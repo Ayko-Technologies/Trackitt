@@ -25,23 +25,30 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Sell
+import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -54,6 +61,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -88,6 +97,7 @@ private val PRESET_COLORS = listOf(
     Color(0xFF90A4AE) to Color(0xFF263238),
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit = {},
@@ -99,7 +109,9 @@ fun SettingsScreen(
     val db = remember { TrackittDatabase.getInstance(context) }
     val customCategories by db.customCategoryDao().getAll().collectAsStateWithLifecycle(initialValue = emptyList())
 
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showAddCategoryDialog by remember { mutableStateOf(false) }
+
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     val signInLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -114,177 +126,287 @@ fun SettingsScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
-                .navigationBarsPadding(),
-        ) {
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .padding(start = 12.dp, end = 12.dp, top = 8.dp),
-                ) {
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            LargeTopAppBar(
+                title = {
+                    Text(
+                        "Settings",
+                        fontFamily = SatoshiFamily,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                },
+                navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                    Text(
-                        text = "Settings",
-                        fontFamily = SatoshiFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 22.sp,
-                        letterSpacing = (-0.3).sp,
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
-            }
+                },
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                ),
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .navigationBarsPadding(),
+        ) {
+            // ── Categories ──
+            item { SectionHeader("Categories") }
 
-            // Categories section
             item {
-                Spacer(Modifier.height(24.dp))
-                Text(
-                    text = "CATEGORIES",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = SatoshiFamily,
-                    modifier = Modifier.padding(start = 24.dp, bottom = 12.dp),
-                )
-            }
-
-            items(customCategories) { cat ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 8.dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(cat.bgColor), CircleShape),
-                    )
-                    Spacer(Modifier.width(14.dp))
-                    Text(
-                        cat.name,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = SatoshiFamily,
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(onClick = {
-                        scope.launch { db.customCategoryDao().delete(cat.id) }
-                    }) {
-                        Icon(
-                            Icons.Filled.Delete,
-                            contentDescription = "Delete",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp),
+                SettingsGroup {
+                    customCategories.forEachIndexed { index, cat ->
+                        SettingsRow(
+                            leading = {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .background(Color(cat.bgColor), CircleShape),
+                                )
+                            },
+                            label = cat.name,
+                            trailing = {
+                                IconButton(
+                                    onClick = { scope.launch { db.customCategoryDao().delete(cat.id) } },
+                                    modifier = Modifier.size(32.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Delete,
+                                        contentDescription = "Delete",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                }
+                            },
+                            showDivider = index < customCategories.size - 1,
                         )
                     }
+                    SettingsRow(
+                        leading = {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                            ) {
+                                Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
+                            }
+                        },
+                        label = "Add category",
+                        labelColor = MaterialTheme.colorScheme.primary,
+                        onClick = { showAddCategoryDialog = true },
+                        showDivider = false,
+                    )
                 }
             }
 
+            // ── Data & Backup ──
+            item { SectionHeader("Data & Backup") }
+
             item {
-                OutlinedButton(
-                    onClick = { showAddDialog = true },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 8.dp)
-                        .height(44.dp),
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Add category", fontFamily = SatoshiFamily, fontWeight = FontWeight.Medium)
+                SettingsGroup {
+                    SettingsRow(
+                        icon = Icons.Filled.CloudUpload,
+                        label = "Back up to Google Drive",
+                        subtitle = "Saves your database to a private Drive folder",
+                        onClick = {
+                            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                .requestEmail()
+                                .requestScopes(Scope(DriveScopes.DRIVE_APPDATA))
+                                .build()
+                            val client = GoogleSignIn.getClient(context, gso)
+                            signInLauncher.launch(client.signInIntent)
+                        },
+                        showDivider = true,
+                    )
+                    SettingsRow(
+                        icon = Icons.Filled.History,
+                        label = "Restore from backup",
+                        subtitle = "Download a previous backup from Drive",
+                        onClick = {
+                            scope.launch { snackbarHostState.showSnackbar("Restore coming soon") }
+                        },
+                        showDivider = false,
+                    )
                 }
             }
 
-            // Data section
-            item {
-                Spacer(Modifier.height(24.dp))
-                Text(
-                    text = "DATA",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = SatoshiFamily,
-                    modifier = Modifier.padding(start = 24.dp, bottom = 12.dp),
-                )
-            }
+            // ── SMS ──
+            item { SectionHeader("SMS Parsing") }
 
             item {
-                Button(
-                    onClick = {
-                        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                            .requestEmail()
-                            .requestScopes(Scope(DriveScopes.DRIVE_APPDATA))
-                            .build()
-                        val client = GoogleSignIn.getClient(context, gso)
-                        signInLauncher.launch(client.signInIntent)
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .height(48.dp),
-                ) {
-                    Icon(Icons.Filled.CloudUpload, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Back up to Google Drive", fontFamily = SatoshiFamily, fontWeight = FontWeight.Medium)
+                SettingsGroup {
+                    SettingsRow(
+                        icon = Icons.Filled.Sms,
+                        label = "SMS sources",
+                        subtitle = "MTN MoMo",
+                        showChevron = true,
+                        showDivider = true,
+                    )
+                    SettingsRow(
+                        icon = Icons.Filled.Sell,
+                        label = "Merchant dictionary",
+                        subtitle = "40+ auto-categorised merchants",
+                        showChevron = true,
+                        showDivider = false,
+                    )
                 }
             }
 
+            // ── About ──
+            item { SectionHeader("About") }
+
             item {
-                Spacer(Modifier.height(12.dp))
-                OutlinedButton(
-                    onClick = {
-                        scope.launch { snackbarHostState.showSnackbar("Restore coming soon") }
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .height(48.dp),
-                ) {
-                    Icon(Icons.Filled.CloudDownload, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Restore from backup", fontFamily = SatoshiFamily, fontWeight = FontWeight.Medium)
+                SettingsGroup {
+                    SettingsRow(
+                        icon = Icons.Filled.Info,
+                        label = "Version",
+                        trailing = {
+                            Text(
+                                "0.1.0",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontFamily = SatoshiFamily,
+                            )
+                        },
+                        showDivider = true,
+                    )
+                    SettingsRow(
+                        icon = Icons.Filled.Palette,
+                        label = "Made by Ayko Technologies",
+                        showDivider = false,
+                    )
                 }
             }
+
+            item { Spacer(Modifier.height(40.dp)) }
         }
-
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(16.dp),
-        )
     }
 
-    if (showAddDialog) {
+    if (showAddCategoryDialog) {
         AddCategoryDialog(
-            onDismiss = { showAddDialog = false },
+            onDismiss = { showAddCategoryDialog = false },
             onSave = { name, bgColor, fgColor ->
                 scope.launch {
                     db.customCategoryDao().insert(
-                        CustomCategoryEntity(
-                            name = name,
-                            bgColor = bgColor.toArgb(),
-                            fgColor = fgColor.toArgb(),
-                        )
+                        CustomCategoryEntity(name = name, bgColor = bgColor.toArgb(), fgColor = fgColor.toArgb())
                     )
                 }
-                showAddDialog = false
+                showAddCategoryDialog = false
             },
         )
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    Text(
+        text = title.uppercase(),
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.5.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontFamily = SatoshiFamily,
+        modifier = Modifier.padding(start = 32.dp, top = 28.dp, bottom = 8.dp),
+    )
+}
+
+@Composable
+private fun SettingsGroup(content: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer),
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun SettingsRow(
+    icon: ImageVector? = null,
+    leading: (@Composable () -> Unit)? = null,
+    label: String,
+    subtitle: String? = null,
+    labelColor: Color = MaterialTheme.colorScheme.onSurface,
+    trailing: (@Composable () -> Unit)? = null,
+    showChevron: Boolean = false,
+    showDivider: Boolean = true,
+    onClick: (() -> Unit)? = null,
+) {
+    Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+        ) {
+            if (leading != null) {
+                leading()
+                Spacer(Modifier.width(14.dp))
+            } else if (icon != null) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp),
+                )
+                Spacer(Modifier.width(14.dp))
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    label,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = labelColor,
+                    fontFamily = SatoshiFamily,
+                )
+                if (subtitle != null) {
+                    Text(
+                        subtitle,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontFamily = SatoshiFamily,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+
+            if (trailing != null) {
+                trailing()
+            }
+
+            if (showChevron) {
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+
+        if (showDivider) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = if (icon != null || leading != null) 52.dp else 16.dp)
+                    .height(0.5.dp)
+                    .background(MaterialTheme.colorScheme.outlineVariant),
+            )
+        }
     }
 }
 
@@ -334,12 +456,7 @@ private fun AddCategoryDialog(
                                 .clickable { selectedColorIndex = index },
                         ) {
                             if (isSelected) {
-                                Icon(
-                                    Icons.Filled.Check,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(18.dp),
-                                )
+                                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                             }
                         }
                     }
@@ -355,14 +472,10 @@ private fun AddCategoryDialog(
                     }
                 },
                 enabled = name.isNotBlank(),
-            ) {
-                Text("Save")
-            }
+            ) { Text("Save") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
 }
