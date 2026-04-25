@@ -102,6 +102,8 @@ private val PRESET_COLORS = listOf(
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit = {},
+    onNavigateToSmsSources: () -> Unit = {},
+    onNavigateToMerchantDictionary: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -251,6 +253,7 @@ fun SettingsScreen(
                         subtitle = "MTN MoMo",
                         showChevron = true,
                         showDivider = true,
+                        onClick = onNavigateToSmsSources,
                     )
                     SettingsRow(
                         icon = Icons.Filled.Sell,
@@ -258,6 +261,7 @@ fun SettingsScreen(
                         subtitle = "40+ auto-categorised merchants",
                         showChevron = true,
                         showDivider = false,
+                        onClick = onNavigateToMerchantDictionary,
                     )
                 }
             }
@@ -338,10 +342,10 @@ fun SettingsScreen(
     if (showAddCategoryDialog) {
         AddCategoryDialog(
             onDismiss = { showAddCategoryDialog = false },
-            onSave = { name, bgColor, fgColor ->
+            onSave = { name, bgColor, fgColor, iconName ->
                 scope.launch {
                     db.customCategoryDao().insert(
-                        CustomCategoryEntity(name = name, bgColor = bgColor.toArgb(), fgColor = fgColor.toArgb())
+                        CustomCategoryEntity(name = name, bgColor = bgColor.toArgb(), fgColor = fgColor.toArgb(), iconName = iconName)
                     )
                 }
                 showAddCategoryDialog = false
@@ -457,10 +461,24 @@ private fun SettingsRow(
 @Composable
 private fun AddCategoryDialog(
     onDismiss: () -> Unit,
-    onSave: (name: String, bgColor: Color, fgColor: Color) -> Unit,
+    onSave: (name: String, bgColor: Color, fgColor: Color, iconName: String) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
     var selectedColorIndex by remember { mutableIntStateOf(0) }
+    var selectedIconIndex by remember { mutableIntStateOf(0) }
+
+    val iconOptions = listOf(
+        "Favorite" to Icons.Filled.Add, // placeholder, we use names
+        "Star" to Icons.Filled.Add,
+    )
+
+    // Icon grid using Material icons
+    val availableIcons = remember {
+        listOf(
+            "favorite" to androidx.compose.material.icons.Icons.Filled.Add,
+            "star" to androidx.compose.material.icons.Icons.Filled.Add,
+        )
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -474,14 +492,51 @@ private fun AddCategoryDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+
                 Spacer(Modifier.height(16.dp))
-                Text(
-                    "Color",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = SatoshiFamily,
+                Text("Icon", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
+                Spacer(Modifier.height(8.dp))
+
+                val icons = listOf(
+                    "restaurant" to androidx.compose.material.icons.Icons.Filled.Add,
+                    "local_grocery_store" to androidx.compose.material.icons.Icons.Filled.Add,
+                    "directions_bus" to androidx.compose.material.icons.Icons.Filled.Add,
+                    "receipt_long" to androidx.compose.material.icons.Icons.Filled.Add,
+                    "shopping_bag" to androidx.compose.material.icons.Icons.Filled.Add,
+                    "swap_horiz" to androidx.compose.material.icons.Icons.Filled.Add,
+                    "category" to androidx.compose.material.icons.Icons.Filled.Add,
+                    "favorite" to androidx.compose.material.icons.Icons.Filled.Add,
                 )
+
+                // Use the actual TransactionCategory icons as a selection grid
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val catIcons = com.ayko.trackitt.domain.model.TransactionCategory.entries
+                    items(catIcons.size) { index ->
+                        val cat = catIcons[index]
+                        val isSelected = index == selectedIconIndex
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                                    else MaterialTheme.colorScheme.surfaceContainerHigh
+                                )
+                                .clickable { selectedIconIndex = index },
+                        ) {
+                            Icon(
+                                cat.icon,
+                                contentDescription = cat.label,
+                                tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+                Text("Color", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
                 Spacer(Modifier.height(8.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(PRESET_COLORS.size) { index ->
@@ -512,7 +567,8 @@ private fun AddCategoryDialog(
                 onClick = {
                     if (name.isNotBlank()) {
                         val (bg, fg) = PRESET_COLORS[selectedColorIndex]
-                        onSave(name.trim(), bg, fg)
+                        val iconName = com.ayko.trackitt.domain.model.TransactionCategory.entries[selectedIconIndex].name.lowercase()
+                        onSave(name.trim(), bg, fg, iconName)
                     }
                 },
                 enabled = name.isNotBlank(),

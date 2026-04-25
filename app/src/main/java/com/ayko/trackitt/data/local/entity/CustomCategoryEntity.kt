@@ -10,4 +10,5 @@ data class CustomCategoryEntity(
     val name: String,
     val bgColor: Int,
     val fgColor: Int,
+    val iconName: String = "category",
 )
