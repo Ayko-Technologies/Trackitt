@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -257,6 +258,49 @@ fun SettingsScreen(
                         subtitle = "40+ auto-categorised merchants",
                         showChevron = true,
                         showDivider = false,
+                    )
+                }
+            }
+
+            // ── Danger Zone ──
+            item { SectionHeader("Danger Zone") }
+
+            item {
+                var showConfirm by remember { mutableStateOf(false) }
+
+                SettingsGroup {
+                    SettingsRow(
+                        icon = Icons.Filled.Delete,
+                        label = "Reset all data",
+                        subtitle = "Delete all transactions, categories, and merchant mappings",
+                        labelColor = Color(0xFFB3261E),
+                        onClick = { showConfirm = true },
+                        showDivider = false,
+                    )
+                }
+
+                if (showConfirm) {
+                    AlertDialog(
+                        onDismissRequest = { showConfirm = false },
+                        title = { Text("Reset all data?", fontFamily = SatoshiFamily, fontWeight = FontWeight.Medium) },
+                        text = { Text("This will permanently delete all your transactions, custom categories, and merchant mappings. This cannot be undone.") },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        db.clearAllTables()
+                                        context.getSharedPreferences("trackitt", 0).edit().clear().apply()
+                                        context.getSharedPreferences("search", 0).edit().clear().apply()
+                                        snackbarHostState.showSnackbar("All data cleared")
+                                    }
+                                    showConfirm = false
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB3261E)),
+                            ) { Text("Reset") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showConfirm = false }) { Text("Cancel") }
+                        },
                     )
                 }
             }
