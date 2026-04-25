@@ -1,15 +1,17 @@
 package com.ayko.trackitt.domain.model
 
-import java.time.LocalDateTime
-
 data class Transaction(
-    val id: String,
+    val id: Long = 0,
     val amount: Double,
+    val fee: Double = 0.0,
+    val isIncome: Boolean = false,
     val category: TransactionCategory,
     val merchant: String,
-    val date: LocalDateTime,
     val reference: String? = null,
+    val transactionId: String = "",
     val source: String = "MTN MoMo",
     val note: String? = null,
+    val date: Long = System.currentTimeMillis(),
     val isFromSms: Boolean = false,
+    val rawSms: String? = null,
 )
