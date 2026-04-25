@@ -40,7 +40,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.ayko.trackitt.ui.component.DisplayNumber
+import com.ayko.trackitt.ui.component.MonthPicker
 import com.ayko.trackitt.ui.component.FloatingNavBar
 import com.ayko.trackitt.ui.component.MonthChart
 import com.ayko.trackitt.ui.component.TrackittChip
@@ -63,7 +67,11 @@ fun HomeScreen(
     val chartCategories by viewModel.chartCategories.collectAsStateWithLifecycle(initialValue = emptyList())
     val smsGranted by viewModel.smsPermissionGranted.collectAsStateWithLifecycle()
 
+    val monthName by viewModel.currentMonthName.collectAsStateWithLifecycle(initialValue = "")
+    val currentYear by viewModel.currentYear.collectAsStateWithLifecycle(initialValue = 2026)
+
     val empty = chartCategories.isEmpty()
+    var showMonthPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val granted = ContextCompat.checkSelfPermission(
@@ -78,7 +86,7 @@ fun HomeScreen(
         viewModel.onSmsPermissionResult(granted, context)
     }
 
-    val periodLabel = if (selectedPeriod == Period.TODAY) "TODAY" else viewModel.currentMonthName.uppercase()
+    val periodLabel = if (selectedPeriod == Period.TODAY) "TODAY" else monthName.uppercase()
     val totalFormatted = if (total >= 1000) {
         String.format(Locale.US, "₵%.1fk", total / 1000)
     } else {
@@ -138,9 +146,12 @@ fun HomeScreen(
                     )
                     Spacer(Modifier.width(8.dp))
                     TrackittChip(
-                        label = "${viewModel.currentMonthName} ${viewModel.currentYear}",
+                        label = "$monthName $currentYear",
                         selected = selectedPeriod == Period.MONTH,
-                        onClick = { viewModel.selectPeriod(Period.MONTH) },
+                        onClick = {
+                            if (selectedPeriod == Period.MONTH) showMonthPicker = true
+                            else viewModel.selectPeriod(Period.MONTH)
+                        },
                         leadingIcon = Icons.Filled.CalendarMonth,
                     )
                 }
@@ -185,7 +196,7 @@ fun HomeScreen(
             MonthChart(
                 categories = chartCategories,
                 totalFormatted = totalFormatted,
-                monthLabel = viewModel.currentMonthName,
+                monthLabel = monthName,
                 empty = empty,
                 modifier = Modifier
                     .padding(top = if (smsGranted) 20.dp else 4.dp)
@@ -199,5 +210,17 @@ fun HomeScreen(
             onSearchTap = onSearchTap,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
+
+        if (showMonthPicker) {
+            MonthPicker(
+                selectedYear = viewModel.selectedYearValue,
+                selectedMonth = viewModel.selectedMonthValue,
+                onMonthSelected = { year, month ->
+                    viewModel.setMonth(year, month)
+                    showMonthPicker = false
+                },
+                onDismiss = { showMonthPicker = false },
+            )
+        }
     }
 }
