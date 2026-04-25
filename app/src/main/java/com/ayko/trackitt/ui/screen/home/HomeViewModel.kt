@@ -18,9 +18,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.Month
+import java.time.ZoneId
 
-enum class Period { TODAY, MONTH }
+enum class Period { DAY, MONTH }
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = (application as TrackittApplication).container.repository
@@ -31,6 +33,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val now = LocalDate.now()
     private val _selectedYear = MutableStateFlow(now.year)
     private val _selectedMonth = MutableStateFlow(now.monthValue)
+    private val _selectedDay = MutableStateFlow(now.dayOfMonth)
 
     val currentMonthName: Flow<String> = _selectedMonth.map { monthVal ->
         Month.of(monthVal).name.lowercase().replaceFirstChar { it.uppercase() }
@@ -38,13 +41,36 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val currentYear: Flow<Int> = _selectedYear
     val selectedMonthValue: Int get() = _selectedMonth.value
     val selectedYearValue: Int get() = _selectedYear.value
+    val selectedDayValue: Int get() = _selectedDay.value
+
+    val dayLabel: Flow<String> = combine(_selectedDay, _selectedMonth, _selectedYear) { day, month, year ->
+        val date = LocalDate.of(year, month, day)
+        val today = LocalDate.now()
+        when {
+            date == today -> "Today"
+            date == today.minusDays(1) -> "Yesterday"
+            else -> "${Month.of(month).name.take(3).lowercase().replaceFirstChar { it.uppercase() }} $day"
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val total: Flow<Double> = combine(_selectedPeriod, _selectedYear, _selectedMonth) { period, year, month ->
-        Triple(period, year, month)
-    }.flatMapLatest { (period, year, month) ->
+    val total: Flow<Double> = combine(
+        _selectedPeriod, _selectedYear, _selectedMonth, _selectedDay
+    ) { period, year, month, day ->
+        arrayOf(period, year, month, day)
+    }.flatMapLatest { args ->
+        val period = args[0] as Period
+        val year = args[1] as Int
+        val month = args[2] as Int
+        val day = args[3] as Int
         when (period) {
-            Period.TODAY -> repository.getTodayTotal()
+            Period.DAY -> {
+                val date = LocalDate.of(year, month, day)
+                val zone = ZoneId.systemDefault()
+                val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
+                val end = date.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
+                repository.getDayTotal(start, end)
+            }
             Period.MONTH -> repository.getMonthTotal(year, month)
         }
     }
@@ -64,6 +90,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val smsPermissionGranted = MutableStateFlow(false)
 
     fun selectPeriod(period: Period) {
+        if (period == Period.DAY) {
+            _selectedDay.value = LocalDate.now().dayOfMonth
+        }
         _selectedPeriod.value = period
     }
 
@@ -71,6 +100,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _selectedYear.value = year
         _selectedMonth.value = month
         _selectedPeriod.value = Period.MONTH
+    }
+
+    fun setDay(day: Int) {
+        _selectedDay.value = day
+        _selectedPeriod.value = Period.DAY
     }
 
     fun onSmsPermissionResult(granted: Boolean, context: Context) {

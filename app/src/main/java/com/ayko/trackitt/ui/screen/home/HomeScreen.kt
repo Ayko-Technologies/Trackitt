@@ -43,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.ayko.trackitt.ui.component.DayPicker
 import com.ayko.trackitt.ui.component.DisplayNumber
 import com.ayko.trackitt.ui.component.MonthPicker
 import com.ayko.trackitt.ui.component.FloatingNavBar
@@ -70,8 +71,11 @@ fun HomeScreen(
     val monthName by viewModel.currentMonthName.collectAsStateWithLifecycle(initialValue = "")
     val currentYear by viewModel.currentYear.collectAsStateWithLifecycle(initialValue = 2026)
 
+    val dayLabel by viewModel.dayLabel.collectAsStateWithLifecycle(initialValue = "Today")
+
     val empty = chartCategories.isEmpty()
     var showMonthPicker by remember { mutableStateOf(false) }
+    var showDayPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val granted = ContextCompat.checkSelfPermission(
@@ -86,7 +90,7 @@ fun HomeScreen(
         viewModel.onSmsPermissionResult(granted, context)
     }
 
-    val periodLabel = if (selectedPeriod == Period.TODAY) "TODAY" else monthName.uppercase()
+    val periodLabel = if (selectedPeriod == Period.DAY) dayLabel.uppercase() else monthName.uppercase()
     val totalFormatted = if (total >= 1000) {
         String.format(Locale.US, "₵%.1fk", total / 1000)
     } else {
@@ -139,9 +143,12 @@ fun HomeScreen(
 
                 Row(modifier = Modifier.padding(top = 14.dp)) {
                     TrackittChip(
-                        label = "Today",
-                        selected = selectedPeriod == Period.TODAY,
-                        onClick = { viewModel.selectPeriod(Period.TODAY) },
+                        label = dayLabel,
+                        selected = selectedPeriod == Period.DAY,
+                        onClick = {
+                            if (selectedPeriod == Period.DAY) showDayPicker = true
+                            else viewModel.selectPeriod(Period.DAY)
+                        },
                         leadingIcon = Icons.Filled.Today,
                     )
                     Spacer(Modifier.width(8.dp))
@@ -220,6 +227,19 @@ fun HomeScreen(
                     showMonthPicker = false
                 },
                 onDismiss = { showMonthPicker = false },
+            )
+        }
+
+        if (showDayPicker) {
+            DayPicker(
+                year = viewModel.selectedYearValue,
+                month = viewModel.selectedMonthValue,
+                selectedDay = viewModel.selectedDayValue,
+                onDaySelected = { day ->
+                    viewModel.setDay(day)
+                    showDayPicker = false
+                },
+                onDismiss = { showDayPicker = false },
             )
         }
     }
