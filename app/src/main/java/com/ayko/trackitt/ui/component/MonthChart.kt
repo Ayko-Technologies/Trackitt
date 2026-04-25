@@ -48,6 +48,7 @@ data class ChartCategory(
 fun MonthChart(
     categories: List<ChartCategory>,
     totalFormatted: String,
+    monthLabel: String = "APRIL",
     empty: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -74,6 +75,7 @@ fun MonthChart(
                 cardBg = cardBg,
                 empty = empty,
                 totalFormatted = totalFormatted,
+                monthLabel = monthLabel,
             )
 
             Box(modifier = Modifier.weight(1f)) {
@@ -189,6 +191,7 @@ private fun ChartHeader(
     cardBg: Color,
     empty: Boolean,
     totalFormatted: String,
+    monthLabel: String = "APRIL",
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -214,7 +217,7 @@ private fun ChartHeader(
         }
         Spacer(Modifier.width(10.dp))
         Text(
-            text = "TRACKITT · APRIL",
+            text = "TRACKITT · ${monthLabel.uppercase()}",
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.6.sp,

@@ -6,6 +6,6 @@ sealed class NavRoute(val route: String) {
     data object Settings : NavRoute("settings")
     data object Search : NavRoute("search")
     data object Detail : NavRoute("detail/{transactionId}") {
-        fun withId(id: String) = "detail/$id"
+        fun withId(id: Long) = "detail/$id"
     }
 }
