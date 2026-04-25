@@ -6,9 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,10 +29,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -41,6 +39,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.ui.component.CookieIcon
 import com.ayko.trackitt.ui.component.DisplayNumber
@@ -50,10 +50,17 @@ import com.ayko.trackitt.ui.theme.SurfaceContainerHigh
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddScreen(
+    viewModel: AddViewModel = viewModel(),
     onClose: () -> Unit = {},
     onSave: () -> Unit = {},
 ) {
-    var selectedCategory by remember { mutableIntStateOf(-1) }
+    val amount by viewModel.amount.collectAsStateWithLifecycle()
+    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val saved by viewModel.saved.collectAsStateWithLifecycle()
+
+    LaunchedEffect(saved) {
+        if (saved) onSave()
+    }
 
     Column(
         modifier = Modifier
@@ -80,7 +87,6 @@ fun AddScreen(
             ),
         )
 
-        // Amount — no label
         Column(modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 20.dp)) {
             val primaryColor = MaterialTheme.colorScheme.primary
             Row(
@@ -98,7 +104,7 @@ fun AddScreen(
                     .padding(bottom = 8.dp),
             ) {
                 DisplayNumber(
-                    value = 215.0,
+                    value = amount.toDoubleOrNull() ?: 0.0,
                     sizeSp = 56f,
                 )
                 Spacer(Modifier.weight(1f))
@@ -111,21 +117,19 @@ fun AddScreen(
             }
         }
 
-        // Category grid with cookie shapes
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(0.dp),
             modifier = Modifier
                 .padding(start = 16.dp, end = 16.dp, top = 12.dp)
                 .height(180.dp),
         ) {
-            itemsIndexed(TransactionCategory.entries.toList()) { index, cat ->
-                val isSelected = index == selectedCategory
+            itemsIndexed(TransactionCategory.entries.toList()) { _, cat ->
+                val isSelected = selectedCategory == cat
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable {
-                        selectedCategory = if (isSelected) -1 else index
+                        viewModel.selectedCategory.value = if (isSelected) null else cat
                     },
                 ) {
                     CookieIcon(
@@ -153,7 +157,6 @@ fun AddScreen(
             }
         }
 
-        // + Add details
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
@@ -162,43 +165,23 @@ fun AddScreen(
                 .padding(top = 16.dp)
                 .clickable { },
         ) {
-            Icon(
-                imageVector = Icons.Filled.Add,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp),
-            )
+            Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
-            Text(
-                text = "Add details",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.primary,
-                fontFamily = SatoshiFamily,
-            )
+            Text("Add details", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary, fontFamily = SatoshiFamily)
         }
 
         Spacer(Modifier.weight(1f))
 
-        // Save button
         Button(
-            onClick = onSave,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
+            onClick = { viewModel.save() },
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(20.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp, vertical = 24.dp)
                 .height(40.dp),
         ) {
-            Text(
-                text = "Save expense",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = SatoshiFamily,
-            )
+            Text("Save expense", fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFamily = SatoshiFamily)
         }
     }
 }

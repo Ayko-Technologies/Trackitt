@@ -2,9 +2,11 @@ package com.ayko.trackitt.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.ayko.trackitt.ui.screen.add.AddScreen
 import com.ayko.trackitt.ui.screen.detail.DetailScreen
 import com.ayko.trackitt.ui.screen.home.HomeScreen
@@ -49,8 +51,13 @@ fun TrackittNavGraph(
             )
         }
 
-        composable(NavRoute.Detail.route) {
+        composable(
+            NavRoute.Detail.route,
+            arguments = listOf(navArgument("transactionId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val txId = backStackEntry.arguments?.getLong("transactionId") ?: return@composable
             DetailScreen(
+                transactionId = txId,
                 onBack = { navController.popBackStack() },
                 onConfirm = { navController.popBackStack() },
             )

@@ -1,25 +1,24 @@
 package com.ayko.trackitt.ui.screen.search
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,24 +28,30 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ayko.trackitt.domain.model.TransactionCategory
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ayko.trackitt.domain.model.Transaction
 import com.ayko.trackitt.ui.theme.FrauncesFamily
 import com.ayko.trackitt.ui.theme.SatoshiFamily
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.compose.foundation.layout.Box
 
 @Composable
 fun SearchScreen(
+    viewModel: SearchViewModel = viewModel(),
     onBack: () -> Unit = {},
 ) {
-    var query by remember { mutableStateOf("trotro") }
+    val query by viewModel.query.collectAsStateWithLifecycle()
+    val results by viewModel.results.collectAsStateWithLifecycle(initialValue = emptyList())
+    val recentSearches by viewModel.recentSearches.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -54,7 +59,6 @@ fun SearchScreen(
             .background(MaterialTheme.colorScheme.surface)
             .navigationBarsPadding(),
     ) {
-        // Search bar
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -69,7 +73,7 @@ fun SearchScreen(
             }
             TextField(
                 value = query,
-                onValueChange = { query = it },
+                onValueChange = { viewModel.query.value = it },
                 placeholder = { Text("Search transactions") },
                 singleLine = true,
                 colors = TextFieldDefaults.colors(
@@ -81,88 +85,69 @@ fun SearchScreen(
                 modifier = Modifier.weight(1f),
             )
             if (query.isNotEmpty()) {
-                IconButton(onClick = { query = "" }) {
+                IconButton(onClick = { viewModel.query.value = "" }) {
                     Icon(Icons.Outlined.Close, contentDescription = "Clear", modifier = Modifier.size(20.dp))
                 }
             }
         }
 
-        // Results
-        if (query.isNotEmpty()) {
-            Text(
-                text = "RESULTS FOR \"${query.uppercase()}\"",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.5.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontFamily = SatoshiFamily,
-                modifier = Modifier.padding(start = 20.dp, top = 20.dp, bottom = 8.dp),
-            )
-
-            val results = listOf(
-                Triple("Trotro to Madina", "Transport · Apr 22", "−₵15.00"),
-                Triple("Trotro to Legon", "Transport · Apr 19", "−₵8.00"),
-                Triple("Trotro to Circle", "Transport · Apr 14", "−₵12.00"),
-            )
-
-            results.forEach { (merchant, subtitle, amount) ->
-                SearchResultRow(
-                    merchant = merchant,
-                    subtitle = subtitle,
-                    amount = amount,
-                    category = TransactionCategory.TRANSPORT,
-                )
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            if (results.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "RESULTS FOR \"${query.uppercase()}\"",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontFamily = SatoshiFamily,
+                        modifier = Modifier.padding(start = 20.dp, top = 20.dp, bottom = 8.dp),
+                    )
+                }
+                items(results) { tx ->
+                    SearchResultRow(tx)
+                }
+                item {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                }
             }
 
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
-        }
-
-        // Recent
-        Text(
-            text = "RECENT",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.5.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontFamily = SatoshiFamily,
-            modifier = Modifier.padding(start = 20.dp, top = 12.dp, bottom = 8.dp),
-        )
-
-        listOf("Lydia supermarket", "MTN MoMo", "DStv bills").forEach { recent ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.History,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-                Spacer(Modifier.width(16.dp))
-                Text(
-                    text = recent,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+            if (recentSearches.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "RECENT",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontFamily = SatoshiFamily,
+                        modifier = Modifier.padding(start = 20.dp, top = 12.dp, bottom = 8.dp),
+                    )
+                }
+                items(recentSearches) { recent ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                    ) {
+                        Icon(Icons.Filled.History, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(16.dp))
+                        Text(recent, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun SearchResultRow(
-    merchant: String,
-    subtitle: String,
-    amount: String,
-    category: TransactionCategory,
-) {
+private fun SearchResultRow(tx: Transaction) {
+    val dateFormatted = SimpleDateFormat("MMM d", Locale.US).format(Date(tx.date))
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -173,30 +158,22 @@ private fun SearchResultRow(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(36.dp)
-                .background(category.bgColor, CircleShape),
+                .background(tx.category.bgColor, CircleShape),
         ) {
             Icon(
-                imageVector = category.icon,
+                imageVector = tx.category.icon,
                 contentDescription = null,
-                tint = category.fgColor,
+                tint = tx.category.fgColor,
                 modifier = Modifier.size(18.dp),
             )
         }
         Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = merchant,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-            )
-            Text(
-                text = subtitle,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text(tx.merchant, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            Text("${tx.category.label} · $dateFormatted", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Text(
-            text = amount,
+            text = "${if (tx.isIncome) "+" else "−"}₵${String.format(Locale.US, "%.2f", tx.amount)}",
             fontSize = 15.sp,
             fontWeight = FontWeight.Normal,
             fontFamily = FrauncesFamily,
