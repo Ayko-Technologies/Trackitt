@@ -48,6 +48,9 @@ fun TrackittNavGraph(
         composable(NavRoute.Search.route) {
             SearchScreen(
                 onBack = { navController.popBackStack() },
+                onTransactionTap = { id ->
+                    navController.navigate(NavRoute.Detail.withId(id))
+                },
             )
         }
 
