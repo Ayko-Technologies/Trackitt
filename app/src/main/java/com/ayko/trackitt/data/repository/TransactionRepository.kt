@@ -43,6 +43,10 @@ class TransactionRepository(
         return transactionDao.getTotalForRange(start, end)
     }
 
+    fun getDayTotal(startOfDay: Long, endOfDay: Long): Flow<Double> {
+        return transactionDao.getTotalForRange(startOfDay, endOfDay)
+    }
+
     fun getMonthTotal(year: Int, month: Int): Flow<Double> {
         val y = year.toString()
         val m = month.toString().padStart(2, '0')
