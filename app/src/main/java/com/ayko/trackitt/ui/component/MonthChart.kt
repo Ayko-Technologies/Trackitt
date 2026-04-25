@@ -79,7 +79,7 @@ fun MonthChart(
             )
 
             Box(modifier = Modifier.weight(1f)) {
-                Box(
+                if (!empty) Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(end = 0.dp, bottom = 40.dp)
