@@ -1,9 +1,14 @@
 package com.ayko.trackitt.service.sms
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.net.Uri
+import android.os.Build
+import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.ayko.trackitt.R
 import com.ayko.trackitt.TrackittApplication
 
 class SmsBackfillWorker(
@@ -33,6 +38,7 @@ class SmsBackfillWorker(
             "date ASC"
         ) ?: return Result.failure()
 
+        var count = 0
         cursor.use {
             val bodyIdx = it.getColumnIndexOrThrow("body")
             val addressIdx = it.getColumnIndexOrThrow("address")
@@ -41,11 +47,30 @@ class SmsBackfillWorker(
                 val sender = it.getString(addressIdx)
                 val parsed = container.parseSms(sender, body) ?: continue
                 repository.insertFromSms(parsed)
+                count++
             }
         }
 
         prefs.edit().putBoolean("backfill_completed", true).apply()
+        showDoneNotification(count)
         return Result.success()
+    }
+
+    private fun showDoneNotification(count: Int) {
+        val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            nm.createNotificationChannel(
+                NotificationChannel("trackitt_scan", "SMS Scan", NotificationManager.IMPORTANCE_DEFAULT)
+            )
+        }
+        val text = if (count == 0) "No new transactions found" else "$count transaction${if (count != 1) "s" else ""} imported"
+        val notification = NotificationCompat.Builder(applicationContext, "trackitt_scan")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("SMS scan complete")
+            .setContentText(text)
+            .setAutoCancel(true)
+            .build()
+        nm.notify(9999, notification)
     }
 
     companion object {
