@@ -260,7 +260,8 @@ fun SettingsScreen(
                         label = "Re-scan SMS",
                         subtitle = run {
                             val days = context.getSharedPreferences("trackitt", 0).getInt("backfill_days", 90)
-                            "Re-import MoMo messages from the last $days days"
+                            if (days == 1) "Re-import today's MoMo messages"
+                            else "Re-import MoMo messages from the last $days days"
                         },
                         showDivider = true,
                         onClick = {
@@ -276,7 +277,11 @@ fun SettingsScreen(
                                 androidx.work.ExistingWorkPolicy.REPLACE,
                                 request,
                             )
-                            scope.launch { snackbarHostState.showSnackbar("Scanning last $days days of SMS...") }
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    if (days == 1) "Scanning today's SMS..." else "Scanning last $days days of SMS..."
+                                )
+                            }
                         },
                     )
                     SettingsRow(
@@ -288,7 +293,7 @@ fun SettingsScreen(
                             var currentDays by remember { mutableIntStateOf(prefs.getInt("backfill_days", 90)) }
 
                             Text(
-                                "$currentDays days",
+                                if (currentDays == 1) "1 day" else "$currentDays days",
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontFamily = SatoshiFamily,
@@ -317,7 +322,7 @@ fun SettingsScreen(
                                                 ) {
                                                     Text(
                                                         when (days) {
-                                                            1 -> "Today only"
+                                                            1 -> "1 day (today)"
                                                             7 -> "7 days (1 week)"
                                                             30 -> "30 days (1 month)"
                                                             60 -> "60 days (2 months)"
