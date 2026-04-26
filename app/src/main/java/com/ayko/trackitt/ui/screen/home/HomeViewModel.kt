@@ -77,15 +77,30 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val chartCategories: Flow<List<ChartCategory>> =
-        combine(_selectedYear, _selectedMonth) { year, month -> year to month }
-            .flatMapLatest { (year, month) ->
-                repository.getCategoryTotals(year, month).map { totals ->
-                    totals.mapNotNull { ct ->
-                        val cat = try { TransactionCategory.valueOf(ct.category) } catch (_: Exception) { null }
-                        cat?.let { ChartCategory(it, ct.total) }
-                    }
+        combine(_selectedPeriod, _selectedYear, _selectedMonth, _selectedDay) { period, year, month, day ->
+            arrayOf(period, year, month, day)
+        }.flatMapLatest { args ->
+            val period = args[0] as Period
+            val year = args[1] as Int
+            val month = args[2] as Int
+            val day = args[3] as Int
+            val totalsFlow = when (period) {
+                Period.DAY -> {
+                    val date = LocalDate.of(year, month, day)
+                    val zone = ZoneId.systemDefault()
+                    val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
+                    val end = date.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
+                    repository.getCategoryTotalsForRange(start, end)
+                }
+                Period.MONTH -> repository.getCategoryTotals(year, month)
+            }
+            totalsFlow.map { totals ->
+                totals.mapNotNull { ct ->
+                    val cat = try { TransactionCategory.valueOf(ct.category) } catch (_: Exception) { null }
+                    cat?.let { ChartCategory(it, ct.total) }
                 }
             }
+        }
 
     val smsPermissionGranted = MutableStateFlow(false)
 

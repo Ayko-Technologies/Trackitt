@@ -43,6 +43,10 @@ class TransactionRepository(
         return transactionDao.getTotalForRange(start, end)
     }
 
+    fun getCategoryTotalsForRange(startOfDay: Long, endOfDay: Long): Flow<List<CategoryTotal>> {
+        return transactionDao.getCategoryTotalsForRange(startOfDay, endOfDay)
+    }
+
     fun getDayTotal(startOfDay: Long, endOfDay: Long): Flow<Double> {
         return transactionDao.getTotalForRange(startOfDay, endOfDay)
     }
