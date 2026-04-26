@@ -201,4 +201,49 @@ class TransactionPipelineTest {
         assertEquals(4510.00, billTx.amount, 0.01)
         assertEquals(TransactionCategory.BILLS, billTx.category)
     }
+
+    @Test
+    fun payment_made_with_period_before_current_balance() = runTest {
+        val sms = "Payment made for GHS 10.00 to ALIDU ALIU. Current Balance: GHS 4.81. Available Balance: GHS 4.81. Reference: motor. Transaction ID: 80064981938. Fee charged: GHS 0.00 TAX charged: GHS 0.00."
+        val parsed = parser.parse(sms)
+        assertNotNull(parsed)
+        assertEquals(10.00, parsed!!.amount, 0.01)
+        assertEquals("ALIDU ALIU", parsed.merchant)
+        assertEquals("80064981938", parsed.transactionId)
+        repository.insertFromSms(parsed)
+        val tx = repository.getById(1).first()!!
+        assertEquals(TransactionCategory.OTHER, tx.category)
+    }
+
+    @Test
+    fun payment_made_without_period_before_current_balance() = runTest {
+        val sms = "Payment made for GHS 27.00 to COMFORT OSSOM Current Balance: GHS 14.81 . Available Balance: GHS 14.81. Reference: soqp. Transaction ID: 80064818294. Fee charged: GHS0.00 Tax charged: 0."
+        val parsed = parser.parse(sms)
+        assertNotNull(parsed)
+        assertEquals(27.00, parsed!!.amount, 0.01)
+        assertEquals("COMFORT OSSOM", parsed.merchant)
+    }
+
+    @Test
+    fun payment_received_with_double_space() = runTest {
+        val sms = "Payment received for GHS 30.00 from CHARLES MCCARTHY  Current Balance: GHS 41.81 . Available Balance: GHS 41.81. Reference: 1. Transaction ID: 80064707313. TRANSACTION FEE: 0.00"
+        val parsed = parser.parse(sms)
+        assertNotNull(parsed)
+        assertEquals(30.00, parsed!!.amount, 0.01)
+        assertEquals("CHARLES MCCARTHY", parsed.merchant)
+        assertTrue(parsed.isIncome)
+    }
+
+    @Test
+    fun duplicate_sms_variants_same_transaction_id() = runTest {
+        val sms1 = "Payment made for GHS 10.00 to ALIDU ALIU. Current Balance: GHS 4.81. Available Balance: GHS 4.81. Reference: motor. Transaction ID: 80064981938. Fee charged: GHS 0.00 TAX charged: GHS 0.00."
+        val sms2 = "Payment made for GHS 10.00 to ALIDU ALIU Current Balance: GHS 4.81 . Available Balance: GHS 4.81. Reference: motor. Transaction ID: 80064981938. Fee charged: GHS0.00 Tax charged: 0. Download the MoMo App for a Faster & Easier Experience. Click here: https://mtnmymomo.onelink.me/XJOt/MoMo"
+
+        repository.insertFromSms(parser.parse(sms1)!!)
+        repository.insertFromSms(parser.parse(sms2)!!)
+
+        val now = LocalDate.now()
+        val transactions = repository.getByMonth(now.year, now.monthValue).first()
+        assertEquals(1, transactions.size)
+    }
 }

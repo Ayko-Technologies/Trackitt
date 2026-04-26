@@ -22,7 +22,8 @@ class MoMoSmsParser {
 
     private fun parsePaymentMade(body: String): ParsedTransaction? {
         val amount = extractAmount("Payment made for", body) ?: return null
-        val merchant = extractBetween(body, "to ", " Current Balance") ?: return null
+        val merchant = (extractBetween(body, "to ", ". Current Balance")
+            ?: extractBetween(body, "to ", " Current Balance")) ?: return null
         val txId = extractTransactionId(body) ?: return null
         val fee = extractFee(body)
         val reference = extractReference(body)
@@ -31,7 +32,9 @@ class MoMoSmsParser {
 
     private fun parsePaymentReceived(body: String): ParsedTransaction? {
         val amount = extractAmount("Payment received for", body) ?: return null
-        val merchant = extractBetween(body, "from ", "  Current Balance") ?: extractBetween(body, "from ", " Current Balance") ?: return null
+        val merchant = (extractBetween(body, "from ", ". Current Balance")
+            ?: extractBetween(body, "from ", "  Current Balance")
+            ?: extractBetween(body, "from ", " Current Balance")) ?: return null
         val txId = extractTransactionId(body) ?: return null
         val fee = extractFee(body)
         val reference = extractReference(body)
