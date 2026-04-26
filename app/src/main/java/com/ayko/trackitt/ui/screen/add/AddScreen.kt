@@ -121,7 +121,7 @@ fun AddScreen(
                     }
                     .padding(bottom = 8.dp),
             ) {
-                val hasOp = amount.contains("+") || (amount.lastIndexOf("−") > 0)
+                val hasOp = amount.contains("+") || amount.lastIndexOf("−") > 0 || amount.contains("×") || amount.contains("÷")
                 if (hasOp) {
                     Text(
                         text = "GH₵ $amount",
@@ -235,7 +235,7 @@ fun AddScreen(
             expression = amount,
             onDigit = { digit ->
                 val current = amount
-                val lastPart = current.substringAfterLast("+").substringAfterLast("−")
+                val lastPart = current.substringAfterLast("+").substringAfterLast("−").substringAfterLast("×").substringAfterLast("÷")
                 if (lastPart == "0" && digit == "0") return@CalculatorPad
                 if (lastPart == "0" && digit != "00") {
                     viewModel.amount.value = current.dropLast(1) + digit
@@ -246,9 +246,9 @@ fun AddScreen(
                 }
             },
             onDecimal = {
-                val lastPart = amount.substringAfterLast("+").substringAfterLast("−")
+                val lastPart = amount.substringAfterLast("+").substringAfterLast("−").substringAfterLast("×").substringAfterLast("÷")
                 if (!lastPart.contains(".")) {
-                    viewModel.amount.value = if (amount.isEmpty() || amount.endsWith("+") || amount.endsWith("−")) "${amount}0." else "$amount."
+                    viewModel.amount.value = if (amount.isEmpty() || amount.last() in "+−×÷") "${amount}0." else "$amount."
                 }
             },
             onBackspace = {
@@ -257,7 +257,7 @@ fun AddScreen(
                 }
             },
             onOperator = { op ->
-                if (amount.isNotEmpty() && !amount.endsWith("+") && !amount.endsWith("−")) {
+                if (amount.isNotEmpty() && !amount.endsWith("+") && !amount.endsWith("−") && !amount.endsWith("×") && !amount.endsWith("÷")) {
                     viewModel.amount.value = amount + op
                 }
             },
@@ -279,22 +279,52 @@ fun AddScreen(
 
 private fun evaluateExpression(expr: String): Double? {
     if (expr.isEmpty()) return null
-    val clean = expr.trimEnd('+', '−')
+    val clean = expr.trimEnd('+', '−', '×', '÷')
     if (clean.isEmpty()) return null
 
-    var result = 0.0
+    val tokens = mutableListOf<Any>()
     var current = ""
-    var op = '+'
 
-    for (ch in "$clean+") {
-        if (ch == '+' || ch == '−') {
+    for (ch in clean) {
+        if (ch == '+' || ch == '−' || ch == '×' || ch == '÷') {
             val num = current.toDoubleOrNull() ?: return null
-            result = if (op == '+') result + num else result - num
+            tokens.add(num)
+            tokens.add(ch)
             current = ""
-            op = ch
         } else {
             current += ch
         }
+    }
+    val lastNum = current.toDoubleOrNull() ?: return null
+    tokens.add(lastNum)
+
+    // Handle × and ÷ first (order of operations)
+    val simplified = mutableListOf<Any>()
+    var i = 0
+    while (i < tokens.size) {
+        if (i + 2 < tokens.size && (tokens[i + 1] == '×' || tokens[i + 1] == '÷')) {
+            var acc = tokens[i] as Double
+            while (i + 2 < tokens.size && (tokens[i + 1] == '×' || tokens[i + 1] == '÷')) {
+                val op = tokens[i + 1] as Char
+                val right = tokens[i + 2] as Double
+                acc = if (op == '×') acc * right else if (right != 0.0) acc / right else return null
+                i += 2
+            }
+            simplified.add(acc)
+        } else {
+            simplified.add(tokens[i])
+        }
+        i++
+    }
+
+    // Handle + and −
+    var result = simplified[0] as Double
+    var j = 1
+    while (j < simplified.size) {
+        val op = simplified[j] as Char
+        val right = simplified[j + 1] as Double
+        result = if (op == '+') result + right else result - right
+        j += 2
     }
     return result
 }
