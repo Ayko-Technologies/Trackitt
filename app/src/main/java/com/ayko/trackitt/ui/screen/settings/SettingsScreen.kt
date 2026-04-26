@@ -95,7 +95,6 @@ private val PRESET_COLORS = listOf(
 fun SettingsScreen(
     onBack: () -> Unit = {},
     onNavigateToSmsSources: () -> Unit = {},
-    onNavigateToMerchantDictionary: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -246,14 +245,6 @@ fun SettingsScreen(
                         showChevron = true,
                         showDivider = true,
                         onClick = onNavigateToSmsSources,
-                    )
-                    SettingsRow(
-                        icon = Icons.Filled.Sell,
-                        label = "Merchant dictionary",
-                        subtitle = "40+ auto-categorised merchants",
-                        showChevron = true,
-                        showDivider = true,
-                        onClick = onNavigateToMerchantDictionary,
                     )
                     SettingsRow(
                         icon = Icons.Filled.Refresh,

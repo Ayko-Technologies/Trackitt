@@ -227,7 +227,7 @@ fun HomeScreen(
                 empty = empty,
                 onCategoryTap = { category -> selectedCategoryForSheet = category },
                 modifier = Modifier
-                    .padding(top = if (smsGranted) 20.dp else 4.dp, bottom = 88.dp)
+                    .padding(top = if (smsGranted) 20.dp else 4.dp)
                     .weight(1f),
             )
         }

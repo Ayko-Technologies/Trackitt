@@ -47,7 +47,6 @@ fun TrackittNavGraph(
             SettingsScreen(
                 onBack = { navController.popBackStack() },
                 onNavigateToSmsSources = { navController.navigate(NavRoute.SmsSources.route) },
-                onNavigateToMerchantDictionary = { navController.navigate(NavRoute.MerchantDictionary.route) },
             )
         }
 

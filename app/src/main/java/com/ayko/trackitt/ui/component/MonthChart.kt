@@ -65,8 +65,7 @@ fun MonthChart(
 
     Box(
         modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
+            .fillMaxSize(),
     ) {
         Column(
             modifier = Modifier
@@ -138,7 +137,7 @@ fun MonthChart(
                         modifier = Modifier
                             .fillMaxSize()
                             .horizontalScroll(rememberScrollState())
-                            .padding(start = 18.dp, end = 28.dp, top = 10.dp, bottom = 16.dp),
+                            .padding(start = 18.dp, end = 28.dp, top = 10.dp, bottom = 100.dp),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.Bottom,
                     ) {
