@@ -121,10 +121,21 @@ fun AddScreen(
                     }
                     .padding(bottom = 8.dp),
             ) {
-                DisplayNumber(
-                    value = amount.toDoubleOrNull() ?: 0.0,
-                    sizeSp = 52f,
-                )
+                val hasOp = amount.contains("+") || (amount.lastIndexOf("−") > 0)
+                if (hasOp) {
+                    Text(
+                        text = "GH₵ $amount",
+                        fontSize = 32.sp,
+                        fontFamily = com.ayko.trackitt.ui.theme.FrauncesFamily,
+                        fontWeight = FontWeight.Normal,
+                        letterSpacing = (-0.5).sp,
+                    )
+                } else {
+                    DisplayNumber(
+                        value = amount.toDoubleOrNull() ?: 0.0,
+                        sizeSp = 52f,
+                    )
+                }
                 Spacer(Modifier.weight(1f))
                 if (amount.isEmpty()) {
                     Spacer(
@@ -221,19 +232,23 @@ fun AddScreen(
         Spacer(Modifier.weight(1f))
 
         if (showCalculator) CalculatorPad(
+            expression = amount,
             onDigit = { digit ->
                 val current = amount
-                if (current == "0" && digit != "0") {
-                    viewModel.amount.value = digit
-                } else if (current.contains(".") && current.substringAfter(".").length >= 2) {
-                    // max 2 decimal places
+                val lastPart = current.substringAfterLast("+").substringAfterLast("−")
+                if (lastPart == "0" && digit == "0") return@CalculatorPad
+                if (lastPart == "0" && digit != "00") {
+                    viewModel.amount.value = current.dropLast(1) + digit
+                } else if (lastPart.contains(".") && lastPart.substringAfter(".").length >= 2) {
+                    return@CalculatorPad
                 } else {
                     viewModel.amount.value = current + digit
                 }
             },
             onDecimal = {
-                if (!amount.contains(".")) {
-                    viewModel.amount.value = if (amount.isEmpty()) "0." else "$amount."
+                val lastPart = amount.substringAfterLast("+").substringAfterLast("−")
+                if (!lastPart.contains(".")) {
+                    viewModel.amount.value = if (amount.isEmpty() || amount.endsWith("+") || amount.endsWith("−")) "${amount}0." else "$amount."
                 }
             },
             onBackspace = {
@@ -241,8 +256,45 @@ fun AddScreen(
                     viewModel.amount.value = amount.dropLast(1)
                 }
             },
+            onOperator = { op ->
+                if (amount.isNotEmpty() && !amount.endsWith("+") && !amount.endsWith("−")) {
+                    viewModel.amount.value = amount + op
+                }
+            },
+            onEquals = {
+                val result = evaluateExpression(amount)
+                if (result != null && result >= 0) {
+                    viewModel.amount.value = if (result == result.toLong().toDouble()) {
+                        result.toLong().toString()
+                    } else {
+                        String.format(java.util.Locale.US, "%.2f", result)
+                    }
+                }
+            },
             onSave = { viewModel.save() },
-            saveEnabled = (amount.toDoubleOrNull() ?: 0.0) > 0 && selectedCategory != null,
+            saveEnabled = (evaluateExpression(amount) ?: 0.0) > 0 && selectedCategory != null,
         )
     }
+}
+
+private fun evaluateExpression(expr: String): Double? {
+    if (expr.isEmpty()) return null
+    val clean = expr.trimEnd('+', '−')
+    if (clean.isEmpty()) return null
+
+    var result = 0.0
+    var current = ""
+    var op = '+'
+
+    for (ch in "$clean+") {
+        if (ch == '+' || ch == '−') {
+            val num = current.toDoubleOrNull() ?: return null
+            result = if (op == '+') result + num else result - num
+            current = ""
+            op = ch
+        } else {
+            current += ch
+        }
+    }
+    return result
 }
