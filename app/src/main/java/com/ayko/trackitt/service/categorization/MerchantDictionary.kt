@@ -41,15 +41,17 @@ val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "gwcl" to TransactionCategory.BILLS,
     "dstv" to TransactionCategory.BILLS,
     "gotv" to TransactionCategory.BILLS,
-    "vodafone" to TransactionCategory.BILLS,
-    "telecel push" to TransactionCategory.BILLS,
-    "mtn airtime" to TransactionCategory.BILLS,
-    "mtnbundle" to TransactionCategory.BILLS,
-    "mtn bundle" to TransactionCategory.BILLS,
     "airtel" to TransactionCategory.BILLS,
     "bills.inv" to TransactionCategory.BILLS,
     "surfline" to TransactionCategory.BILLS,
     "etranzact" to TransactionCategory.BILLS,
+
+    // Airtime / Top-up
+    "mtn airtime" to TransactionCategory.AIRTIME,
+    "mtnbundle" to TransactionCategory.AIRTIME,
+    "mtn bundle" to TransactionCategory.AIRTIME,
+    "telecel push" to TransactionCategory.AIRTIME,
+    "vodafone" to TransactionCategory.AIRTIME,
 
     // Income / banks
     "expresspay" to TransactionCategory.INCOME,
@@ -71,12 +73,16 @@ val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "taptapsend" to TransactionCategory.TRANSFER,
 
     // Health
-    "greenville hospital" to TransactionCategory.OTHER,
+    "greenville hospital" to TransactionCategory.HEALTH,
+    "hospital" to TransactionCategory.HEALTH,
+    "pharmacy" to TransactionCategory.HEALTH,
+    "clinic" to TransactionCategory.HEALTH,
 
-    // Church/Giving
-    "icgc" to TransactionCategory.OTHER,
-    "life centre" to TransactionCategory.OTHER,
-    "cornerstone chapel" to TransactionCategory.OTHER,
+    // Church
+    "icgc" to TransactionCategory.CHURCH,
+    "life centre" to TransactionCategory.CHURCH,
+    "cornerstone chapel" to TransactionCategory.CHURCH,
+    "dayspring" to TransactionCategory.CHURCH,
 )
 
 val REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
@@ -135,9 +141,11 @@ val REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     // Bills
     "dstv" to TransactionCategory.BILLS,
     "internet" to TransactionCategory.BILLS,
-    "data" to TransactionCategory.BILLS,
-    "airtime" to TransactionCategory.BILLS,
     "surfline" to TransactionCategory.BILLS,
+
+    // Airtime
+    "data" to TransactionCategory.AIRTIME,
+    "airtime" to TransactionCategory.AIRTIME,
 
     // Groceries
     "market" to TransactionCategory.GROCERIES,
@@ -152,9 +160,15 @@ val REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "charger" to TransactionCategory.SHOPPING,
     "card" to TransactionCategory.SHOPPING,
 
-    // Church/Giving
-    "offering" to TransactionCategory.OTHER,
-    "tithe" to TransactionCategory.OTHER,
-    "seed offering" to TransactionCategory.OTHER,
-    "church" to TransactionCategory.OTHER,
+    // Church
+    "offering" to TransactionCategory.CHURCH,
+    "tithe" to TransactionCategory.CHURCH,
+    "seed offering" to TransactionCategory.CHURCH,
+    "church" to TransactionCategory.CHURCH,
+
+    // Health
+    "hospital" to TransactionCategory.HEALTH,
+    "pharmacy" to TransactionCategory.HEALTH,
+    "clinic" to TransactionCategory.HEALTH,
+    "lab" to TransactionCategory.HEALTH,
 )
