@@ -78,16 +78,20 @@ fun HomeScreen(
     var showDayPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        val granted = ContextCompat.checkSelfPermission(
+        val receiveGranted = ContextCompat.checkSelfPermission(
             context, Manifest.permission.RECEIVE_SMS
         ) == PackageManager.PERMISSION_GRANTED
-        viewModel.smsPermissionGranted.value = granted
+        val readGranted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.READ_SMS
+        ) == PackageManager.PERMISSION_GRANTED
+        viewModel.smsPermissionGranted.value = receiveGranted && readGranted
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        viewModel.onSmsPermissionResult(granted, context)
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        val allGranted = results.values.all { it }
+        viewModel.onSmsPermissionResult(allGranted, context)
     }
 
     val periodLabel = if (selectedPeriod == Period.DAY) dayLabel.uppercase() else monthName.uppercase()
@@ -189,7 +193,12 @@ fun HomeScreen(
                     )
                     Spacer(Modifier.width(8.dp))
                     Button(
-                        onClick = { permissionLauncher.launch(Manifest.permission.RECEIVE_SMS) },
+                        onClick = {
+                            permissionLauncher.launch(arrayOf(
+                                Manifest.permission.RECEIVE_SMS,
+                                Manifest.permission.READ_SMS,
+                            ))
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                         ),
