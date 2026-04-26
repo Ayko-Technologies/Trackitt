@@ -66,7 +66,9 @@ fun HomeScreen(
     val context = LocalContext.current
     val selectedPeriod by viewModel.selectedPeriod.collectAsStateWithLifecycle()
     val total by viewModel.total.collectAsStateWithLifecycle(initialValue = 0.0)
-    val chartCategories by viewModel.chartCategories.collectAsStateWithLifecycle(initialValue = emptyList())
+    val allChartCategories by viewModel.chartCategories.collectAsStateWithLifecycle(initialValue = emptyList())
+    val showIncome = remember { context.getSharedPreferences("trackitt_display", 0).getBoolean("show_income", true) }
+    val chartCategories = if (showIncome) allChartCategories else allChartCategories.filter { it.category != com.ayko.trackitt.domain.model.TransactionCategory.INCOME }
     val smsGranted by viewModel.smsPermissionGranted.collectAsStateWithLifecycle()
 
     val monthName by viewModel.currentMonthName.collectAsStateWithLifecycle(initialValue = "")

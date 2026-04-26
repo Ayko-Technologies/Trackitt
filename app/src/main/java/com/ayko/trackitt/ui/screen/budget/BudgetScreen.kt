@@ -89,6 +89,7 @@ fun BudgetScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
+    val showIncome = remember { context.getSharedPreferences("trackitt_display", 0).getBoolean("show_income", true) }
     val totalBudget = budgets.sumOf { it.amount }
     val expenseTotals = categoryTotals.filter { it.category != TransactionCategory.INCOME.name }
     val totalSpent = expenseTotals.sumOf { it.total }
@@ -171,20 +172,22 @@ fun BudgetScreen(
                             )
                         }
                     }
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainer)
-                            .padding(16.dp),
-                    ) {
-                        Text("Income", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "GH₵${String.format(Locale.US, "%.0f", totalIncome)}",
-                            fontSize = 22.sp, fontFamily = FrauncesFamily,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
+                    if (showIncome) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainer)
+                                .padding(16.dp),
+                        ) {
+                            Text("Income", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "GH₵${String.format(Locale.US, "%.0f", totalIncome)}",
+                                fontSize = 22.sp, fontFamily = FrauncesFamily,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                     }
                 }
             }
