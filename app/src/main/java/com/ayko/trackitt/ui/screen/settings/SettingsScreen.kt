@@ -371,9 +371,12 @@ fun SettingsScreen(
                                         db.clearAllTables()
                                         context.getSharedPreferences("trackitt", 0).edit().clear().apply()
                                         context.getSharedPreferences("search", 0).edit().clear().apply()
-                                        snackbarHostState.showSnackbar("All data cleared")
+                                        // Restart the app so all Flows reset
+                                        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                                        intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK or android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        context.startActivity(intent)
+                                        Runtime.getRuntime().exit(0)
                                     }
-                                    showConfirm = false
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB3261E)),
                             ) { Text("Reset") }
