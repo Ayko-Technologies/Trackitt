@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -63,6 +64,7 @@ fun AddScreen(
     val source by viewModel.source.collectAsStateWithLifecycle()
 
     var detailsExpanded by remember { mutableStateOf(false) }
+    var textFieldFocused by remember { mutableStateOf(false) }
 
     LaunchedEffect(saved) {
         if (saved) onSave()
@@ -188,7 +190,9 @@ fun AddScreen(
                     onValueChange = { viewModel.note.value = it },
                     label = { Text("Note") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { textFieldFocused = it.isFocused },
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
@@ -196,15 +200,16 @@ fun AddScreen(
                     onValueChange = { viewModel.source.value = it },
                     label = { Text("Source") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { textFieldFocused = it.isFocused },
                 )
             }
         }
 
         Spacer(Modifier.weight(1f))
 
-        // Calculator pad
-        CalculatorPad(
+        if (!textFieldFocused) CalculatorPad(
             onDigit = { digit ->
                 val current = amount
                 if (current == "0" && digit != "0") {
