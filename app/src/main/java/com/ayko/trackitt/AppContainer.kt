@@ -11,7 +11,7 @@ import com.ayko.trackitt.service.sms.MoMoSmsParser
 import com.ayko.trackitt.service.sms.ParsedTransaction
 import com.ayko.trackitt.service.sms.TelecelCashParser
 
-class AppContainer(context: Context) {
+class AppContainer(private val context: Context) {
     val database = TrackittDatabase.getInstance(context)
 
     val categorizationService: CategorizationService = DictionaryCategorizationService(
@@ -33,14 +33,37 @@ class AppContainer(context: Context) {
     private val ecobankParser = EcobankSmsParser()
     private val telecelParser = TelecelCashParser()
 
-    val smsSenders = listOf("MobileMoney", "ECOBANK", "T-CASH")
+    private val allSenders = mapOf(
+        "MobileMoney" to momoParser,
+        "ECOBANK" to ecobankParser,
+        "T-CASH" to telecelParser,
+    )
+
+    val smsSenders: List<String>
+        get() {
+            val prefs = context.getSharedPreferences("sms_sources", 0)
+            return allSenders.keys.filter { prefs.getBoolean("source_$it", true) }
+        }
 
     fun parseSms(sender: String?, body: String): ParsedTransaction? {
+        val prefs = context.getSharedPreferences("sms_sources", 0)
+
         return when {
-            sender.equals("MobileMoney", ignoreCase = true) -> momoParser.parse(body)
-            sender.equals("ECOBANK", ignoreCase = true) -> ecobankParser.parse(body)
-            sender.equals("T-CASH", ignoreCase = true) -> telecelParser.parse(body)
-            else -> momoParser.parse(body) ?: ecobankParser.parse(body) ?: telecelParser.parse(body)
+            sender.equals("MobileMoney", ignoreCase = true) -> {
+                if (prefs.getBoolean("source_MobileMoney", true)) momoParser.parse(body) else null
+            }
+            sender.equals("ECOBANK", ignoreCase = true) -> {
+                if (prefs.getBoolean("source_ECOBANK", true)) ecobankParser.parse(body) else null
+            }
+            sender.equals("T-CASH", ignoreCase = true) -> {
+                if (prefs.getBoolean("source_T-CASH", true)) telecelParser.parse(body) else null
+            }
+            else -> {
+                if (prefs.getBoolean("source_MobileMoney", true)) momoParser.parse(body)?.let { return it }
+                if (prefs.getBoolean("source_ECOBANK", true)) ecobankParser.parse(body)?.let { return it }
+                if (prefs.getBoolean("source_T-CASH", true)) telecelParser.parse(body)?.let { return it }
+                null
+            }
         }
     }
 }
