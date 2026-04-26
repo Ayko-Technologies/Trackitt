@@ -1,10 +1,6 @@
 package com.ayko.trackitt.ui.screen.add
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,12 +15,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -50,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ayko.trackitt.domain.model.TransactionCategory
+import com.ayko.trackitt.ui.component.CalculatorPad
 import com.ayko.trackitt.ui.component.CookieIcon
 import com.ayko.trackitt.ui.component.DisplayNumber
 import com.ayko.trackitt.ui.theme.SatoshiFamily
@@ -65,6 +59,10 @@ fun AddScreen(
     val amount by viewModel.amount.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val saved by viewModel.saved.collectAsStateWithLifecycle()
+    val note by viewModel.note.collectAsStateWithLifecycle()
+    val source by viewModel.source.collectAsStateWithLifecycle()
+
+    var detailsExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(saved) {
         if (saved) onSave()
@@ -95,51 +93,40 @@ fun AddScreen(
             ),
         )
 
-        Column(modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 20.dp)) {
+        // Amount display
+        Column(modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 12.dp)) {
             val primaryColor = MaterialTheme.colorScheme.primary
-            BasicTextField(
-                value = amount,
-                onValueChange = { input ->
-                    val filtered = input.filter { it.isDigit() || it == '.' }
-                    if (filtered.count { it == '.' } <= 1) {
-                        viewModel.amount.value = filtered
-                    }
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true,
-                textStyle = TextStyle(color = Color.Transparent, fontSize = 1.sp),
-                decorationBox = { _ ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .drawBehind {
-                                drawLine(
-                                    color = primaryColor,
-                                    start = Offset(0f, size.height),
-                                    end = Offset(size.width, size.height),
-                                    strokeWidth = 2.dp.toPx(),
-                                )
-                            }
-                            .padding(bottom = 8.dp),
-                    ) {
-                        DisplayNumber(
-                            value = amount.toDoubleOrNull() ?: 0.0,
-                            sizeSp = 56f,
-                        )
-                        Spacer(Modifier.weight(1f))
-                        Spacer(
-                            Modifier
-                                .width(2.dp)
-                                .height(40.dp)
-                                .drawBehind { drawRect(primaryColor) },
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .drawBehind {
+                        drawLine(
+                            color = primaryColor,
+                            start = Offset(0f, size.height),
+                            end = Offset(size.width, size.height),
+                            strokeWidth = 2.dp.toPx(),
                         )
                     }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
+                    .padding(bottom = 8.dp),
+            ) {
+                DisplayNumber(
+                    value = amount.toDoubleOrNull() ?: 0.0,
+                    sizeSp = 52f,
+                )
+                Spacer(Modifier.weight(1f))
+                if (amount.isEmpty()) {
+                    Spacer(
+                        Modifier
+                            .width(2.dp)
+                            .height(36.dp)
+                            .drawBehind { drawRect(primaryColor) },
+                    )
+                }
+            }
         }
 
+        // Category grid
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -180,18 +167,14 @@ fun AddScreen(
             }
         }
 
-        // Add details — expandable
-        var detailsExpanded by remember { mutableStateOf(false) }
-        val note by viewModel.note.collectAsStateWithLifecycle()
-        val source by viewModel.source.collectAsStateWithLifecycle()
-
+        // Add details
         if (!detailsExpanded) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp)
+                    .padding(top = 12.dp)
                     .clickable { detailsExpanded = true },
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
@@ -199,7 +182,7 @@ fun AddScreen(
                 Text("Add details", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary, fontFamily = SatoshiFamily)
             }
         } else {
-            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
                 OutlinedTextField(
                     value = note,
                     onValueChange = { viewModel.note.value = it },
@@ -207,7 +190,7 @@ fun AddScreen(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = source,
                     onValueChange = { viewModel.source.value = it },
@@ -220,16 +203,30 @@ fun AddScreen(
 
         Spacer(Modifier.weight(1f))
 
-        Button(
-            onClick = { viewModel.save() },
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 24.dp)
-                .height(40.dp),
-        ) {
-            Text("Save expense", fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFamily = SatoshiFamily)
-        }
+        // Calculator pad
+        CalculatorPad(
+            onDigit = { digit ->
+                val current = amount
+                if (current == "0" && digit != "0") {
+                    viewModel.amount.value = digit
+                } else if (current.contains(".") && current.substringAfter(".").length >= 2) {
+                    // max 2 decimal places
+                } else {
+                    viewModel.amount.value = current + digit
+                }
+            },
+            onDecimal = {
+                if (!amount.contains(".")) {
+                    viewModel.amount.value = if (amount.isEmpty()) "0." else "$amount."
+                }
+            },
+            onBackspace = {
+                if (amount.isNotEmpty()) {
+                    viewModel.amount.value = amount.dropLast(1)
+                }
+            },
+            onSave = { viewModel.save() },
+            saveEnabled = (amount.toDoubleOrNull() ?: 0.0) > 0 && selectedCategory != null,
+        )
     }
 }
