@@ -35,8 +35,7 @@ interface TransactionDao {
 
     @Query("""
         SELECT category, SUM(amount) as total FROM transactions
-        WHERE isIncome = 0
-        AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
+        WHERE strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
         AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
         GROUP BY category
         ORDER BY total DESC
@@ -45,8 +44,7 @@ interface TransactionDao {
 
     @Query("""
         SELECT category, SUM(amount) as total FROM transactions
-        WHERE isIncome = 0
-        AND date >= :startOfDay AND date < :endOfDay
+        WHERE date >= :startOfDay AND date < :endOfDay
         GROUP BY category
         ORDER BY total DESC
     """)

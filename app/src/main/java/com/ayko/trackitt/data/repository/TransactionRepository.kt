@@ -66,7 +66,8 @@ class TransactionRepository(
     }
 
     suspend fun insertFromSms(parsed: ParsedTransaction) {
-        val category = categorizationService.categorize(parsed.merchant)
+        val category = if (parsed.isIncome) TransactionCategory.INCOME
+            else categorizationService.categorize(parsed.merchant, parsed.reference)
         val entity = TransactionEntity(
             amount = parsed.amount,
             fee = parsed.fee,

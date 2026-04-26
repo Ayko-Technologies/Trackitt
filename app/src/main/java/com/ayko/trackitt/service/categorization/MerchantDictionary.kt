@@ -47,3 +47,49 @@ val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = mapOf(
 
     "bigpay" to TransactionCategory.TRANSFER,
 )
+
+val REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
+    // Transport
+    "motor" to TransactionCategory.TRANSPORT,
+    "fuel" to TransactionCategory.TRANSPORT,
+    "petrol" to TransactionCategory.TRANSPORT,
+    "diesel" to TransactionCategory.TRANSPORT,
+    "trotro" to TransactionCategory.TRANSPORT,
+    "taxi" to TransactionCategory.TRANSPORT,
+    "bolt" to TransactionCategory.TRANSPORT,
+    "uber" to TransactionCategory.TRANSPORT,
+
+    // House
+    "soap" to TransactionCategory.HOUSE,
+    "rent" to TransactionCategory.HOUSE,
+    "water" to TransactionCategory.HOUSE,
+    "light" to TransactionCategory.HOUSE,
+    "electric" to TransactionCategory.HOUSE,
+    "cleaning" to TransactionCategory.HOUSE,
+    "detergent" to TransactionCategory.HOUSE,
+
+    // Food
+    "food" to TransactionCategory.FOOD,
+    "lunch" to TransactionCategory.FOOD,
+    "dinner" to TransactionCategory.FOOD,
+    "breakfast" to TransactionCategory.FOOD,
+    "chop" to TransactionCategory.FOOD,
+
+    // Beauty
+    "hair" to TransactionCategory.BEAUTY,
+    "salon" to TransactionCategory.BEAUTY,
+    "cream" to TransactionCategory.BEAUTY,
+    "makeup" to TransactionCategory.BEAUTY,
+    "nails" to TransactionCategory.BEAUTY,
+    "barber" to TransactionCategory.BEAUTY,
+
+    // Bills
+    "dstv" to TransactionCategory.BILLS,
+    "internet" to TransactionCategory.BILLS,
+    "data" to TransactionCategory.BILLS,
+    "airtime" to TransactionCategory.BILLS,
+
+    // Groceries
+    "market" to TransactionCategory.GROCERIES,
+    "shop" to TransactionCategory.GROCERIES,
+)
