@@ -5,9 +5,11 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalGroceryStore
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -26,6 +28,8 @@ enum class TransactionCategory(
     BILLS("Bills", Icons.AutoMirrored.Filled.ReceiptLong, CatBillsBg, CatBillsFg, 280f),
     SHOPPING("Shopping", Icons.Filled.ShoppingBag, CatShoppingBg, CatShoppingFg, 340f),
     TRANSFER("Transfer", Icons.Filled.SwapHoriz, CatTransferBg, CatTransferFg, 40f),
+    HOUSE("House", Icons.Filled.Home, CatHouseBg, CatHouseFg, 160f),
+    BEAUTY("Beauty", Icons.Filled.Spa, CatBeautyBg, CatBeautyFg, 320f),
     INCOME("Income", Icons.Filled.ArrowDownward, CatIncomeBg, CatIncomeFg, 148f),
     OTHER("Other", Icons.Filled.Category, CatOtherBg, CatOtherFg, 100f),
 }
