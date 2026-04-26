@@ -44,6 +44,15 @@ interface TransactionDao {
     fun getCategoryTotals(year: String, month: String): Flow<List<CategoryTotal>>
 
     @Query("""
+        SELECT category, SUM(amount) as total FROM transactions
+        WHERE isIncome = 0
+        AND date >= :startOfDay AND date < :endOfDay
+        GROUP BY category
+        ORDER BY total DESC
+    """)
+    fun getCategoryTotalsForRange(startOfDay: Long, endOfDay: Long): Flow<List<CategoryTotal>>
+
+    @Query("""
         SELECT COALESCE(SUM(amount), 0.0) FROM transactions
         WHERE isIncome = 0
         AND date >= :startOfDay AND date < :endOfDay
