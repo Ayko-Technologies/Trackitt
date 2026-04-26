@@ -28,6 +28,24 @@ class DetailViewModel(
         }
     }
 
+    fun updateMerchant(merchant: String) {
+        viewModelScope.launch {
+            repository.updateMerchant(transactionId, merchant)
+        }
+    }
+
+    fun updateNote(note: String?) {
+        viewModelScope.launch {
+            repository.updateNote(transactionId, note)
+        }
+    }
+
+    fun updateAmount(amount: Double) {
+        viewModelScope.launch {
+            repository.updateAmount(transactionId, amount)
+        }
+    }
+
     fun delete() {
         viewModelScope.launch {
             repository.delete(transactionId)

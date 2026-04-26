@@ -108,6 +108,18 @@ class TransactionRepository(
         )
     }
 
+    suspend fun updateMerchant(id: Long, merchant: String) {
+        transactionDao.updateMerchant(id, merchant)
+    }
+
+    suspend fun updateNote(id: Long, note: String?) {
+        transactionDao.updateNote(id, note)
+    }
+
+    suspend fun updateAmount(id: Long, amount: Double) {
+        transactionDao.updateAmount(id, amount)
+    }
+
     suspend fun delete(id: Long) {
         transactionDao.delete(id)
     }
