@@ -252,8 +252,26 @@ fun SettingsScreen(
                         label = "Merchant dictionary",
                         subtitle = "40+ auto-categorised merchants",
                         showChevron = true,
-                        showDivider = false,
+                        showDivider = true,
                         onClick = onNavigateToMerchantDictionary,
+                    )
+                    SettingsRow(
+                        icon = Icons.Filled.Refresh,
+                        label = "Re-scan SMS",
+                        subtitle = "Re-import MoMo messages from the last 90 days",
+                        showDivider = false,
+                        onClick = {
+                            context.getSharedPreferences("trackitt", 0).edit()
+                                .putBoolean("backfill_completed", false).apply()
+                            val request = androidx.work.OneTimeWorkRequestBuilder<
+                                com.ayko.trackitt.service.sms.SmsBackfillWorker>().build()
+                            androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
+                                "sms_backfill",
+                                androidx.work.ExistingWorkPolicy.REPLACE,
+                                request,
+                            )
+                            scope.launch { snackbarHostState.showSnackbar("Scanning SMS...") }
+                        },
                     )
                 }
             }
