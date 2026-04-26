@@ -1,6 +1,10 @@
 package com.ayko.trackitt.ui.screen.add
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -93,32 +97,47 @@ fun AddScreen(
 
         Column(modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 20.dp)) {
             val primaryColor = MaterialTheme.colorScheme.primary
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .drawBehind {
-                        drawLine(
-                            color = primaryColor,
-                            start = Offset(0f, size.height),
-                            end = Offset(size.width, size.height),
-                            strokeWidth = 2.dp.toPx(),
+            BasicTextField(
+                value = amount,
+                onValueChange = { input ->
+                    val filtered = input.filter { it.isDigit() || it == '.' }
+                    if (filtered.count { it == '.' } <= 1) {
+                        viewModel.amount.value = filtered
+                    }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true,
+                textStyle = TextStyle(color = Color.Transparent, fontSize = 1.sp),
+                decorationBox = { _ ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .drawBehind {
+                                drawLine(
+                                    color = primaryColor,
+                                    start = Offset(0f, size.height),
+                                    end = Offset(size.width, size.height),
+                                    strokeWidth = 2.dp.toPx(),
+                                )
+                            }
+                            .padding(bottom = 8.dp),
+                    ) {
+                        DisplayNumber(
+                            value = amount.toDoubleOrNull() ?: 0.0,
+                            sizeSp = 56f,
+                        )
+                        Spacer(Modifier.weight(1f))
+                        Spacer(
+                            Modifier
+                                .width(2.dp)
+                                .height(40.dp)
+                                .drawBehind { drawRect(primaryColor) },
                         )
                     }
-                    .padding(bottom = 8.dp),
-            ) {
-                DisplayNumber(
-                    value = amount.toDoubleOrNull() ?: 0.0,
-                    sizeSp = 56f,
-                )
-                Spacer(Modifier.weight(1f))
-                Spacer(
-                    Modifier
-                        .width(2.dp)
-                        .height(40.dp)
-                        .drawBehind { drawRect(primaryColor) },
-                )
-            }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
 
         LazyVerticalGrid(

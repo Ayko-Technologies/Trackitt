@@ -584,18 +584,9 @@ private fun AddCategoryDialog(
                                 Icon(displayedIcons[index], contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                             }
                         }
-                        item {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
-                                    .clickable { showAllIcons = true },
-                            ) {
-                                Text("...", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
+                    }
+                    TextButton(onClick = { showAllIcons = true }) {
+                        Text("More icons →", fontFamily = SatoshiFamily, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     }
                 }
 
@@ -622,26 +613,22 @@ private fun AddCategoryDialog(
                             }
                         }
                     }
-                    // Custom color button
-                    item {
-                        val hasCustom = customBg != null
+                }
+                TextButton(onClick = { showCustomColor = !showCustomColor }) {
+                    Text(
+                        if (showCustomColor) "Hide hex input" else "Custom hex →",
+                        fontFamily = SatoshiFamily,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    if (customBg != null) {
+                        Spacer(Modifier.width(8.dp))
                         Box(
-                            contentAlignment = Alignment.Center,
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(16.dp)
                                 .clip(CircleShape)
-                                .then(
-                                    if (hasCustom) Modifier.background(customBg!!, CircleShape).border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                                )
-                                .clickable { showCustomColor = !showCustomColor },
-                        ) {
-                            if (hasCustom) {
-                                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            } else {
-                                Icon(Icons.Filled.Palette, contentDescription = "Custom color", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                            }
-                        }
+                                .background(customBg!!, CircleShape),
+                        )
                     }
                 }
 
