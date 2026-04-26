@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -191,21 +192,32 @@ fun AddScreen(
             }
         }
 
-        // Add details
-        if (!detailsExpanded) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
-                    .clickable { detailsExpanded = true; showCalculator = false },
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Add details", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary, fontFamily = SatoshiFamily)
-            }
-        } else {
+        // Add details — toggle
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+                .clickable {
+                    detailsExpanded = !detailsExpanded
+                    if (detailsExpanded) showCalculator = false
+                    if (!detailsExpanded) focusManager.clearFocus()
+                },
+        ) {
+            Icon(
+                if (detailsExpanded) Icons.Filled.Remove else Icons.Filled.Add,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                if (detailsExpanded) "Hide details" else "Add details",
+                fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary, fontFamily = SatoshiFamily,
+            )
+        }
+        if (detailsExpanded) {
             Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
                 OutlinedTextField(
                     value = note,
