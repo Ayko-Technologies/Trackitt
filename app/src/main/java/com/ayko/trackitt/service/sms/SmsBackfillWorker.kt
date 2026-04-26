@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import com.ayko.trackitt.TrackittApplication
 
 class SmsBackfillWorker(
@@ -19,13 +20,14 @@ class SmsBackfillWorker(
         val prefs = applicationContext.getSharedPreferences("trackitt", Context.MODE_PRIVATE)
         if (prefs.getBoolean("backfill_completed", false)) return Result.success()
 
-        val ninetyDaysAgo = System.currentTimeMillis() - (90L * 24 * 60 * 60 * 1000)
+        val days = inputData.getInt(KEY_LOOKBACK_DAYS, prefs.getInt("backfill_days", DEFAULT_DAYS))
+        val cutoff = System.currentTimeMillis() - (days.toLong() * 24 * 60 * 60 * 1000)
 
         val cursor = applicationContext.contentResolver.query(
             Uri.parse("content://sms/inbox"),
             arrayOf("body", "date"),
             "date > ?",
-            arrayOf(ninetyDaysAgo.toString()),
+            arrayOf(cutoff.toString()),
             "date ASC"
         ) ?: return Result.failure()
 
@@ -40,5 +42,10 @@ class SmsBackfillWorker(
 
         prefs.edit().putBoolean("backfill_completed", true).apply()
         return Result.success()
+    }
+
+    companion object {
+        const val KEY_LOOKBACK_DAYS = "lookback_days"
+        const val DEFAULT_DAYS = 90
     }
 }
