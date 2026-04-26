@@ -46,8 +46,7 @@ class SmsBackfillWorker(
                 val body = it.getString(bodyIdx) ?: continue
                 val sender = it.getString(addressIdx)
                 val parsed = container.parseSms(sender, body) ?: continue
-                repository.insertFromSms(parsed)
-                count++
+                if (repository.insertFromSms(parsed)) count++
             }
         }
 
@@ -63,10 +62,11 @@ class SmsBackfillWorker(
                 NotificationChannel("trackitt_scan", "SMS Scan", NotificationManager.IMPORTANCE_DEFAULT)
             )
         }
-        val text = if (count == 0) "No new transactions found" else "$count transaction${if (count != 1) "s" else ""} imported"
+        val title = if (count == 0) "All caught up" else "SMS scan complete"
+        val text = if (count == 0) "Your transactions are up to date" else "$count new transaction${if (count != 1) "s" else ""} imported"
         val notification = NotificationCompat.Builder(applicationContext, "trackitt_scan")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("SMS scan complete")
+            .setContentTitle(title)
             .setContentText(text)
             .setAutoCancel(true)
             .build()
