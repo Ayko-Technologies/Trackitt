@@ -26,15 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Sell
-import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -466,25 +458,75 @@ private fun AddCategoryDialog(
     var name by remember { mutableStateOf("") }
     var selectedColorIndex by remember { mutableIntStateOf(0) }
     var selectedIconIndex by remember { mutableIntStateOf(0) }
+    var showAllIcons by remember { mutableStateOf(false) }
+    var showCustomColor by remember { mutableStateOf(false) }
+    var hexInput by remember { mutableStateOf("") }
+    var customBg by remember { mutableStateOf<Color?>(null) }
+    var customFg by remember { mutableStateOf<Color?>(null) }
 
-    val iconOptions = listOf(
-        "Favorite" to Icons.Filled.Add, // placeholder, we use names
-        "Star" to Icons.Filled.Add,
-    )
-
-    // Icon grid using Material icons
-    val availableIcons = remember {
-        listOf(
-            "favorite" to androidx.compose.material.icons.Icons.Filled.Add,
-            "star" to androidx.compose.material.icons.Icons.Filled.Add,
+    val allIcons = remember {
+        listOf<androidx.compose.ui.graphics.vector.ImageVector>(
+            Icons.Filled.Restaurant,
+            Icons.Filled.LocalGroceryStore,
+            Icons.Filled.DirectionsBus,
+            Icons.Filled.ShoppingBag,
+            Icons.Filled.Category,
+            Icons.Filled.SwapHoriz,
+            Icons.Filled.ArrowDownward,
+            Icons.Filled.Favorite,
+            Icons.Filled.Star,
+            Icons.Filled.Home,
+            Icons.Filled.Work,
+            Icons.Filled.School,
+            Icons.Filled.FitnessCenter,
+            Icons.Filled.LocalHospital,
+            Icons.Filled.Pets,
+            Icons.Filled.ChildCare,
+            Icons.Filled.Flight,
+            Icons.Filled.Hotel,
+            Icons.Filled.LocalCafe,
+            Icons.Filled.LocalBar,
+            Icons.Filled.MusicNote,
+            Icons.Filled.SportsEsports,
+            Icons.Filled.Movie,
+            Icons.Filled.MenuBook,
+            Icons.Filled.Checkroom,
+            Icons.Filled.Build,
+            Icons.Filled.LocalGasStation,
+            Icons.Filled.LocalParking,
+            Icons.Filled.Wifi,
+            Icons.Filled.Phone,
+            Icons.Filled.Savings,
+            Icons.Filled.CardGiftcard,
+            Icons.Filled.Handshake,
+            Icons.Filled.VolunteerActivism,
+            Icons.Filled.Spa,
+            Icons.Filled.Park,
         )
     }
+
+    val iconNames = remember {
+        listOf(
+            "restaurant", "local_grocery_store", "directions_bus", "shopping_bag",
+            "category", "swap_horiz", "arrow_downward", "favorite",
+            "star", "home", "work", "school",
+            "fitness_center", "local_hospital", "pets", "child_care",
+            "flight", "hotel", "local_cafe", "local_bar",
+            "music_note", "sports_esports", "movie", "menu_book",
+            "checkroom", "build", "local_gas_station", "local_parking",
+            "wifi", "phone", "savings", "card_giftcard",
+            "handshake", "volunteer_activism", "spa", "park",
+        )
+    }
+
+    val displayedIcons = if (showAllIcons) allIcons else allIcons.take(8)
+    val displayedNames = if (showAllIcons) iconNames else iconNames.take(8)
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("New category", fontFamily = SatoshiFamily, fontWeight = FontWeight.Medium) },
         text = {
-            Column {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -493,70 +535,153 @@ private fun AddCategoryDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
+                // Icon section
                 Spacer(Modifier.height(16.dp))
                 Text("Icon", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
                 Spacer(Modifier.height(8.dp))
 
-                val icons = listOf(
-                    "restaurant" to androidx.compose.material.icons.Icons.Filled.Add,
-                    "local_grocery_store" to androidx.compose.material.icons.Icons.Filled.Add,
-                    "directions_bus" to androidx.compose.material.icons.Icons.Filled.Add,
-                    "receipt_long" to androidx.compose.material.icons.Icons.Filled.Add,
-                    "shopping_bag" to androidx.compose.material.icons.Icons.Filled.Add,
-                    "swap_horiz" to androidx.compose.material.icons.Icons.Filled.Add,
-                    "category" to androidx.compose.material.icons.Icons.Filled.Add,
-                    "favorite" to androidx.compose.material.icons.Icons.Filled.Add,
-                )
-
-                // Use the actual TransactionCategory icons as a selection grid
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val catIcons = com.ayko.trackitt.domain.model.TransactionCategory.entries
-                    items(catIcons.size) { index ->
-                        val cat = catIcons[index]
-                        val isSelected = index == selectedIconIndex
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.surfaceContainerHigh
-                                )
-                                .clickable { selectedIconIndex = index },
-                        ) {
-                            Icon(
-                                cat.icon,
-                                contentDescription = cat.label,
-                                tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(22.dp),
-                            )
+                // Icon grid — 4 columns when expanded, scrollable row when collapsed
+                if (showAllIcons) {
+                    // Full grid
+                    Column {
+                        for (row in displayedIcons.indices step 6) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                for (col in 0 until 6) {
+                                    val idx = row + col
+                                    if (idx < displayedIcons.size) {
+                                        val isSelected = idx == selectedIconIndex
+                                        Box(
+                                            contentAlignment = Alignment.Center,
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
+                                                .clickable { selectedIconIndex = idx },
+                                        ) {
+                                            Icon(displayedIcons[idx], contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                                        }
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(6.dp))
+                        }
+                        TextButton(onClick = { showAllIcons = false }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                            Text("Show less", fontFamily = SatoshiFamily, fontSize = 12.sp)
+                        }
+                    }
+                } else {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(displayedIcons.size) { index ->
+                            val isSelected = index == selectedIconIndex
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
+                                    .clickable { selectedIconIndex = index },
+                            ) {
+                                Icon(displayedIcons[index], contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                        item {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
+                                    .clickable { showAllIcons = true },
+                            ) {
+                                Text("...", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
                 }
 
+                // Color section
                 Spacer(Modifier.height(16.dp))
                 Text("Color", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
                 Spacer(Modifier.height(8.dp))
+
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(PRESET_COLORS.size) { index ->
                         val (bg, _) = PRESET_COLORS[index]
-                        val isSelected = index == selectedColorIndex
+                        val isSelected = customBg == null && index == selectedColorIndex
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
                                 .background(bg, CircleShape)
-                                .then(
-                                    if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                                    else Modifier
-                                )
-                                .clickable { selectedColorIndex = index },
+                                .then(if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier)
+                                .clickable { selectedColorIndex = index; customBg = null; customFg = null; showCustomColor = false },
                         ) {
                             if (isSelected) {
                                 Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                             }
+                        }
+                    }
+                    // Custom color button
+                    item {
+                        val hasCustom = customBg != null
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .then(
+                                    if (hasCustom) Modifier.background(customBg!!, CircleShape).border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                                )
+                                .clickable { showCustomColor = !showCustomColor },
+                        ) {
+                            if (hasCustom) {
+                                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            } else {
+                                Icon(Icons.Filled.Palette, contentDescription = "Custom color", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                }
+
+                // Custom hex color input
+                if (showCustomColor) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("#", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(4.dp))
+                        OutlinedTextField(
+                            value = hexInput,
+                            onValueChange = { input ->
+                                val filtered = input.filter { it in "0123456789abcdefABCDEF" }.take(6)
+                                hexInput = filtered
+                                if (filtered.length == 6) {
+                                    try {
+                                        val color = Color(android.graphics.Color.parseColor("#$filtered"))
+                                        customBg = color
+                                        val luminance = (0.299 * color.red + 0.587 * color.green + 0.114 * color.blue).toFloat()
+                                        customFg = if (luminance > 0.5f) Color(
+                                            red = (color.red * 0.3f).coerceIn(0f, 1f),
+                                            green = (color.green * 0.3f).coerceIn(0f, 1f),
+                                            blue = (color.blue * 0.3f).coerceIn(0f, 1f),
+                                        ) else Color.White
+                                    } catch (_: Exception) {}
+                                }
+                            },
+                            placeholder = { Text("FF5722") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f).height(52.dp),
+                        )
+                        if (customBg != null) {
+                            Spacer(Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(customBg!!, CircleShape)
+                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+                            )
                         }
                     }
                 }
@@ -566,9 +691,10 @@ private fun AddCategoryDialog(
             Button(
                 onClick = {
                     if (name.isNotBlank()) {
-                        val (bg, fg) = PRESET_COLORS[selectedColorIndex]
-                        val iconName = com.ayko.trackitt.domain.model.TransactionCategory.entries[selectedIconIndex].name.lowercase()
-                        onSave(name.trim(), bg, fg, iconName)
+                        val bg = customBg ?: PRESET_COLORS[selectedColorIndex].first
+                        val fg = customFg ?: PRESET_COLORS[selectedColorIndex].second
+                        val safeIndex = selectedIconIndex.coerceIn(0, iconNames.lastIndex)
+                        onSave(name.trim(), bg, fg, iconNames[safeIndex])
                     }
                 },
                 enabled = name.isNotBlank(),
