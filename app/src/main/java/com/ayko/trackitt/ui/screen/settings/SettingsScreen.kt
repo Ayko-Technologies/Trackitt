@@ -226,6 +226,35 @@ fun SettingsScreen(
                 }
             }
 
+            // ── Display ──
+            item { SectionHeader("Display") }
+
+            item {
+                val displayPrefs = remember { context.getSharedPreferences("trackitt_display", 0) }
+                var showIncome by remember { mutableStateOf(displayPrefs.getBoolean("show_income", true)) }
+
+                SettingsGroup {
+                    SettingsRow(
+                        icon = Icons.Filled.ArrowDownward,
+                        label = "Show income",
+                        subtitle = "Include income in chart and budget",
+                        trailing = {
+                            androidx.compose.material3.Switch(
+                                checked = showIncome,
+                                onCheckedChange = {
+                                    showIncome = it
+                                    displayPrefs.edit().putBoolean("show_income", it).apply()
+                                },
+                                colors = androidx.compose.material3.SwitchDefaults.colors(
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        },
+                        showDivider = false,
+                    )
+                }
+            }
+
             // ── Data & Backup ──
             item { SectionHeader("Data & Backup") }
 
