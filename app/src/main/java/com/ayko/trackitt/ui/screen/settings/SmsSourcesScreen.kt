@@ -61,7 +61,7 @@ fun SmsSourcesScreen(onBack: () -> Unit = {}) {
         ) {
             SectionLabel("Mobile Money")
             SourceRow("MTN MoMo", Color(0xFFFFCC00), Color(0xFF003366), active = true)
-            SourceRow("Telecel Cash", Color(0xFFE31E24), Color.White, active = false, comingSoon = true)
+            SourceRow("Telecel Cash", Color(0xFFE31E24), Color.White, active = true)
             SourceRow("AT Money", Color(0xFF0066B3), Color.White, active = false, comingSoon = true)
 
             SectionLabel("Banks")
