@@ -90,7 +90,7 @@ class TransactionRepository(
             merchant = parsed.merchant,
             reference = parsed.reference,
             transactionId = parsed.transactionId,
-            source = "MTN MoMo",
+            source = parsed.source,
             note = null,
             date = parsed.date,
             isFromSms = true,
