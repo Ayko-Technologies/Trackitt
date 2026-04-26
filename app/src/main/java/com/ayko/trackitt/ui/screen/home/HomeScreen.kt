@@ -84,7 +84,15 @@ fun HomeScreen(
         val readGranted = ContextCompat.checkSelfPermission(
             context, Manifest.permission.READ_SMS
         ) == PackageManager.PERMISSION_GRANTED
-        viewModel.smsPermissionGranted.value = receiveGranted && readGranted
+        val bothGranted = receiveGranted && readGranted
+        viewModel.smsPermissionGranted.value = bothGranted
+
+        if (bothGranted) {
+            val prefs = context.getSharedPreferences("trackitt", 0)
+            if (!prefs.getBoolean("backfill_completed", false)) {
+                viewModel.onSmsPermissionResult(true, context)
+            }
+        }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
