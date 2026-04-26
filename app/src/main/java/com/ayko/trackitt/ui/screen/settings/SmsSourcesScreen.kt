@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,24 +23,34 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.sp
 import com.ayko.trackitt.ui.theme.SatoshiFamily
+
+private const val PREFS_NAME = "sms_sources"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmsSourcesScreen(onBack: () -> Unit = {}) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences(PREFS_NAME, 0) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -53,23 +64,49 @@ fun SmsSourcesScreen(onBack: () -> Unit = {}) {
         },
         containerColor = MaterialTheme.colorScheme.surface,
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .navigationBarsPadding(),
         ) {
-            SectionLabel("Mobile Money")
-            SourceRow("MTN MoMo", Color(0xFFFFCC00), Color(0xFF003366), active = true)
-            SourceRow("Telecel Cash", Color(0xFFE31E24), Color.White, active = true)
-            SourceRow("AT Money", Color(0xFF0066B3), Color.White, active = false, comingSoon = true)
+            item { SectionLabel("Mobile Money") }
+            item {
+                ToggleSourceRow(
+                    name = "MTN MoMo",
+                    key = "MobileMoney",
+                    bgColor = Color(0xFFFFCC00),
+                    textColor = Color(0xFF003366),
+                    prefs = prefs,
+                )
+            }
+            item {
+                ToggleSourceRow(
+                    name = "Telecel Cash",
+                    key = "T-CASH",
+                    bgColor = Color(0xFFE31E24),
+                    textColor = Color.White,
+                    prefs = prefs,
+                )
+            }
+            item {
+                SourceRow("AT Money", Color(0xFF0066B3), Color.White, active = false, comingSoon = true)
+            }
 
-            SectionLabel("Banks")
-            SourceRow("Ecobank", Color(0xFF003B71), Color.White, active = true)
-            SourceRow("GCB Bank", Color(0xFF004D26), Color.White, active = false, comingSoon = true)
-            SourceRow("Stanbic Bank", Color(0xFF0033A0), Color.White, active = false, comingSoon = true)
-            SourceRow("Fidelity Bank", Color(0xFF006B3F), Color.White, active = false, comingSoon = true)
-            SourceRow("Absa Bank", Color(0xFFAF0000), Color.White, active = false, comingSoon = true)
+            item { SectionLabel("Banks") }
+            item {
+                ToggleSourceRow(
+                    name = "Ecobank",
+                    key = "ECOBANK",
+                    bgColor = Color(0xFF003B71),
+                    textColor = Color.White,
+                    prefs = prefs,
+                )
+            }
+            item { SourceRow("GCB Bank", Color(0xFF004D26), Color.White, active = false, comingSoon = true) }
+            item { SourceRow("Stanbic Bank", Color(0xFF0033A0), Color.White, active = false, comingSoon = true) }
+            item { SourceRow("Fidelity Bank", Color(0xFF006B3F), Color.White, active = false, comingSoon = true) }
+            item { SourceRow("Absa Bank", Color(0xFFAF0000), Color.White, active = false, comingSoon = true) }
         }
     }
 }
@@ -82,8 +119,59 @@ private fun SectionLabel(title: String) {
         fontWeight = FontWeight.SemiBold,
         letterSpacing = 0.5.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontFamily = SatoshiFamily,
         modifier = Modifier.padding(start = 24.dp, top = 24.dp, bottom = 8.dp),
     )
+}
+
+@Composable
+private fun ToggleSourceRow(
+    name: String,
+    key: String,
+    bgColor: Color,
+    textColor: Color,
+    prefs: android.content.SharedPreferences,
+) {
+    var enabled by remember { mutableStateOf(prefs.getBoolean("source_$key", true)) }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .padding(16.dp),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(40.dp)
+                .background(bgColor, CircleShape),
+        ) {
+            Text(name.first().toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor, fontFamily = SatoshiFamily)
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(name, fontSize = 15.sp, fontWeight = FontWeight.Medium, fontFamily = SatoshiFamily)
+            Text(
+                if (enabled) "Active" else "Off",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontFamily = SatoshiFamily,
+            )
+        }
+        Switch(
+            checked = enabled,
+            onCheckedChange = {
+                enabled = it
+                prefs.edit().putBoolean("source_$key", it).apply()
+            },
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+            ),
+        )
+    }
 }
 
 @Composable
@@ -107,43 +195,14 @@ private fun SourceRow(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(40.dp)
-                .background(bgColor, CircleShape),
+                .background(bgColor.copy(alpha = 0.4f), CircleShape),
         ) {
-            Text(
-                name.first().toString(),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = textColor,
-                fontFamily = SatoshiFamily,
-            )
+            Text(name.first().toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), fontFamily = SatoshiFamily)
         }
         Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(name, fontSize = 15.sp, fontWeight = FontWeight.Medium, fontFamily = SatoshiFamily)
-            Text(
-                if (active) "Active" else if (comingSoon) "Coming soon" else "Inactive",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontFamily = SatoshiFamily,
-            )
-        }
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(
-                    if (active) MaterialTheme.colorScheme.primaryContainer
-                    else MaterialTheme.colorScheme.surfaceContainerHigh
-                )
-                .padding(horizontal = 10.dp, vertical = 4.dp),
-        ) {
-            Text(
-                if (active) "ON" else "OFF",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp,
-                color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontFamily = SatoshiFamily,
-            )
+            Text(name, fontSize = 15.sp, fontWeight = FontWeight.Medium, fontFamily = SatoshiFamily, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Coming soon", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
         }
     }
 }
