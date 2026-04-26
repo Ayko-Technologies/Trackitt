@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -64,7 +65,8 @@ fun AddScreen(
     val source by viewModel.source.collectAsStateWithLifecycle()
 
     var detailsExpanded by remember { mutableStateOf(false) }
-    var textFieldFocused by remember { mutableStateOf(false) }
+    var showCalculator by remember { mutableStateOf(true) }
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(saved) {
         if (saved) onSave()
@@ -95,8 +97,15 @@ fun AddScreen(
             ),
         )
 
-        // Amount display
-        Column(modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 12.dp)) {
+        // Amount display — tap to show calculator
+        Column(
+            modifier = Modifier
+                .padding(start = 24.dp, end = 24.dp, top = 12.dp)
+                .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) {
+                    showCalculator = true
+                    focusManager.clearFocus()
+                },
+        ) {
             val primaryColor = MaterialTheme.colorScheme.primary
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -142,6 +151,8 @@ fun AddScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable {
                         viewModel.selectedCategory.value = if (isSelected) null else cat
+                        showCalculator = false
+                        focusManager.clearFocus()
                     },
                 ) {
                     CookieIcon(
@@ -177,7 +188,7 @@ fun AddScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp)
-                    .clickable { detailsExpanded = true },
+                    .clickable { detailsExpanded = true; showCalculator = false },
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
@@ -192,7 +203,7 @@ fun AddScreen(
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .onFocusChanged { textFieldFocused = it.isFocused },
+                        .onFocusChanged { if (it.isFocused) showCalculator = false },
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
@@ -202,14 +213,14 @@ fun AddScreen(
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .onFocusChanged { textFieldFocused = it.isFocused },
+                        .onFocusChanged { if (it.isFocused) showCalculator = false },
                 )
             }
         }
 
         Spacer(Modifier.weight(1f))
 
-        if (!textFieldFocused) CalculatorPad(
+        if (showCalculator) CalculatorPad(
             onDigit = { digit ->
                 val current = amount
                 if (current == "0" && digit != "0") {
