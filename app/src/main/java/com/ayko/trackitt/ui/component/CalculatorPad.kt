@@ -68,15 +68,10 @@ fun CalculatorPad(
             CalcKey("9", Modifier.weight(1f)) { onDigit("9") }
             CalcKey("×", Modifier.weight(1f), accent = true) { onOperator("×") }
         }
-        // Row 4: . 0 00 ÷
+        // Row 4: . 0 ⌫ ÷
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             CalcKey(".", Modifier.weight(1f)) { onDecimal() }
             CalcKey("0", Modifier.weight(1f)) { onDigit("0") }
-            CalcKey("00", Modifier.weight(1f)) { onDigit("00") }
-            CalcKey("÷", Modifier.weight(1f), accent = true) { onOperator("÷") }
-        }
-        // Row 5: ⌫ and = (or just ⌫)
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -93,11 +88,11 @@ fun CalculatorPad(
                     modifier = Modifier.size(20.dp),
                 )
             }
-            if (hasOperator) {
-                CalcKey("=", Modifier.weight(1f), accent = true) { onEquals() }
-            } else {
-                Box(modifier = Modifier.weight(1f))
-            }
+            CalcKey("÷", Modifier.weight(1f), accent = true) { onOperator("÷") }
+        }
+        // = row (only when needed)
+        if (hasOperator) {
+            CalcKey("=", Modifier.fillMaxWidth(), accent = true) { onEquals() }
         }
         // Save button
         Box(
