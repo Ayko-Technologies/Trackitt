@@ -48,7 +48,9 @@ val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = mapOf(
 
     // Airtime / Top-up
     "mtn airtime" to TransactionCategory.AIRTIME,
-    "telecel push" to TransactionCategory.AIRTIME,
+
+    // Transfer
+    "telecel push" to TransactionCategory.TRANSFER,
 
     // Data bundles → Bills
     "mtnbundle" to TransactionCategory.BILLS,
@@ -102,6 +104,7 @@ val REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
 
     // House
     "soap" to TransactionCategory.HOUSE,
+    "soqp" to TransactionCategory.HOUSE,
     "rent" to TransactionCategory.HOUSE,
     "water" to TransactionCategory.HOUSE,
     "light" to TransactionCategory.HOUSE,
