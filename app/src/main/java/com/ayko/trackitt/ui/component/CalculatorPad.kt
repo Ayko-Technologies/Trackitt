@@ -37,7 +37,8 @@ fun CalculatorPad(
     expression: String,
     modifier: Modifier = Modifier,
 ) {
-    val hasOperator = expression.contains("+") || (expression.lastIndexOf("−") > 0)
+    val hasOperator = expression.contains("+") || expression.lastIndexOf("−") > 0 ||
+            expression.contains("×") || expression.contains("÷")
 
     Column(
         modifier = modifier
@@ -60,56 +61,42 @@ fun CalculatorPad(
             CalcKey("6", Modifier.weight(1f)) { onDigit("6") }
             CalcKey("−", Modifier.weight(1f), accent = true) { onOperator("−") }
         }
-        // Row 3: 7 8 9 =
+        // Row 3: 7 8 9 ×
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             CalcKey("7", Modifier.weight(1f)) { onDigit("7") }
             CalcKey("8", Modifier.weight(1f)) { onDigit("8") }
             CalcKey("9", Modifier.weight(1f)) { onDigit("9") }
-            if (hasOperator) {
-                CalcKey("=", Modifier.weight(1f), accent = true) { onEquals() }
-            } else {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                        .clickable { onBackspace() },
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.Backspace,
-                        contentDescription = "Backspace",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
+            CalcKey("×", Modifier.weight(1f), accent = true) { onOperator("×") }
         }
-        // Row 4: . 0 ⌫ (or save-row if = visible)
+        // Row 4: . 0 00 ÷
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             CalcKey(".", Modifier.weight(1f)) { onDecimal() }
             CalcKey("0", Modifier.weight(1f)) { onDigit("0") }
             CalcKey("00", Modifier.weight(1f)) { onDigit("00") }
+            CalcKey("÷", Modifier.weight(1f), accent = true) { onOperator("÷") }
+        }
+        // Row 5: ⌫ and = (or just ⌫)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .clickable { onBackspace() },
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.Backspace,
+                    contentDescription = "Backspace",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
             if (hasOperator) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                        .clickable { onBackspace() },
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.Backspace,
-                        contentDescription = "Backspace",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
+                CalcKey("=", Modifier.weight(1f), accent = true) { onEquals() }
             } else {
-                CalcKey("00", Modifier.weight(1f)) { onDigit("00") }
+                Box(modifier = Modifier.weight(1f))
             }
         }
         // Save button
