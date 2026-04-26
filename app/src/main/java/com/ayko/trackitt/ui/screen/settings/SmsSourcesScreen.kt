@@ -59,6 +59,7 @@ fun SmsSourcesScreen(onBack: () -> Unit = {}) {
                 .navigationBarsPadding(),
         ) {
             SourceRow("MTN MoMo", Color(0xFFFFCC00), Color(0xFF003366), active = true)
+            SourceRow("Ecobank", Color(0xFF003B71), Color.White, active = true)
             SourceRow("Telecel Cash", Color(0xFFE31E24), Color.White, active = false, comingSoon = true)
             SourceRow("AT Money", Color(0xFF0066B3), Color.White, active = false, comingSoon = true)
         }

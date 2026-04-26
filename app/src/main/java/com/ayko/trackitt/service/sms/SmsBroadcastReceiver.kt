@@ -21,20 +21,21 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
         if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
 
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-        val fullBody = messages
+        val grouped = messages
             .groupBy { it.originatingAddress }
-            .map { (_, parts) -> parts.joinToString("") { it.messageBody ?: "" } }
+            .map { (sender, parts) ->
+                sender to parts.joinToString("") { it.messageBody ?: "" }
+            }
 
         val app = context.applicationContext as? TrackittApplication ?: return
-        val parser = app.container.smsParser
-        val repository = app.container.repository
+        val container = app.container
 
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                fullBody.forEach { body ->
-                    val parsed = parser.parse(body) ?: return@forEach
-                    repository.insertFromSms(parsed)
+                grouped.forEach { (sender, body) ->
+                    val parsed = container.parseSms(sender, body) ?: return@forEach
+                    container.repository.insertFromSms(parsed)
                     showNotification(context, parsed)
                 }
             } finally {
@@ -51,12 +52,11 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
                 CHANNEL_ID,
                 "Transactions",
                 NotificationManager.IMPORTANCE_LOW,
-            ).apply { description = "New transactions from MoMo SMS" }
+            ).apply { description = "New transactions from SMS" }
             notificationManager.createNotificationChannel(channel)
         }
 
         val amountFormatted = String.format(Locale.US, "%.2f", parsed.amount)
-        val direction = if (parsed.isIncome) "received from" else "to"
         val title = if (parsed.isIncome) "GH₵$amountFormatted received" else "GH₵$amountFormatted spent"
         val text = "${if (parsed.isIncome) "From" else "To"} ${parsed.merchant}"
 

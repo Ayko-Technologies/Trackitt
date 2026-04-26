@@ -55,6 +55,19 @@ val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "mtn bundle" to TransactionCategory.BILLS,
     "vodafone" to TransactionCategory.BILLS,
 
+    // Ecobank POS merchants
+    "spotify" to TransactionCategory.BILLS,
+    "netflix" to TransactionCategory.BILLS,
+    "youtube" to TransactionCategory.BILLS,
+    "google one" to TransactionCategory.BILLS,
+    "amazon" to TransactionCategory.SHOPPING,
+    "ebay" to TransactionCategory.SHOPPING,
+    "wallet2bank" to TransactionCategory.TRANSFER,
+    "bank2wallet" to TransactionCategory.TRANSFER,
+    "momo → bank" to TransactionCategory.TRANSFER,
+    "bank → momo" to TransactionCategory.TRANSFER,
+    "atm" to TransactionCategory.OTHER,
+
     // Transfer / Remittance
     "bigpay" to TransactionCategory.TRANSFER,
     "interoperability push" to TransactionCategory.TRANSFER,

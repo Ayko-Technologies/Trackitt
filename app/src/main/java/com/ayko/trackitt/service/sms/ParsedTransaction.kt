@@ -9,4 +9,5 @@ data class ParsedTransaction(
     val reference: String?,
     val date: Long,
     val rawSms: String,
+    val source: String = "MTN MoMo",
 )

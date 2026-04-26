@@ -6,7 +6,9 @@ import com.ayko.trackitt.data.repository.TransactionRepository
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.service.categorization.CategorizationService
 import com.ayko.trackitt.service.categorization.DictionaryCategorizationService
+import com.ayko.trackitt.service.sms.EcobankSmsParser
 import com.ayko.trackitt.service.sms.MoMoSmsParser
+import com.ayko.trackitt.service.sms.ParsedTransaction
 
 class AppContainer(context: Context) {
     val database = TrackittDatabase.getInstance(context)
@@ -26,5 +28,16 @@ class AppContainer(context: Context) {
         categorizationService = categorizationService,
     )
 
-    val smsParser = MoMoSmsParser()
+    private val momoParser = MoMoSmsParser()
+    private val ecobankParser = EcobankSmsParser()
+
+    val smsSenders = listOf("MobileMoney", "ECOBANK")
+
+    fun parseSms(sender: String?, body: String): ParsedTransaction? {
+        return when {
+            sender.equals("MobileMoney", ignoreCase = true) -> momoParser.parse(body)
+            sender.equals("ECOBANK", ignoreCase = true) -> ecobankParser.parse(body)
+            else -> momoParser.parse(body) ?: ecobankParser.parse(body)
+        }
+    }
 }
