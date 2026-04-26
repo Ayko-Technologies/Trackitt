@@ -57,6 +57,20 @@ class TransactionRepository(
         return transactionDao.getMonthTotal(y, m)
     }
 
+    fun getByCategory(category: String, year: Int, month: Int): Flow<List<Transaction>> {
+        val y = year.toString()
+        val m = month.toString().padStart(2, '0')
+        return transactionDao.getByCategory(category, y, m).map { list -> list.map { it.toDomain() } }
+    }
+
+    fun getByCategoryForRange(category: String, startOfDay: Long, endOfDay: Long): Flow<List<Transaction>> {
+        return transactionDao.getByCategoryForRange(category, startOfDay, endOfDay).map { list -> list.map { it.toDomain() } }
+    }
+
+    fun getByDateRange(startOfDay: Long, endOfDay: Long): Flow<List<Transaction>> {
+        return transactionDao.getByDateRange(startOfDay, endOfDay).map { list -> list.map { it.toDomain() } }
+    }
+
     fun searchByMerchant(query: String): Flow<List<Transaction>> {
         return transactionDao.searchByMerchant(query).map { list -> list.map { it.toDomain() } }
     }
