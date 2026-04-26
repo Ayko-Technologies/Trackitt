@@ -9,6 +9,7 @@ import com.ayko.trackitt.service.categorization.DictionaryCategorizationService
 import com.ayko.trackitt.service.sms.EcobankSmsParser
 import com.ayko.trackitt.service.sms.MoMoSmsParser
 import com.ayko.trackitt.service.sms.ParsedTransaction
+import com.ayko.trackitt.service.sms.TelecelCashParser
 
 class AppContainer(context: Context) {
     val database = TrackittDatabase.getInstance(context)
@@ -30,14 +31,16 @@ class AppContainer(context: Context) {
 
     private val momoParser = MoMoSmsParser()
     private val ecobankParser = EcobankSmsParser()
+    private val telecelParser = TelecelCashParser()
 
-    val smsSenders = listOf("MobileMoney", "ECOBANK")
+    val smsSenders = listOf("MobileMoney", "ECOBANK", "T-CASH")
 
     fun parseSms(sender: String?, body: String): ParsedTransaction? {
         return when {
             sender.equals("MobileMoney", ignoreCase = true) -> momoParser.parse(body)
             sender.equals("ECOBANK", ignoreCase = true) -> ecobankParser.parse(body)
-            else -> momoParser.parse(body) ?: ecobankParser.parse(body)
+            sender.equals("T-CASH", ignoreCase = true) -> telecelParser.parse(body)
+            else -> momoParser.parse(body) ?: ecobankParser.parse(body) ?: telecelParser.parse(body)
         }
     }
 }
