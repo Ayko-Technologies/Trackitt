@@ -90,7 +90,9 @@ fun BudgetScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     val totalBudget = budgets.sumOf { it.amount }
-    val totalSpent = categoryTotals.sumOf { it.total }
+    val expenseTotals = categoryTotals.filter { it.category != TransactionCategory.INCOME.name }
+    val totalSpent = expenseTotals.sumOf { it.total }
+    val totalIncome = categoryTotals.find { it.category == TransactionCategory.INCOME.name }?.total ?: 0.0
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -129,55 +131,61 @@ fun BudgetScreen(
                 .padding(innerPadding)
                 .navigationBarsPadding(),
         ) {
-            // Overview card
             item {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .padding(20.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
+                            .padding(16.dp),
                     ) {
-                        Column {
-                            Text("Spent", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
-                            Text(
-                                "GH₵${String.format(Locale.US, "%.0f", totalSpent)}",
-                                fontSize = 24.sp, fontFamily = FrauncesFamily,
+                        Text("Expenses", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "GH₵${String.format(Locale.US, "%.0f", totalSpent)}",
+                            fontSize = 22.sp, fontFamily = FrauncesFamily,
+                        )
+                        if (totalBudget > 0) {
+                            Spacer(Modifier.height(8.dp))
+                            val progress = (totalSpent / totalBudget).toFloat().coerceIn(0f, 1f)
+                            val animatedProgress by animateFloatAsState(progress, label = "expenseProgress")
+                            LinearProgressIndicator(
+                                progress = { animatedProgress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
+                                color = if (progress > 0.9f) Color(0xFFB3261E) else MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.outlineVariant,
                             )
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("Budget", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
                             Text(
-                                "GH₵${String.format(Locale.US, "%.0f", totalBudget)}",
-                                fontSize = 24.sp, fontFamily = FrauncesFamily,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                "of GH₵${String.format(Locale.US, "%.0f", totalBudget)} budget",
+                                fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontFamily = SatoshiFamily, modifier = Modifier.padding(top = 4.dp),
                             )
                         }
                     }
-                    Spacer(Modifier.height(12.dp))
-                    val progress = if (totalBudget > 0) (totalSpent / totalBudget).toFloat().coerceIn(0f, 1f) else 0f
-                    val animatedProgress by animateFloatAsState(progress, label = "totalProgress")
-                    LinearProgressIndicator(
-                        progress = { animatedProgress },
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = if (progress > 0.9f) Color(0xFFB3261E) else MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.outlineVariant,
-                    )
-                    Text(
-                        text = "${(progress * 100).toInt()}% of total budget",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontFamily = SatoshiFamily,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
+                            .weight(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
+                            .padding(16.dp),
+                    ) {
+                        Text("Income", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "GH₵${String.format(Locale.US, "%.0f", totalIncome)}",
+                            fontSize = 22.sp, fontFamily = FrauncesFamily,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
             }
 
