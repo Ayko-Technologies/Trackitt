@@ -258,20 +258,84 @@ fun SettingsScreen(
                     SettingsRow(
                         icon = Icons.Filled.Refresh,
                         label = "Re-scan SMS",
-                        subtitle = "Re-import MoMo messages from the last 90 days",
-                        showDivider = false,
+                        subtitle = run {
+                            val days = context.getSharedPreferences("trackitt", 0).getInt("backfill_days", 90)
+                            "Re-import MoMo messages from the last $days days"
+                        },
+                        showDivider = true,
                         onClick = {
-                            context.getSharedPreferences("trackitt", 0).edit()
-                                .putBoolean("backfill_completed", false).apply()
+                            val prefs = context.getSharedPreferences("trackitt", 0)
+                            val days = prefs.getInt("backfill_days", 90)
+                            prefs.edit().putBoolean("backfill_completed", false).apply()
                             val request = androidx.work.OneTimeWorkRequestBuilder<
-                                com.ayko.trackitt.service.sms.SmsBackfillWorker>().build()
+                                com.ayko.trackitt.service.sms.SmsBackfillWorker>()
+                                .setInputData(androidx.work.workDataOf("lookback_days" to days))
+                                .build()
                             androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
                                 "sms_backfill",
                                 androidx.work.ExistingWorkPolicy.REPLACE,
                                 request,
                             )
-                            scope.launch { snackbarHostState.showSnackbar("Scanning SMS...") }
+                            scope.launch { snackbarHostState.showSnackbar("Scanning last $days days of SMS...") }
                         },
+                    )
+                    SettingsRow(
+                        icon = Icons.Filled.DateRange,
+                        label = "SMS lookback period",
+                        trailing = {
+                            var showPicker by remember { mutableStateOf(false) }
+                            val prefs = remember { context.getSharedPreferences("trackitt", 0) }
+                            var currentDays by remember { mutableIntStateOf(prefs.getInt("backfill_days", 90)) }
+
+                            Text(
+                                "$currentDays days",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontFamily = SatoshiFamily,
+                                modifier = Modifier.clickable { showPicker = true },
+                            )
+
+                            if (showPicker) {
+                                AlertDialog(
+                                    onDismissRequest = { showPicker = false },
+                                    title = { Text("Lookback period", fontFamily = SatoshiFamily) },
+                                    text = {
+                                        Column {
+                                            listOf(30, 60, 90, 180, 365).forEach { days ->
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clip(RoundedCornerShape(10.dp))
+                                                        .background(if (days == currentDays) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                                                        .clickable {
+                                                            currentDays = days
+                                                            prefs.edit().putInt("backfill_days", days).apply()
+                                                            showPicker = false
+                                                        }
+                                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                                ) {
+                                                    Text(
+                                                        when (days) {
+                                                            30 -> "30 days (1 month)"
+                                                            60 -> "60 days (2 months)"
+                                                            90 -> "90 days (3 months)"
+                                                            180 -> "180 days (6 months)"
+                                                            365 -> "365 days (1 year)"
+                                                            else -> "$days days"
+                                                        },
+                                                        fontFamily = SatoshiFamily,
+                                                        fontWeight = if (days == currentDays) FontWeight.SemiBold else FontWeight.Normal,
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    },
+                                    confirmButton = {},
+                                )
+                            }
+                        },
+                        showDivider = false,
                     )
                 }
             }
