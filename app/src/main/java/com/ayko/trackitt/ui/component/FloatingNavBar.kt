@@ -2,10 +2,12 @@ package com.ayko.trackitt.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,7 +22,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 private val BtnSize = 52.dp
@@ -35,27 +38,31 @@ fun FloatingNavBar(
     modifier: Modifier = Modifier,
 ) {
     Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = 28.dp, start = 20.dp, end = 20.dp),
     ) {
-        NavButton(
-            icon = Icons.Filled.Add,
-            contentDescription = "Add expense",
-            bg = MaterialTheme.colorScheme.primary,
-            tint = MaterialTheme.colorScheme.onPrimary,
-            onClick = onAddTap,
-        )
-        Spacer(Modifier.width(12.dp))
-        NavButton(
-            icon = Icons.Filled.DonutSmall,
-            contentDescription = "Budgets",
-            bg = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tint = MaterialTheme.colorScheme.onSurface,
-            onClick = onBudgetTap,
-        )
-        Spacer(Modifier.weight(1f))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            NavButton(
+                icon = Icons.Filled.Add,
+                contentDescription = "Add expense",
+                bg = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.onPrimary,
+                onClick = onAddTap,
+            )
+            NavButton(
+                icon = Icons.Filled.DonutSmall,
+                contentDescription = "Budgets",
+                bg = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tint = MaterialTheme.colorScheme.onSurface,
+                onClick = onBudgetTap,
+            )
+        }
         NavButton(
             icon = Icons.Filled.Search,
             contentDescription = "Search",
@@ -68,17 +75,16 @@ fun FloatingNavBar(
 
 @Composable
 private fun NavButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     contentDescription: String,
-    bg: androidx.compose.ui.graphics.Color,
-    tint: androidx.compose.ui.graphics.Color,
+    bg: Color,
+    tint: Color,
     onClick: () -> Unit,
 ) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(BtnSize)
-            .shadow(4.dp, BtnShape)
             .clip(BtnShape)
             .background(bg)
             .clickable { onClick() },

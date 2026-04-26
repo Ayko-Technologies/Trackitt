@@ -2,6 +2,7 @@ package com.ayko.trackitt.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,12 +11,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,19 +27,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.ui.theme.FrauncesFamily
-import com.ayko.trackitt.ui.theme.SatoshiFamily
 import com.ayko.trackitt.ui.theme.OnSurface
 import com.ayko.trackitt.ui.theme.Primary
 import com.ayko.trackitt.ui.theme.Secondary
 import com.ayko.trackitt.ui.theme.Surface
 import com.ayko.trackitt.ui.theme.SurfaceContainerHigh
-import androidx.compose.ui.graphics.compositeOver
 import java.util.Locale
 
 data class ChartCategory(
@@ -56,7 +58,6 @@ fun MonthChart(
 ) {
     val leadCategory = categories.firstOrNull()
     val leadBg = leadCategory?.category?.bgColor ?: SurfaceContainerHigh
-    val leadFg = leadCategory?.category?.fgColor ?: Primary
     val cardBg = if (empty) SurfaceContainerHigh else leadBg.copy(alpha = 0.3f).compositeOver(Surface)
     val blobFg = if (empty) Secondary else leadBg.copy(alpha = 0.6f).compositeOver(Surface)
 
@@ -84,7 +85,7 @@ fun MonthChart(
                 if (!empty) Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(end = 0.dp, bottom = 40.dp)
+                        .padding(bottom = 40.dp)
                         .size(240.dp),
                 ) {
                     androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
@@ -102,78 +103,27 @@ fun MonthChart(
                     }
                 }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(start = 18.dp, end = 18.dp, top = 22.dp, bottom = 120.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    if (empty) {
-                        val ghostHeights = listOf(0.82f, 0.60f, 0.46f, 0.26f)
-                        ghostHeights.forEach { h ->
+                if (empty) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 18.dp, vertical = 22.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.Bottom,
+                    ) {
+                        listOf(0.82f, 0.60f, 0.46f, 0.26f).forEach { h ->
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight(h)
-                                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 20.dp, bottomEnd = 20.dp))
+                                    .clip(RoundedCornerShape(24.dp))
                                     .background(Secondary),
                             )
                         }
-                    } else {
-                        categories.forEach { cat ->
-                            val fraction = (cat.total / maxVal).toFloat().coerceIn(0f, 1f)
-                            val isLead = cat == categories.first()
-                            val barBg = if (isLead) cat.category.fgColor else cat.category.bgColor
-                            val labelColor = if (isLead) Color.White.copy(alpha = 0.7f) else cat.category.fgColor
-                            val amountColor = if (isLead) Color.White else OnSurface
-
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .clickable { onCategoryTap(cat.category) },
-                                verticalArrangement = Arrangement.Bottom,
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .fillMaxHeight(fraction)
-                                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 20.dp, bottomEnd = 20.dp))
-                                        .background(barBg)
-                                        .padding(horizontal = 12.dp, vertical = 14.dp),
-                                    verticalArrangement = Arrangement.Bottom,
-                                ) {
-                                    Text(
-                                        text = cat.category.label.uppercase(),
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.2.sp,
-                                        color = labelColor,
-                                        fontFamily = SatoshiFamily,
-                                        maxLines = 1,
-                                    )
-                                    Text(
-                                        text = String.format(Locale.US, "%.2f", cat.total),
-                                        fontSize = 17.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        letterSpacing = (-0.4).sp,
-                                        color = amountColor,
-                                        fontFamily = FrauncesFamily,
-                                        maxLines = 1,
-                                    )
-                                }
-                            }
-                        }
                     }
-                }
-
-                if (empty) {
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(bottom = 120.dp),
+                        modifier = Modifier.fillMaxSize(),
                     ) {
                         Text(
                             text = "Your transactions will show up here",
@@ -182,6 +132,59 @@ fun MonthChart(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             letterSpacing = (-0.1).sp,
                         )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(start = 18.dp, end = 28.dp, top = 10.dp, bottom = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.Bottom,
+                    ) {
+                        categories.forEach { cat ->
+                            val fraction = (cat.total / maxVal).toFloat().coerceIn(0f, 1f)
+                            val isLead = cat == categories.first()
+                            val barBg = if (isLead) cat.category.fgColor else cat.category.bgColor
+                            val iconColor = if (isLead) Color.White.copy(alpha = 0.7f) else cat.category.fgColor
+                            val amountColor = if (isLead) Color.White else OnSurface
+
+                            Column(
+                                modifier = Modifier
+                                    .width(72.dp)
+                                    .fillMaxHeight(),
+                                verticalArrangement = Arrangement.Bottom,
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .fillMaxHeight(fraction.coerceAtLeast(0.16f))
+                                        .clip(RoundedCornerShape(24.dp))
+                                        .background(barBg)
+                                        .clickable { onCategoryTap(cat.category) }
+                                        .padding(vertical = 14.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = cat.category.icon,
+                                        contentDescription = cat.category.label,
+                                        tint = iconColor,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.weight(1f))
+                                    Text(
+                                        text = formatBarAmount(cat.total),
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        letterSpacing = (-0.4).sp,
+                                        color = amountColor,
+                                        fontFamily = FrauncesFamily,
+                                        textAlign = TextAlign.Center,
+                                    )
+                                    Spacer(Modifier.weight(1f))
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -253,5 +256,15 @@ private fun ChartHeader(
                     .padding(horizontal = 8.dp, vertical = 3.dp),
             )
         }
+    }
+}
+
+private fun formatBarAmount(value: Double): String {
+    return if (value >= 1000) {
+        String.format(Locale.US, "%.0fk", value / 1000)
+    } else if (value == value.toLong().toDouble()) {
+        String.format(Locale.US, "%.0f", value)
+    } else {
+        String.format(Locale.US, "%.1f", value)
     }
 }
