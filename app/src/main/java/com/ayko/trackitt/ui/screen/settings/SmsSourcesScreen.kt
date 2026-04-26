@@ -33,6 +33,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.sp
 import com.ayko.trackitt.ui.theme.SatoshiFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,12 +59,31 @@ fun SmsSourcesScreen(onBack: () -> Unit = {}) {
                 .padding(innerPadding)
                 .navigationBarsPadding(),
         ) {
+            SectionLabel("Mobile Money")
             SourceRow("MTN MoMo", Color(0xFFFFCC00), Color(0xFF003366), active = true)
-            SourceRow("Ecobank", Color(0xFF003B71), Color.White, active = true)
             SourceRow("Telecel Cash", Color(0xFFE31E24), Color.White, active = false, comingSoon = true)
             SourceRow("AT Money", Color(0xFF0066B3), Color.White, active = false, comingSoon = true)
+
+            SectionLabel("Banks")
+            SourceRow("Ecobank", Color(0xFF003B71), Color.White, active = true)
+            SourceRow("GCB Bank", Color(0xFF004D26), Color.White, active = false, comingSoon = true)
+            SourceRow("Stanbic Bank", Color(0xFF0033A0), Color.White, active = false, comingSoon = true)
+            SourceRow("Fidelity Bank", Color(0xFF006B3F), Color.White, active = false, comingSoon = true)
+            SourceRow("Absa Bank", Color(0xFFAF0000), Color.White, active = false, comingSoon = true)
         }
     }
+}
+
+@Composable
+private fun SectionLabel(title: String) {
+    Text(
+        text = title.uppercase(),
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.5.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 24.dp, top = 24.dp, bottom = 8.dp),
+    )
 }
 
 @Composable
