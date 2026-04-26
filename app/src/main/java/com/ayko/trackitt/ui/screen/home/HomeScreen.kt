@@ -43,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.ayko.trackitt.ui.component.CategoryBottomSheet
 import com.ayko.trackitt.ui.component.DayPicker
 import com.ayko.trackitt.ui.component.DisplayNumber
 import com.ayko.trackitt.ui.component.MonthPicker
@@ -76,6 +77,8 @@ fun HomeScreen(
     val empty = chartCategories.isEmpty()
     var showMonthPicker by remember { mutableStateOf(false) }
     var showDayPicker by remember { mutableStateOf(false) }
+    var selectedCategoryForSheet by remember { mutableStateOf<com.ayko.trackitt.domain.model.TransactionCategory?>(null) }
+    val categoryTransactions by viewModel.getCategoryTransactions(selectedCategoryForSheet?.name).collectAsStateWithLifecycle(initialValue = emptyList())
 
     LaunchedEffect(Unit) {
         val receiveGranted = ContextCompat.checkSelfPermission(
@@ -222,6 +225,7 @@ fun HomeScreen(
                 totalFormatted = totalFormatted,
                 monthLabel = monthName,
                 empty = empty,
+                onCategoryTap = { category -> selectedCategoryForSheet = category },
                 modifier = Modifier
                     .padding(top = if (smsGranted) 20.dp else 4.dp)
                     .weight(1f),
@@ -257,6 +261,18 @@ fun HomeScreen(
                     showDayPicker = false
                 },
                 onDismiss = { showDayPicker = false },
+            )
+        }
+
+        if (selectedCategoryForSheet != null) {
+            CategoryBottomSheet(
+                category = selectedCategoryForSheet!!,
+                transactions = categoryTransactions,
+                onTransactionTap = { id ->
+                    selectedCategoryForSheet = null
+                    onTransactionTap(id)
+                },
+                onDismiss = { selectedCategoryForSheet = null },
             )
         }
     }

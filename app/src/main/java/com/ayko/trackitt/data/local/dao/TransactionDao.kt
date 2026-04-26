@@ -68,6 +68,23 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE merchant LIKE '%' || :query || '%' ORDER BY date DESC")
     fun searchByMerchant(query: String): Flow<List<TransactionEntity>>
 
+    @Query("""
+        SELECT * FROM transactions
+        WHERE category = :category
+        AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
+        AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
+        ORDER BY date DESC
+    """)
+    fun getByCategory(category: String, year: String, month: String): Flow<List<TransactionEntity>>
+
+    @Query("""
+        SELECT * FROM transactions
+        WHERE category = :category
+        AND date >= :startOfDay AND date < :endOfDay
+        ORDER BY date DESC
+    """)
+    fun getByCategoryForRange(category: String, startOfDay: Long, endOfDay: Long): Flow<List<TransactionEntity>>
+
     @Query("SELECT * FROM transactions WHERE id = :id")
     fun getById(id: Long): Flow<TransactionEntity?>
 

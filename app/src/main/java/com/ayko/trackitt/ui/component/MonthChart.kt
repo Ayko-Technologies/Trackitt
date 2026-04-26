@@ -1,6 +1,7 @@
 package com.ayko.trackitt.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +51,7 @@ fun MonthChart(
     totalFormatted: String,
     monthLabel: String = "APRIL",
     empty: Boolean = false,
+    onCategoryTap: (TransactionCategory) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val leadCategory = categories.firstOrNull()
@@ -129,7 +131,8 @@ fun MonthChart(
                             Column(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .fillMaxHeight(),
+                                    .fillMaxHeight()
+                                    .clickable { onCategoryTap(cat.category) },
                                 verticalArrangement = Arrangement.Bottom,
                             ) {
                                 Column(

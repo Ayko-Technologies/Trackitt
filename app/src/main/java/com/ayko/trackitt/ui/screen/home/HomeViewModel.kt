@@ -102,6 +102,24 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+    fun getCategoryTransactions(categoryName: String?): Flow<List<com.ayko.trackitt.domain.model.Transaction>> {
+        if (categoryName == null) return kotlinx.coroutines.flow.flowOf(emptyList())
+        val period = _selectedPeriod.value
+        val year = _selectedYear.value
+        val month = _selectedMonth.value
+        val day = _selectedDay.value
+        return when (period) {
+            Period.DAY -> {
+                val date = LocalDate.of(year, month, day)
+                val zone = ZoneId.systemDefault()
+                val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
+                val end = date.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
+                repository.getByCategoryForRange(categoryName, start, end)
+            }
+            Period.MONTH -> repository.getByCategory(categoryName, year, month)
+        }
+    }
+
     val smsPermissionGranted = MutableStateFlow(false)
 
     fun selectPeriod(period: Period) {
