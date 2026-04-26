@@ -35,7 +35,7 @@ fun FloatingNavBar(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        verticalAlignment = Alignment.Bottom,
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = 28.dp, start = 20.dp, end = 20.dp),
