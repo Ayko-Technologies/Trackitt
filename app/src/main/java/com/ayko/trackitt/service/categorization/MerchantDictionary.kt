@@ -49,32 +49,19 @@ val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     // Airtime / Top-up
     "mtn airtime" to TransactionCategory.AIRTIME,
 
-    // Transfer
-    "telecel push" to TransactionCategory.TRANSFER,
 
     // Data bundles → Bills
     "mtnbundle" to TransactionCategory.BILLS,
     "mtn bundle" to TransactionCategory.BILLS,
     "vodafone" to TransactionCategory.BILLS,
 
-    // Income / banks
-    "expresspay" to TransactionCategory.INCOME,
-    "express pay" to TransactionCategory.INCOME,
-    "ecobank" to TransactionCategory.INCOME,
-    "gcb" to TransactionCategory.INCOME,
-    "stanbic" to TransactionCategory.INCOME,
-    "fidelity" to TransactionCategory.INCOME,
-    "calbank" to TransactionCategory.INCOME,
-    "absa" to TransactionCategory.INCOME,
-    "uba" to TransactionCategory.INCOME,
-    "send wave" to TransactionCategory.INCOME,
-    "interoperability pull" to TransactionCategory.INCOME,
-
-    // Transfer
+    // Transfer / Remittance
     "bigpay" to TransactionCategory.TRANSFER,
     "interoperability push" to TransactionCategory.TRANSFER,
+    "interoperability pull" to TransactionCategory.TRANSFER,
     "itc" to TransactionCategory.TRANSFER,
     "taptapsend" to TransactionCategory.TRANSFER,
+    "send wave" to TransactionCategory.TRANSFER,
 
     // Health
     "greenville hospital" to TransactionCategory.HEALTH,
@@ -132,6 +119,11 @@ val REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "malt" to TransactionCategory.FOOD,
     "coke" to TransactionCategory.FOOD,
     "delivery" to TransactionCategory.FOOD,
+    "pie" to TransactionCategory.FOOD,
+    "meat" to TransactionCategory.FOOD,
+    "rice" to TransactionCategory.FOOD,
+    "egg" to TransactionCategory.FOOD,
+    "drink" to TransactionCategory.FOOD,
 
     // Beauty
     "hair" to TransactionCategory.BEAUTY,
