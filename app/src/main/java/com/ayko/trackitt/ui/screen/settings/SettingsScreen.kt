@@ -301,7 +301,7 @@ fun SettingsScreen(
                                     title = { Text("Lookback period", fontFamily = SatoshiFamily) },
                                     text = {
                                         Column {
-                                            listOf(30, 60, 90, 180, 365).forEach { days ->
+                                            listOf(1, 7, 30, 60, 90, 180, 365).forEach { days ->
                                                 Row(
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     modifier = Modifier
@@ -317,6 +317,8 @@ fun SettingsScreen(
                                                 ) {
                                                     Text(
                                                         when (days) {
+                                                            1 -> "Today only"
+                                                            7 -> "7 days (1 week)"
                                                             30 -> "30 days (1 month)"
                                                             60 -> "60 days (2 months)"
                                                             90 -> "90 days (3 months)"
