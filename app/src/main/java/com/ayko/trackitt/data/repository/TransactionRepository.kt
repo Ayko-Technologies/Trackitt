@@ -79,7 +79,7 @@ class TransactionRepository(
         return transactionDao.getById(id).map { it?.toDomain() }
     }
 
-    suspend fun insertFromSms(parsed: ParsedTransaction) {
+    suspend fun insertFromSms(parsed: ParsedTransaction): Boolean {
         val category = if (parsed.isIncome) TransactionCategory.INCOME
             else categorizationService.categorize(parsed.merchant, parsed.reference)
         val entity = TransactionEntity(
@@ -96,7 +96,7 @@ class TransactionRepository(
             isFromSms = true,
             rawSms = parsed.rawSms,
         )
-        transactionDao.insert(entity)
+        return transactionDao.insert(entity) != -1L
     }
 
     suspend fun insertManual(transaction: Transaction) {

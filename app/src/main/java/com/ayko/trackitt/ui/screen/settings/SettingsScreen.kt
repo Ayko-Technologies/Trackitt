@@ -120,6 +120,30 @@ fun SettingsScreen(
         }
     }
 
+    val startRescan: () -> Unit = {
+        val prefs = context.getSharedPreferences("trackitt", 0)
+        val days = prefs.getInt("backfill_days", 90)
+        prefs.edit().putBoolean("backfill_completed", false).apply()
+        val request = androidx.work.OneTimeWorkRequestBuilder<
+            com.ayko.trackitt.service.sms.SmsBackfillWorker>()
+            .setInputData(androidx.work.workDataOf("lookback_days" to days))
+            .build()
+        androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
+            "sms_backfill",
+            androidx.work.ExistingWorkPolicy.REPLACE,
+            request,
+        )
+        scope.launch {
+            snackbarHostState.showSnackbar(
+                if (days == 1) "Scanning today's SMS..." else "Scanning last $days days of SMS..."
+            )
+        }
+    }
+
+    val notifPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ -> startRescan() }
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -256,22 +280,14 @@ fun SettingsScreen(
                         },
                         showDivider = true,
                         onClick = {
-                            val prefs = context.getSharedPreferences("trackitt", 0)
-                            val days = prefs.getInt("backfill_days", 90)
-                            prefs.edit().putBoolean("backfill_completed", false).apply()
-                            val request = androidx.work.OneTimeWorkRequestBuilder<
-                                com.ayko.trackitt.service.sms.SmsBackfillWorker>()
-                                .setInputData(androidx.work.workDataOf("lookback_days" to days))
-                                .build()
-                            androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
-                                "sms_backfill",
-                                androidx.work.ExistingWorkPolicy.REPLACE,
-                                request,
-                            )
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    if (days == 1) "Scanning today's SMS..." else "Scanning last $days days of SMS..."
-                                )
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                                androidx.core.content.ContextCompat.checkSelfPermission(
+                                    context, android.Manifest.permission.POST_NOTIFICATIONS
+                                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                            ) {
+                                notifPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                startRescan()
                             }
                         },
                     )
