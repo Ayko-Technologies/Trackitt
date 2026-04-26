@@ -35,6 +35,7 @@ fun CalculatorPad(
     onSave: () -> Unit,
     saveEnabled: Boolean,
     expression: String,
+    buttonText: String = "Save expense",
     modifier: Modifier = Modifier,
 ) {
     val hasOperator = expression.contains("+") || expression.lastIndexOf("−") > 0 ||
@@ -108,7 +109,7 @@ fun CalculatorPad(
                 .then(if (saveEnabled) Modifier.clickable { onSave() } else Modifier),
         ) {
             Text(
-                "Save expense",
+                buttonText,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = SatoshiFamily,

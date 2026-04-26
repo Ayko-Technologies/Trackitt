@@ -1,8 +1,18 @@
 package com.ayko.trackitt.ui.screen.add
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,13 +21,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,10 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,8 +55,12 @@ import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.ui.component.CalculatorPad
 import com.ayko.trackitt.ui.component.CookieIcon
 import com.ayko.trackitt.ui.component.DisplayNumber
+import com.ayko.trackitt.ui.theme.FrauncesFamily
 import com.ayko.trackitt.ui.theme.SatoshiFamily
-import com.ayko.trackitt.ui.theme.SurfaceContainerHigh
+
+private enum class AddStep { AMOUNT, CATEGORY, CONFIRM }
+
+private val expenseCategories = TransactionCategory.entries.filter { it != TransactionCategory.INCOME }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,229 +73,368 @@ fun AddScreen(
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val saved by viewModel.saved.collectAsStateWithLifecycle()
     val note by viewModel.note.collectAsStateWithLifecycle()
-    val source by viewModel.source.collectAsStateWithLifecycle()
 
-    var detailsExpanded by remember { mutableStateOf(false) }
-    var showCalculator by remember { mutableStateOf(true) }
-    val focusManager = LocalFocusManager.current
+    var step by remember { mutableStateOf(AddStep.AMOUNT) }
 
-    LaunchedEffect(saved) {
-        if (saved) onSave()
+    LaunchedEffect(saved) { if (saved) onSave() }
+
+    BackHandler(enabled = step != AddStep.AMOUNT) {
+        step = when (step) {
+            AddStep.CONFIRM -> AddStep.CATEGORY
+            AddStep.CATEGORY -> AddStep.AMOUNT
+            else -> return@BackHandler
+        }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .navigationBarsPadding(),
-    ) {
-        CenterAlignedTopAppBar(
-            title = {
-                Text(
-                    text = "New expense",
-                    fontFamily = SatoshiFamily,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 22.sp,
-                    letterSpacing = (-0.3).sp,
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = onClose) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Close")
-                }
-            },
-            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = Color.Transparent,
-            ),
-        )
-
-        // Amount display — tap to show calculator
+    AnimatedContent(
+        targetState = step,
+        transitionSpec = {
+            if (targetState.ordinal > initialState.ordinal) {
+                (slideInHorizontally { it / 3 } + fadeIn()) togetherWith
+                    (slideOutHorizontally { -it / 3 } + fadeOut())
+            } else {
+                (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith
+                    (slideOutHorizontally { it / 3 } + fadeOut())
+            }
+        },
+        label = "addStep",
+    ) { currentStep ->
         Column(
             modifier = Modifier
-                .padding(start = 24.dp, end = 24.dp, top = 12.dp)
-                .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) {
-                    showCalculator = true
-                    focusManager.clearFocus()
-                },
+                .fillMaxSize()
+                .navigationBarsPadding(),
         ) {
-            val primaryColor = MaterialTheme.colorScheme.primary
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .drawBehind {
-                        drawLine(
-                            color = primaryColor,
-                            start = Offset(0f, size.height),
-                            end = Offset(size.width, size.height),
-                            strokeWidth = 2.dp.toPx(),
-                        )
-                    }
-                    .padding(bottom = 8.dp),
-            ) {
-                val hasOp = amount.contains("+") || amount.lastIndexOf("−") > 0 || amount.contains("×") || amount.contains("÷")
-                if (hasOp) {
+            CenterAlignedTopAppBar(
+                title = {
                     Text(
-                        text = "GH₵ $amount",
-                        fontSize = 32.sp,
-                        fontFamily = com.ayko.trackitt.ui.theme.FrauncesFamily,
-                        fontWeight = FontWeight.Normal,
-                        letterSpacing = (-0.5).sp,
-                    )
-                } else {
-                    DisplayNumber(
-                        value = amount.toDoubleOrNull() ?: 0.0,
-                        sizeSp = 52f,
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-                if (amount.isEmpty()) {
-                    Spacer(
-                        Modifier
-                            .width(2.dp)
-                            .height(36.dp)
-                            .drawBehind { drawRect(primaryColor) },
-                    )
-                }
-            }
-        }
-
-        // Category grid
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp)
-                .height(180.dp),
-        ) {
-            itemsIndexed(TransactionCategory.entries.toList()) { _, cat ->
-                val isSelected = selectedCategory == cat
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.clickable {
-                        viewModel.selectedCategory.value = if (isSelected) null else cat
-                        showCalculator = false
-                        focusManager.clearFocus()
-                    },
-                ) {
-                    CookieIcon(
-                        fillColor = if (isSelected) cat.bgColor else SurfaceContainerHigh,
-                        strokeColor = if (isSelected) cat.fgColor else null,
-                        strokeWidth = 2.dp,
-                        size = 56.dp,
-                    ) {
-                        Icon(
-                            imageVector = cat.icon,
-                            contentDescription = cat.label,
-                            tint = if (isSelected) cat.fgColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp),
-                        )
-                    }
-                    Text(
-                        text = cat.label,
-                        fontSize = 11.sp,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                        when (currentStep) {
+                            AddStep.AMOUNT -> "New expense"
+                            AddStep.CATEGORY -> "What's it for?"
+                            AddStep.CONFIRM -> ""
+                        },
                         fontFamily = SatoshiFamily,
-                        modifier = Modifier.padding(top = 6.dp),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 22.sp,
+                        letterSpacing = (-0.3).sp,
                     )
-                }
-            }
-        }
-
-        // Add details — toggle
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp)
-                .clickable {
-                    detailsExpanded = !detailsExpanded
-                    if (detailsExpanded) showCalculator = false
-                    if (!detailsExpanded) focusManager.clearFocus()
                 },
-        ) {
-            Icon(
-                if (detailsExpanded) Icons.Filled.Remove else Icons.Filled.Add,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp),
+                navigationIcon = {
+                    when (currentStep) {
+                        AddStep.AMOUNT -> IconButton(onClick = onClose) {
+                            Icon(Icons.Outlined.Close, contentDescription = "Close")
+                        }
+                        else -> IconButton(onClick = {
+                            step = if (currentStep == AddStep.CONFIRM) AddStep.CATEGORY else AddStep.AMOUNT
+                        }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.Transparent,
+                ),
             )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                if (detailsExpanded) "Hide details" else "Add details",
-                fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary, fontFamily = SatoshiFamily,
-            )
-        }
-        if (detailsExpanded) {
-            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { viewModel.note.value = it },
-                    label = { Text("Note") },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { if (it.isFocused) showCalculator = false },
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = source,
-                    onValueChange = { viewModel.source.value = it },
-                    label = { Text("Source") },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { if (it.isFocused) showCalculator = false },
-                )
-            }
-        }
 
-        Spacer(Modifier.weight(1f))
-
-        if (showCalculator) CalculatorPad(
-            expression = amount,
-            onDigit = { digit ->
-                val current = amount
-                val lastPart = current.substringAfterLast("+").substringAfterLast("−").substringAfterLast("×").substringAfterLast("÷")
-                if (lastPart == "0" && digit == "0") return@CalculatorPad
-                if (lastPart == "0" && digit != "00") {
-                    viewModel.amount.value = current.dropLast(1) + digit
-                } else if (lastPart.contains(".") && lastPart.substringAfter(".").length >= 2) {
-                    return@CalculatorPad
-                } else {
-                    viewModel.amount.value = current + digit
-                }
-            },
-            onDecimal = {
-                val lastPart = amount.substringAfterLast("+").substringAfterLast("−").substringAfterLast("×").substringAfterLast("÷")
-                if (!lastPart.contains(".")) {
-                    viewModel.amount.value = if (amount.isEmpty() || amount.last() in "+−×÷") "${amount}0." else "$amount."
-                }
-            },
-            onBackspace = {
-                if (amount.isNotEmpty()) {
-                    viewModel.amount.value = amount.dropLast(1)
-                }
-            },
-            onOperator = { op ->
-                if (amount.isNotEmpty() && !amount.endsWith("+") && !amount.endsWith("−") && !amount.endsWith("×") && !amount.endsWith("÷")) {
-                    viewModel.amount.value = amount + op
-                }
-            },
-            onEquals = {
-                val result = evaluateExpression(amount)
-                if (result != null && result >= 0) {
-                    viewModel.amount.value = if (result == result.toLong().toDouble()) {
-                        result.toLong().toString()
-                    } else {
-                        String.format(java.util.Locale.US, "%.2f", result)
+            when (currentStep) {
+                AddStep.AMOUNT -> AmountContent(amount, viewModel) {
+                    val result = evaluateExpression(amount)
+                    if (result != null && result > 0) {
+                        viewModel.amount.value = formatAmount(result)
+                        step = AddStep.CATEGORY
                     }
                 }
-            },
-            onSave = { viewModel.save() },
-            saveEnabled = (evaluateExpression(amount) ?: 0.0) > 0 && selectedCategory != null,
+
+                AddStep.CATEGORY -> CategoryContent(amount) { cat ->
+                    viewModel.selectedCategory.value = cat
+                    step = AddStep.CONFIRM
+                }
+
+                AddStep.CONFIRM -> ConfirmContent(
+                    amount = amount,
+                    category = selectedCategory,
+                    note = note,
+                    onNoteChange = { viewModel.note.value = it },
+                    onSave = { viewModel.save() },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.AmountContent(
+    amount: String,
+    viewModel: AddViewModel,
+    onNext: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        val hasOp = amount.contains("+") || amount.lastIndexOf("−") > 0 ||
+            amount.contains("×") || amount.contains("÷")
+
+        if (hasOp) {
+            Text(
+                text = "GH₵ $amount",
+                fontSize = 32.sp,
+                fontFamily = FrauncesFamily,
+                fontWeight = FontWeight.Normal,
+                letterSpacing = (-0.5).sp,
+            )
+        } else if (amount.isEmpty()) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    "GH₵",
+                    fontSize = 18.sp,
+                    fontFamily = SatoshiFamily,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.alignByBaseline(),
+                )
+                Text(
+                    "0",
+                    fontSize = 64.sp,
+                    fontFamily = FrauncesFamily,
+                    fontWeight = FontWeight.Normal,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .alignByBaseline()
+                        .padding(start = 4.dp),
+                )
+            }
+        } else {
+            DisplayNumber(
+                value = amount.toDoubleOrNull() ?: 0.0,
+                sizeSp = 52f,
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .size(width = 120.dp, height = 2.dp)
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(1.dp)),
         )
+    }
+
+    CalculatorPad(
+        expression = amount,
+        buttonText = "Next",
+        onDigit = { digit ->
+            val current = amount
+            val lastPart = current.substringAfterLast("+").substringAfterLast("−")
+                .substringAfterLast("×").substringAfterLast("÷")
+            if (lastPart == "0" && digit == "0") return@CalculatorPad
+            if (lastPart == "0" && digit != "00") {
+                viewModel.amount.value = current.dropLast(1) + digit
+            } else if (lastPart.contains(".") && lastPart.substringAfter(".").length >= 2) {
+                return@CalculatorPad
+            } else {
+                viewModel.amount.value = current + digit
+            }
+        },
+        onDecimal = {
+            val lastPart = amount.substringAfterLast("+").substringAfterLast("−")
+                .substringAfterLast("×").substringAfterLast("÷")
+            if (!lastPart.contains(".")) {
+                viewModel.amount.value =
+                    if (amount.isEmpty() || amount.last() in "+−×÷") "${amount}0." else "$amount."
+            }
+        },
+        onBackspace = {
+            if (amount.isNotEmpty()) viewModel.amount.value = amount.dropLast(1)
+        },
+        onOperator = { op ->
+            if (amount.isNotEmpty() && !amount.endsWith("+") && !amount.endsWith("−") &&
+                !amount.endsWith("×") && !amount.endsWith("÷")
+            ) {
+                viewModel.amount.value = amount + op
+            }
+        },
+        onEquals = {
+            val result = evaluateExpression(amount)
+            if (result != null && result >= 0) {
+                viewModel.amount.value = formatAmount(result)
+            }
+        },
+        onSave = onNext,
+        saveEnabled = (evaluateExpression(amount) ?: 0.0) > 0,
+    )
+}
+
+@Composable
+private fun CategoryContent(
+    amount: String,
+    onCategorySelected: (TransactionCategory) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+        ) {
+            Text(
+                "GH₵",
+                fontSize = 13.sp,
+                fontFamily = SatoshiFamily,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.alignByBaseline(),
+            )
+            Text(
+                formatDisplay(amount),
+                fontSize = 22.sp,
+                fontFamily = FrauncesFamily,
+                fontWeight = FontWeight.Normal,
+                modifier = Modifier
+                    .alignByBaseline()
+                    .padding(start = 3.dp),
+            )
+        }
+    }
+
+    Spacer(Modifier.height(32.dp))
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(4),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+    ) {
+        items(expenseCategories) { cat ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .clickable { onCategorySelected(cat) }
+                    .padding(vertical = 4.dp),
+            ) {
+                CookieIcon(
+                    fillColor = cat.bgColor,
+                    size = 56.dp,
+                ) {
+                    Icon(
+                        imageVector = cat.icon,
+                        contentDescription = cat.label,
+                        tint = cat.fgColor,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+                Text(
+                    text = cat.label,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontFamily = SatoshiFamily,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.ConfirmContent(
+    amount: String,
+    category: TransactionCategory?,
+    note: String,
+    onNoteChange: (String) -> Unit,
+    onSave: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(Modifier.height(40.dp))
+
+        if (category != null) {
+            CookieIcon(
+                fillColor = category.bgColor,
+                size = 72.dp,
+            ) {
+                Icon(
+                    imageVector = category.icon,
+                    contentDescription = null,
+                    tint = category.fgColor,
+                    modifier = Modifier.size(32.dp),
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                category.label,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = SatoshiFamily,
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+        DisplayNumber(
+            value = amount.toDoubleOrNull() ?: 0.0,
+            sizeSp = 40f,
+        )
+
+        Spacer(Modifier.height(40.dp))
+
+        OutlinedTextField(
+            value = note,
+            onValueChange = onNoteChange,
+            label = { Text("What was this for? (optional)") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .height(56.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.primary)
+            .clickable { onSave() },
+    ) {
+        Text(
+            "Save expense",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = SatoshiFamily,
+            color = MaterialTheme.colorScheme.onPrimary,
+        )
+    }
+}
+
+private fun formatAmount(value: Double): String {
+    return if (value == value.toLong().toDouble()) {
+        value.toLong().toString()
+    } else {
+        String.format(java.util.Locale.US, "%.2f", value)
+    }
+}
+
+private fun formatDisplay(amount: String): String {
+    val value = amount.toDoubleOrNull() ?: return amount
+    return if (value == value.toLong().toDouble()) {
+        val formatted = java.text.NumberFormat.getNumberInstance(java.util.Locale.US)
+            .format(value.toLong())
+        "$formatted.00"
+    } else {
+        String.format(java.util.Locale.US, "%.2f", value)
     }
 }
 
@@ -310,7 +459,6 @@ private fun evaluateExpression(expr: String): Double? {
     val lastNum = current.toDoubleOrNull() ?: return null
     tokens.add(lastNum)
 
-    // Handle × and ÷ first (order of operations)
     val simplified = mutableListOf<Any>()
     var i = 0
     while (i < tokens.size) {
@@ -329,7 +477,6 @@ private fun evaluateExpression(expr: String): Double? {
         i++
     }
 
-    // Handle + and −
     var result = simplified[0] as Double
     var j = 1
     while (j < simplified.size) {
