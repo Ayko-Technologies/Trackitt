@@ -42,7 +42,6 @@ val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "dstv" to TransactionCategory.BILLS,
     "gotv" to TransactionCategory.BILLS,
     "airtel" to TransactionCategory.BILLS,
-    "bills.inv" to TransactionCategory.BILLS,
     "surfline" to TransactionCategory.BILLS,
     "etranzact" to TransactionCategory.BILLS,
 
