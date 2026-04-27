@@ -1,5 +1,11 @@
 package com.ayko.trackitt.ui.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -39,7 +45,11 @@ fun TrackittNavGraph(
                 }
             })
         }
-        composable(NavRoute.Home.route) {
+        composable(
+            NavRoute.Home.route,
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+        ) {
             HomeScreen(
                 onAddTap = { navController.navigate(NavRoute.Add.route) },
                 onSettingsTap = { navController.navigate(NavRoute.Settings.route) },
@@ -51,21 +61,39 @@ fun TrackittNavGraph(
             )
         }
 
-        composable(NavRoute.Add.route) {
+        composable(
+            NavRoute.Add.route,
+            enterTransition = { slideInHorizontally(initialOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+        ) {
             AddScreen(
                 onClose = { navController.popBackStack() },
                 onSave = { navController.popBackStack() },
             )
         }
 
-        composable(NavRoute.Settings.route) {
+        composable(
+            NavRoute.Settings.route,
+            enterTransition = { slideInHorizontally(initialOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+        ) {
             SettingsScreen(
                 onBack = { navController.popBackStack() },
                 onNavigateToSmsSources = { navController.navigate(NavRoute.SmsSources.route) },
             )
         }
 
-        composable(NavRoute.Search.route) {
+        composable(
+            NavRoute.Search.route,
+            enterTransition = { slideInHorizontally(initialOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+        ) {
             SearchScreen(
                 onBack = { navController.popBackStack() },
                 onTransactionTap = { id ->
@@ -74,13 +102,25 @@ fun TrackittNavGraph(
             )
         }
 
-        composable(NavRoute.Budget.route) {
+        composable(
+            NavRoute.Budget.route,
+            enterTransition = { slideInHorizontally(initialOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+        ) {
             BudgetScreen(
                 onBack = { navController.popBackStack() },
             )
         }
 
-        composable(NavRoute.SmsSources.route) {
+        composable(
+            NavRoute.SmsSources.route,
+            enterTransition = { slideInHorizontally(initialOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+        ) {
             SmsSourcesScreen(
                 onBack = { navController.popBackStack() },
             )
@@ -88,7 +128,11 @@ fun TrackittNavGraph(
 
         composable(
             NavRoute.Detail.route,
-            arguments = listOf(navArgument("transactionId") { type = NavType.LongType })
+            arguments = listOf(navArgument("transactionId") { type = NavType.LongType }),
+            enterTransition = { slideInHorizontally(initialOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
         ) { backStackEntry ->
             val txId = backStackEntry.arguments?.getLong("transactionId") ?: return@composable
             DetailScreen(

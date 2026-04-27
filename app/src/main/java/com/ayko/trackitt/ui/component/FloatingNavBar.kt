@@ -85,6 +85,7 @@ private fun NavButton(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(BtnSize)
+            .scalePressEffect()
             .clip(BtnShape)
             .background(bg)
             .clickable { onClick() },

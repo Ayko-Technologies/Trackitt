@@ -78,6 +78,7 @@ fun CalculatorPad(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)
+                    .scalePressEffect()
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .clickable { onBackspace() },
@@ -101,6 +102,7 @@ fun CalculatorPad(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(46.dp)
+                .scalePressEffect()
                 .clip(RoundedCornerShape(12.dp))
                 .background(
                     if (saveEnabled) MaterialTheme.colorScheme.primary
@@ -130,6 +132,7 @@ private fun CalcKey(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .height(48.dp)
+            .scalePressEffect()
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (accent) MaterialTheme.colorScheme.secondaryContainer

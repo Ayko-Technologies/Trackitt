@@ -109,6 +109,7 @@ fun CategoryBottomSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .scalePressEffect()
                         .clickable { onTransactionTap(tx.id) }
                         .padding(horizontal = 24.dp, vertical = 12.dp),
                 ) {

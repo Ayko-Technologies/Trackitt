@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ayko.trackitt.domain.model.Transaction
+import com.ayko.trackitt.ui.component.scalePressEffect
 import com.ayko.trackitt.ui.theme.FrauncesFamily
 import com.ayko.trackitt.ui.theme.SatoshiFamily
 import java.text.SimpleDateFormat
@@ -243,6 +244,7 @@ private fun SearchResultRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .scalePressEffect()
             .clickable { onClick() }
             .padding(horizontal = 20.dp, vertical = 12.dp),
     ) {

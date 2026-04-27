@@ -64,6 +64,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ayko.trackitt.data.backup.DriveBackupManager
 import com.ayko.trackitt.data.local.TrackittDatabase
 import com.ayko.trackitt.data.local.entity.CustomCategoryEntity
+import com.ayko.trackitt.ui.component.scalePressEffect
 import com.ayko.trackitt.ui.theme.SatoshiFamily
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -543,7 +544,7 @@ private fun SettingsRow(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+                .then(if (onClick != null) Modifier.scalePressEffect().clickable { onClick() } else Modifier)
                 .padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
             if (leading != null) {
