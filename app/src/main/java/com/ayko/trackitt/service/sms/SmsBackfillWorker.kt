@@ -25,7 +25,11 @@ class SmsBackfillWorker(
         if (prefs.getBoolean("backfill_completed", false)) return Result.success()
 
         val days = inputData.getInt(KEY_LOOKBACK_DAYS, prefs.getInt("backfill_days", DEFAULT_DAYS))
-        val cutoff = System.currentTimeMillis() - (days.toLong() * 24 * 60 * 60 * 1000)
+        val cutoff = java.time.LocalDate.now()
+            .minusDays(days.toLong() - 1)
+            .atStartOfDay(java.time.ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
 
         val senders = container.smsSenders
         val placeholders = senders.joinToString(",") { "?" }
@@ -75,6 +79,6 @@ class SmsBackfillWorker(
 
     companion object {
         const val KEY_LOOKBACK_DAYS = "lookback_days"
-        const val DEFAULT_DAYS = 90
+        const val DEFAULT_DAYS = 30
     }
 }

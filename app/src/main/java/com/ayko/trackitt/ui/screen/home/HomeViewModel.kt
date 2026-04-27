@@ -26,6 +26,11 @@ enum class Period { DAY, MONTH }
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = (application as TrackittApplication).container.repository
+    private val displayPrefs = application.getSharedPreferences("trackitt_display", 0)
+    private fun includeFees() = displayPrefs.getBoolean("show_fees", false)
+
+    private val _refreshTrigger = MutableStateFlow(0)
+    fun refresh() { _refreshTrigger.value++ }
 
     private val _selectedPeriod = MutableStateFlow(Period.MONTH)
     val selectedPeriod: StateFlow<Period> = _selectedPeriod
@@ -55,9 +60,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val total: Flow<Double> = combine(
-        _selectedPeriod, _selectedYear, _selectedMonth, _selectedDay
-    ) { period, year, month, day ->
-        arrayOf(period, year, month, day)
+        _selectedPeriod, _selectedYear, _selectedMonth, _selectedDay, _refreshTrigger
+    ) { args -> args
     }.flatMapLatest { args ->
         val period = args[0] as Period
         val year = args[1] as Int
@@ -69,16 +73,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 val zone = ZoneId.systemDefault()
                 val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
                 val end = date.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
-                repository.getDayTotal(start, end)
+                repository.getDayTotal(start, end, includeFees())
             }
-            Period.MONTH -> repository.getMonthTotal(year, month)
+            Period.MONTH -> repository.getMonthTotal(year, month, includeFees())
         }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val chartCategories: Flow<List<ChartCategory>> =
-        combine(_selectedPeriod, _selectedYear, _selectedMonth, _selectedDay) { period, year, month, day ->
-            arrayOf(period, year, month, day)
+        combine(_selectedPeriod, _selectedYear, _selectedMonth, _selectedDay, _refreshTrigger) { args -> args
         }.flatMapLatest { args ->
             val period = args[0] as Period
             val year = args[1] as Int
@@ -90,9 +93,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     val zone = ZoneId.systemDefault()
                     val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
                     val end = date.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
-                    repository.getCategoryTotalsForRange(start, end)
+                    repository.getCategoryTotalsForRange(start, end, includeFees())
                 }
-                Period.MONTH -> repository.getCategoryTotals(year, month)
+                Period.MONTH -> repository.getCategoryTotals(year, month, includeFees())
             }
             totalsFlow.map { totals ->
                 totals.mapNotNull { ct ->

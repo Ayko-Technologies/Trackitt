@@ -83,6 +83,7 @@ fun HomeScreen(
     val categoryTransactions by viewModel.getCategoryTransactions(selectedCategoryForSheet?.name).collectAsStateWithLifecycle(initialValue = emptyList())
 
     LaunchedEffect(Unit) {
+        viewModel.refresh()
         val receiveGranted = ContextCompat.checkSelfPermission(
             context, Manifest.permission.RECEIVE_SMS
         ) == PackageManager.PERMISSION_GRANTED
@@ -110,6 +111,8 @@ fun HomeScreen(
     val periodLabel = if (selectedPeriod == Period.DAY) dayLabel.uppercase() else monthName.uppercase()
     val totalFormatted = if (total >= 1000) {
         String.format(Locale.US, "₵%.1fk", total / 1000)
+    } else if (total % 1.0 != 0.0) {
+        String.format(Locale.US, "₵%.2f", total)
     } else {
         String.format(Locale.US, "₵%.0f", total)
     }
@@ -275,6 +278,7 @@ fun HomeScreen(
                     onTransactionTap(id)
                 },
                 onDismiss = { selectedCategoryForSheet = null },
+                includeFees = remember { context.getSharedPreferences("trackitt_display", 0).getBoolean("show_fees", false) },
             )
         }
     }
