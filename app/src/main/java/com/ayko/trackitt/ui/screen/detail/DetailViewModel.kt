@@ -34,9 +34,9 @@ class DetailViewModel(
         }
     }
 
-    fun updateNote(note: String?) {
+    fun updateNote(note: String?, merchant: String = "", reference: String? = null) {
         viewModelScope.launch {
-            repository.updateNote(transactionId, note)
+            repository.updateNote(transactionId, note, merchant, reference)
         }
     }
 

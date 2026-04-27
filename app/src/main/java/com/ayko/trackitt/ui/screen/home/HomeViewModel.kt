@@ -10,9 +10,12 @@ import com.ayko.trackitt.TrackittApplication
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.service.sms.SmsBackfillWorker
 import com.ayko.trackitt.ui.component.ChartCategory
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -28,6 +31,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = (application as TrackittApplication).container.repository
     private val displayPrefs = application.getSharedPreferences("trackitt_display", 0)
     private fun includeFees() = displayPrefs.getBoolean("show_fees", false)
+
+    init {
+        val container = (application as TrackittApplication).container
+        viewModelScope.launch {
+            repository.retryPendingClassifications()
+        }
+        viewModelScope.launch {
+            container.networkMonitor.isConnected.collectLatest { connected ->
+                if (connected) {
+                    repository.retryPendingClassifications()
+                }
+            }
+        }
+    }
 
     private val _refreshTrigger = MutableStateFlow(0)
     fun refresh() { _refreshTrigger.value++ }

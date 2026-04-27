@@ -1,7 +1,11 @@
 package com.ayko.trackitt.ui.component
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.background
@@ -26,8 +30,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -39,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.ui.theme.FrauncesFamily
+import com.ayko.trackitt.ui.theme.SatoshiFamily
 import com.ayko.trackitt.ui.theme.OnSurface
 import com.ayko.trackitt.ui.theme.Primary
 import com.ayko.trackitt.ui.theme.Secondary
@@ -107,6 +114,9 @@ fun MonthChart(
                 }
 
                 if (empty) {
+                    val breathe = rememberInfiniteTransition(label = "breathe")
+                    val ghostHeights = listOf(0.82f, 0.60f, 0.46f, 0.26f)
+
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
@@ -114,27 +124,58 @@ fun MonthChart(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.Bottom,
                     ) {
-                        listOf(0.82f, 0.60f, 0.46f, 0.26f).forEach { h ->
+                        ghostHeights.forEachIndexed { i, h ->
+                            val pulse by breathe.animateFloat(
+                                initialValue = h,
+                                targetValue = h - 0.06f,
+                                animationSpec = infiniteRepeatable(
+                                    animation = tween(1800 + i * 200, easing = FastOutSlowInEasing),
+                                    repeatMode = RepeatMode.Reverse,
+                                ),
+                                label = "ghost$i",
+                            )
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .fillMaxHeight(h)
+                                    .fillMaxHeight(pulse)
                                     .clip(RoundedCornerShape(24.dp))
                                     .background(Secondary),
                             )
                         }
                     }
+
+                    val bobY by breathe.animateFloat(
+                        initialValue = 0f,
+                        targetValue = -8f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1200, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse,
+                        ),
+                        label = "bob",
+                    )
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.fillMaxSize(),
                     ) {
-                        Text(
-                            text = "Your transactions will show up here",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            letterSpacing = (-0.1).sp,
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.graphicsLayer { translationY = bobY },
+                        ) {
+                            Text(
+                                text = "Your transactions will show up here",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                letterSpacing = (-0.1).sp,
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                text = "Add one with +",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                fontFamily = SatoshiFamily,
+                            )
+                        }
                     }
                 } else {
                     Row(

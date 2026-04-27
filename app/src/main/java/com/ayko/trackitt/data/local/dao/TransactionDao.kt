@@ -134,4 +134,10 @@ interface TransactionDao {
 
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun delete(id: Long)
+
+    @Query("SELECT * FROM transactions WHERE needsClassification = 1")
+    suspend fun getPendingClassification(): List<TransactionEntity>
+
+    @Query("UPDATE transactions SET needsClassification = :needs WHERE id = :id")
+    suspend fun updateNeedsClassification(id: Long, needs: Boolean)
 }

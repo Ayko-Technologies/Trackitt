@@ -308,7 +308,7 @@ fun DetailScreen(
                 OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
             },
             confirmButton = {
-                Button(onClick = { viewModel.updateNote(text.ifBlank { null }); showEditNote = false }) { Text("Save") }
+                Button(onClick = { viewModel.updateNote(text.ifBlank { null }, tx.merchant, tx.reference); showEditNote = false }) { Text("Save") }
             },
             dismissButton = {
                 TextButton(onClick = { showEditNote = false }) { Text("Cancel") }

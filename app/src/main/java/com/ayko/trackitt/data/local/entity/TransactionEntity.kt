@@ -23,4 +23,5 @@ data class TransactionEntity(
     val date: Long,
     val isFromSms: Boolean,
     val rawSms: String?,
+    val needsClassification: Boolean = false,
 )
