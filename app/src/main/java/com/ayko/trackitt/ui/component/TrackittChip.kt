@@ -41,6 +41,7 @@ fun TrackittChip(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
             .height(36.dp)
+            .scalePressEffect()
             .clip(shape)
             .then(borderMod)
             .background(bg, shape)

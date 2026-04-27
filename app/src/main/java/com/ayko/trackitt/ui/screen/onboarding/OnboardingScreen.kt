@@ -83,6 +83,7 @@ import com.ayko.trackitt.data.local.TrackittDatabase
 import com.ayko.trackitt.data.local.entity.BudgetEntity
 import com.ayko.trackitt.service.sms.SmsBackfillWorker
 import com.ayko.trackitt.ui.component.CookieIcon
+import com.ayko.trackitt.ui.component.scalePressEffect
 import com.ayko.trackitt.ui.theme.CatFoodBg
 import com.ayko.trackitt.ui.theme.CatFoodFg
 import com.ayko.trackitt.ui.theme.CatGroceriesFg
@@ -246,6 +247,7 @@ private fun PrimaryCta(text: String, icon: ImageVector? = Icons.Filled.ArrowForw
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
+            .scalePressEffect()
             .clip(RoundedCornerShape(28.dp))
             .background(OnSurface)
             .clickable { onClick() },
@@ -265,6 +267,7 @@ private fun GhostCta(text: String, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
+            .scalePressEffect()
             .clip(RoundedCornerShape(24.dp))
             .clickable { onClick() },
     ) {

@@ -1,5 +1,9 @@
 package com.ayko.trackitt.ui.component
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -141,12 +145,22 @@ fun MonthChart(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.Bottom,
                     ) {
-                        categories.forEach { cat ->
+                        categories.forEachIndexed { index, cat ->
                             val fraction = (cat.total / maxVal).toFloat().coerceIn(0f, 1f)
                             val isLead = cat == categories.first()
                             val barBg = if (isLead) cat.category.fgColor else cat.category.bgColor
                             val iconColor = if (isLead) Color.White.copy(alpha = 0.7f) else cat.category.fgColor
                             val amountColor = if (isLead) Color.White else OnSurface
+
+                            val animatedFraction by animateFloatAsState(
+                                targetValue = fraction.coerceAtLeast(0.16f),
+                                animationSpec = tween(
+                                    durationMillis = 400,
+                                    delayMillis = index * 60,
+                                    easing = FastOutSlowInEasing,
+                                ),
+                                label = "barHeight$index",
+                            )
 
                             Column(
                                 modifier = Modifier
@@ -158,7 +172,8 @@ fun MonthChart(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .fillMaxHeight(fraction.coerceAtLeast(0.16f))
+                                        .fillMaxHeight(animatedFraction)
+                                        .scalePressEffect()
                                         .clip(RoundedCornerShape(24.dp))
                                         .background(barBg)
                                         .clickable { onCategoryTap(cat.category) }
