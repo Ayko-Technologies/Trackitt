@@ -10,8 +10,10 @@ import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.service.categorization.ClassificationResult
 import com.ayko.trackitt.service.categorization.SmartCategorizationService
 import com.ayko.trackitt.service.sms.ParsedTransaction
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -144,15 +146,17 @@ class TransactionRepository(
     suspend fun updateNote(id: Long, note: String?, merchant: String = "", reference: String? = null) {
         transactionDao.updateNote(id, note)
         if (!note.isNullOrBlank()) {
-            val result = smartCategorization.classify(merchant, reference, note)
-            when (result) {
-                is ClassificationResult.Classified -> {
-                    if (result.category != TransactionCategory.OTHER) {
-                        transactionDao.updateCategory(id, result.category.name)
+            withContext(NonCancellable) {
+                val result = smartCategorization.classify(merchant, reference, note)
+                when (result) {
+                    is ClassificationResult.Classified -> {
+                        if (result.category != TransactionCategory.OTHER) {
+                            transactionDao.updateCategory(id, result.category.name)
+                        }
+                        transactionDao.updateNeedsClassification(id, false)
                     }
-                    transactionDao.updateNeedsClassification(id, false)
+                    is ClassificationResult.Unavailable -> {}
                 }
-                is ClassificationResult.Unavailable -> {}
             }
         }
     }
