@@ -276,6 +276,35 @@ fun SettingsScreen(
                 }
             }
 
+            // ── AI Categorization ──
+            item { SectionHeader("AI Categorization") }
+
+            item {
+                val aiPrefs = remember { context.getSharedPreferences("trackitt", 0) }
+                var useOnDeviceAi by remember { mutableStateOf(aiPrefs.getBoolean("use_on_device_ai", true)) }
+
+                SettingsGroup {
+                    SettingsRow(
+                        icon = Icons.Filled.Psychology,
+                        label = "Use on-device AI",
+                        subtitle = "Classify transactions with Gemini Nano when available",
+                        trailing = {
+                            androidx.compose.material3.Switch(
+                                checked = useOnDeviceAi,
+                                onCheckedChange = {
+                                    useOnDeviceAi = it
+                                    aiPrefs.edit().putBoolean("use_on_device_ai", it).apply()
+                                },
+                                colors = androidx.compose.material3.SwitchDefaults.colors(
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        },
+                        showDivider = false,
+                    )
+                }
+            }
+
             // ── Data & Backup ──
             item { SectionHeader("Data & Backup") }
 

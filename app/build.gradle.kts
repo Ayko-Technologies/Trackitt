@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    // Uncomment after placing google-services.json in app/
+    // alias(libs.plugins.google.services)
 }
 
 android {
@@ -91,6 +93,13 @@ dependencies {
     implementation(libs.google.play.services.auth)
     implementation(libs.google.api.client.android)
     implementation(libs.google.api.services.drive)
+
+    // ML Kit GenAI (on-device Gemini Nano)
+    implementation(libs.mlkit.genai.prompt)
+
+    // Firebase AI Logic (cloud Gemini Flash-Lite)
+    implementation(platform(libs.firebase.bom))
+    implementation("com.google.firebase:firebase-ai")
 
     // Test
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

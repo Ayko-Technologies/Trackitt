@@ -7,7 +7,8 @@ import com.ayko.trackitt.data.local.entity.MerchantMappingEntity
 import com.ayko.trackitt.data.local.entity.TransactionEntity
 import com.ayko.trackitt.domain.model.Transaction
 import com.ayko.trackitt.domain.model.TransactionCategory
-import com.ayko.trackitt.service.categorization.CategorizationService
+import com.ayko.trackitt.service.categorization.ClassificationResult
+import com.ayko.trackitt.service.categorization.SmartCategorizationService
 import com.ayko.trackitt.service.sms.ParsedTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -18,7 +19,7 @@ import java.time.ZoneId
 class TransactionRepository(
     private val transactionDao: TransactionDao,
     private val merchantMappingDao: MerchantMappingDao,
-    private val categorizationService: CategorizationService,
+    private val smartCategorization: SmartCategorizationService,
 ) {
 
     fun getByMonth(year: Int, month: Int): Flow<List<Transaction>> {
@@ -84,22 +85,26 @@ class TransactionRepository(
     }
 
     suspend fun insertFromSms(parsed: ParsedTransaction): Boolean {
-        val category = if (parsed.isIncome) TransactionCategory.INCOME
-            else categorizationService.categorize(parsed.merchant, parsed.reference)
-        val entity = TransactionEntity(
-            amount = parsed.amount,
-            fee = parsed.fee,
-            isIncome = parsed.isIncome,
-            category = category.name,
-            merchant = parsed.merchant,
-            reference = parsed.reference,
-            transactionId = parsed.transactionId,
-            source = parsed.source,
-            note = null,
-            date = parsed.date,
-            isFromSms = true,
-            rawSms = parsed.rawSms,
-        )
+        if (parsed.isIncome) {
+            val entity = parsed.toEntity(TransactionCategory.INCOME, needsClassification = false)
+            return transactionDao.insert(entity) != -1L
+        }
+
+        val result = smartCategorization.classify(parsed.merchant, parsed.reference, null)
+        val category: TransactionCategory
+        val needsClassification: Boolean
+        when (result) {
+            is ClassificationResult.Classified -> {
+                category = result.category
+                needsClassification = false
+            }
+            is ClassificationResult.Unavailable -> {
+                category = TransactionCategory.OTHER
+                needsClassification = true
+            }
+        }
+
+        val entity = parsed.toEntity(category, needsClassification)
         return transactionDao.insert(entity) != -1L
     }
 
@@ -123,6 +128,7 @@ class TransactionRepository(
 
     suspend fun updateCategory(id: Long, category: TransactionCategory, merchant: String) {
         transactionDao.updateCategory(id, category.name)
+        transactionDao.updateNeedsClassification(id, false)
         merchantMappingDao.upsert(
             MerchantMappingEntity(
                 merchant = merchant.lowercase().trim(),
@@ -135,12 +141,18 @@ class TransactionRepository(
         transactionDao.updateMerchant(id, merchant)
     }
 
-    suspend fun updateNote(id: Long, note: String?) {
+    suspend fun updateNote(id: Long, note: String?, merchant: String = "", reference: String? = null) {
         transactionDao.updateNote(id, note)
         if (!note.isNullOrBlank()) {
-            val suggested = categorizationService.categorize("", note)
-            if (suggested != TransactionCategory.OTHER) {
-                transactionDao.updateCategory(id, suggested.name)
+            val result = smartCategorization.classify(merchant, reference, note)
+            when (result) {
+                is ClassificationResult.Classified -> {
+                    if (result.category != TransactionCategory.OTHER) {
+                        transactionDao.updateCategory(id, result.category.name)
+                    }
+                    transactionDao.updateNeedsClassification(id, false)
+                }
+                is ClassificationResult.Unavailable -> {}
             }
         }
     }
@@ -153,12 +165,44 @@ class TransactionRepository(
         transactionDao.delete(id)
     }
 
+    suspend fun retryPendingClassifications() {
+        val pending = transactionDao.getPendingClassification()
+        for (entity in pending) {
+            val result = smartCategorization.classify(entity.merchant, entity.reference, entity.note)
+            if (result is ClassificationResult.Classified) {
+                transactionDao.updateCategory(entity.id, result.category.name)
+                transactionDao.updateNeedsClassification(entity.id, false)
+            }
+        }
+    }
+
     private fun todayRange(): Pair<Long, Long> {
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now()
         val start = today.atStartOfDay(zone).toInstant().toEpochMilli()
         val end = today.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
         return start to end
+    }
+
+    private fun ParsedTransaction.toEntity(
+        category: TransactionCategory,
+        needsClassification: Boolean,
+    ): TransactionEntity {
+        return TransactionEntity(
+            amount = amount,
+            fee = fee,
+            isIncome = isIncome,
+            category = category.name,
+            merchant = merchant,
+            reference = reference,
+            transactionId = transactionId,
+            source = source,
+            note = null,
+            date = date,
+            isFromSms = true,
+            rawSms = rawSms,
+            needsClassification = needsClassification,
+        )
     }
 
     private fun TransactionEntity.toDomain(): Transaction {

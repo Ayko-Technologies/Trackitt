@@ -3,20 +3,34 @@ package com.ayko.trackitt.service.categorization
 import com.ayko.trackitt.domain.model.TransactionCategory
 
 interface CategorizationService {
-    fun categorize(merchant: String, reference: String? = null): TransactionCategory
+    suspend fun categorize(
+        merchant: String,
+        reference: String? = null,
+        note: String? = null,
+    ): TransactionCategory
 }
 
 class DictionaryCategorizationService(
     private val userLookup: suspend (String) -> TransactionCategory?,
 ) : CategorizationService {
 
-    override fun categorize(merchant: String, reference: String?): TransactionCategory {
+    override suspend fun categorize(
+        merchant: String,
+        reference: String?,
+        note: String?,
+    ): TransactionCategory {
         val normalized = merchant.lowercase().trim()
 
-        val userMapping = kotlinx.coroutines.runBlocking { userLookup(normalized) }
+        val userMapping = userLookup(normalized)
         if (userMapping != null) return userMapping
 
-        // Check reference field first — often tells you what the payment was for
+        if (note != null) {
+            val normalizedNote = note.lowercase().trim()
+            for ((keyword, category) in REFERENCE_DICTIONARY) {
+                if (normalizedNote.contains(keyword)) return category
+            }
+        }
+
         if (reference != null) {
             val normalizedRef = reference.lowercase().trim()
             for ((keyword, category) in REFERENCE_DICTIONARY) {
@@ -24,7 +38,6 @@ class DictionaryCategorizationService(
             }
         }
 
-        // Then check merchant name
         for ((keyword, category) in MERCHANT_DICTIONARY) {
             if (normalized.contains(keyword)) return category
         }
