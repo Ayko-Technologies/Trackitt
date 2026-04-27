@@ -97,9 +97,9 @@ dependencies {
     // ML Kit GenAI (on-device Gemini Nano)
     implementation(libs.mlkit.genai.prompt)
 
-    // Firebase AI Logic (cloud Gemini Flash-Lite)
-    implementation(platform(libs.firebase.bom))
-    implementation("com.google.firebase:firebase-ai")
+    // Firebase AI Logic (cloud Gemini Flash-Lite) — uncomment after placing google-services.json
+    // implementation(platform(libs.firebase.bom))
+    // implementation("com.google.firebase:firebase-ai")
 
     // Test
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
