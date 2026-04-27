@@ -44,9 +44,10 @@ fun CategoryBottomSheet(
     transactions: List<Transaction>,
     onTransactionTap: (Long) -> Unit,
     onDismiss: () -> Unit,
+    includeFees: Boolean = false,
 ) {
     val sheetState = rememberModalBottomSheetState()
-    val total = transactions.sumOf { it.amount }
+    val total = transactions.sumOf { it.amount + if (includeFees) it.fee else 0.0 }
     val count = transactions.size
 
     ModalBottomSheet(
@@ -139,8 +140,9 @@ fun CategoryBottomSheet(
                             fontFamily = SatoshiFamily,
                         )
                     }
+                    val displayAmount = tx.amount + if (includeFees) tx.fee else 0.0
                     Text(
-                        "${if (tx.isIncome) "+" else "−"}₵${String.format(Locale.US, "%.2f", tx.amount)}",
+                        "${if (tx.isIncome) "+" else "−"}₵${String.format(Locale.US, "%.2f", displayAmount)}",
                         fontSize = 15.sp,
                         fontFamily = FrauncesFamily,
                     )

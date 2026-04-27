@@ -1,6 +1,7 @@
 package com.ayko.trackitt.ui.navigation
 
 sealed class NavRoute(val route: String) {
+    data object Onboarding : NavRoute("onboarding")
     data object Home : NavRoute("home")
     data object Add : NavRoute("add")
     data object Settings : NavRoute("settings")

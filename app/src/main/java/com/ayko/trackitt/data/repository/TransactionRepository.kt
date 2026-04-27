@@ -32,10 +32,11 @@ class TransactionRepository(
         return transactionDao.getByDateRange(start, end).map { list -> list.map { it.toDomain() } }
     }
 
-    fun getCategoryTotals(year: Int, month: Int): Flow<List<CategoryTotal>> {
+    fun getCategoryTotals(year: Int, month: Int, includeFees: Boolean = false): Flow<List<CategoryTotal>> {
         val y = year.toString()
         val m = month.toString().padStart(2, '0')
-        return transactionDao.getCategoryTotals(y, m)
+        return if (includeFees) transactionDao.getCategoryTotalsWithFees(y, m)
+        else transactionDao.getCategoryTotals(y, m)
     }
 
     fun getTodayTotal(): Flow<Double> {
@@ -43,18 +44,21 @@ class TransactionRepository(
         return transactionDao.getTotalForRange(start, end)
     }
 
-    fun getCategoryTotalsForRange(startOfDay: Long, endOfDay: Long): Flow<List<CategoryTotal>> {
-        return transactionDao.getCategoryTotalsForRange(startOfDay, endOfDay)
+    fun getCategoryTotalsForRange(startOfDay: Long, endOfDay: Long, includeFees: Boolean = false): Flow<List<CategoryTotal>> {
+        return if (includeFees) transactionDao.getCategoryTotalsForRangeWithFees(startOfDay, endOfDay)
+        else transactionDao.getCategoryTotalsForRange(startOfDay, endOfDay)
     }
 
-    fun getDayTotal(startOfDay: Long, endOfDay: Long): Flow<Double> {
-        return transactionDao.getTotalForRange(startOfDay, endOfDay)
+    fun getDayTotal(startOfDay: Long, endOfDay: Long, includeFees: Boolean = false): Flow<Double> {
+        return if (includeFees) transactionDao.getTotalForRangeWithFees(startOfDay, endOfDay)
+        else transactionDao.getTotalForRange(startOfDay, endOfDay)
     }
 
-    fun getMonthTotal(year: Int, month: Int): Flow<Double> {
+    fun getMonthTotal(year: Int, month: Int, includeFees: Boolean = false): Flow<Double> {
         val y = year.toString()
         val m = month.toString().padStart(2, '0')
-        return transactionDao.getMonthTotal(y, m)
+        return if (includeFees) transactionDao.getMonthTotalWithFees(y, m)
+        else transactionDao.getMonthTotal(y, m)
     }
 
     fun getByCategory(category: String, year: Int, month: Int): Flow<List<Transaction>> {
@@ -133,6 +137,12 @@ class TransactionRepository(
 
     suspend fun updateNote(id: Long, note: String?) {
         transactionDao.updateNote(id, note)
+        if (!note.isNullOrBlank()) {
+            val suggested = categorizationService.categorize("", note)
+            if (suggested != TransactionCategory.OTHER) {
+                transactionDao.updateCategory(id, suggested.name)
+            }
+        }
     }
 
     suspend fun updateAmount(id: Long, amount: Double) {

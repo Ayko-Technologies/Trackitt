@@ -43,12 +43,29 @@ interface TransactionDao {
     fun getCategoryTotals(year: String, month: String): Flow<List<CategoryTotal>>
 
     @Query("""
+        SELECT category, SUM(amount + fee) as total FROM transactions
+        WHERE strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
+        AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
+        GROUP BY category
+        ORDER BY total DESC
+    """)
+    fun getCategoryTotalsWithFees(year: String, month: String): Flow<List<CategoryTotal>>
+
+    @Query("""
         SELECT category, SUM(amount) as total FROM transactions
         WHERE date >= :startOfDay AND date < :endOfDay
         GROUP BY category
         ORDER BY total DESC
     """)
     fun getCategoryTotalsForRange(startOfDay: Long, endOfDay: Long): Flow<List<CategoryTotal>>
+
+    @Query("""
+        SELECT category, SUM(amount + fee) as total FROM transactions
+        WHERE date >= :startOfDay AND date < :endOfDay
+        GROUP BY category
+        ORDER BY total DESC
+    """)
+    fun getCategoryTotalsForRangeWithFees(startOfDay: Long, endOfDay: Long): Flow<List<CategoryTotal>>
 
     @Query("""
         SELECT COALESCE(SUM(amount), 0.0) FROM transactions
@@ -58,12 +75,27 @@ interface TransactionDao {
     fun getTotalForRange(startOfDay: Long, endOfDay: Long): Flow<Double>
 
     @Query("""
+        SELECT COALESCE(SUM(amount + fee), 0.0) FROM transactions
+        WHERE isIncome = 0
+        AND date >= :startOfDay AND date < :endOfDay
+    """)
+    fun getTotalForRangeWithFees(startOfDay: Long, endOfDay: Long): Flow<Double>
+
+    @Query("""
         SELECT COALESCE(SUM(amount), 0.0) FROM transactions
         WHERE isIncome = 0
         AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
         AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
     """)
     fun getMonthTotal(year: String, month: String): Flow<Double>
+
+    @Query("""
+        SELECT COALESCE(SUM(amount + fee), 0.0) FROM transactions
+        WHERE isIncome = 0
+        AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
+        AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
+    """)
+    fun getMonthTotalWithFees(year: String, month: String): Flow<Double>
 
     @Query("SELECT * FROM transactions WHERE merchant LIKE '%' || :query || '%' ORDER BY date DESC")
     fun searchByMerchant(query: String): Flow<List<TransactionEntity>>

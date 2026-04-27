@@ -1,6 +1,8 @@
 package com.ayko.trackitt.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -11,8 +13,8 @@ import com.ayko.trackitt.ui.screen.add.AddScreen
 import com.ayko.trackitt.ui.screen.budget.BudgetScreen
 import com.ayko.trackitt.ui.screen.detail.DetailScreen
 import com.ayko.trackitt.ui.screen.home.HomeScreen
+import com.ayko.trackitt.ui.screen.onboarding.OnboardingScreen
 import com.ayko.trackitt.ui.screen.search.SearchScreen
-import com.ayko.trackitt.ui.screen.settings.MerchantDictionaryScreen
 import com.ayko.trackitt.ui.screen.settings.SettingsScreen
 import com.ayko.trackitt.ui.screen.settings.SmsSourcesScreen
 
@@ -20,10 +22,23 @@ import com.ayko.trackitt.ui.screen.settings.SmsSourcesScreen
 fun TrackittNavGraph(
     navController: NavHostController = rememberNavController(),
 ) {
+    val context = LocalContext.current
+    val onboardingDone = remember {
+        context.getSharedPreferences("trackitt", 0).getBoolean("onboarding_completed", false)
+    }
+    val startDestination = if (onboardingDone) NavRoute.Home.route else NavRoute.Onboarding.route
+
     NavHost(
         navController = navController,
-        startDestination = NavRoute.Home.route,
+        startDestination = startDestination,
     ) {
+        composable(NavRoute.Onboarding.route) {
+            OnboardingScreen(onComplete = {
+                navController.navigate(NavRoute.Home.route) {
+                    popUpTo(NavRoute.Onboarding.route) { inclusive = true }
+                }
+            })
+        }
         composable(NavRoute.Home.route) {
             HomeScreen(
                 onAddTap = { navController.navigate(NavRoute.Add.route) },
@@ -67,12 +82,6 @@ fun TrackittNavGraph(
 
         composable(NavRoute.SmsSources.route) {
             SmsSourcesScreen(
-                onBack = { navController.popBackStack() },
-            )
-        }
-
-        composable(NavRoute.MerchantDictionary.route) {
-            MerchantDictionaryScreen(
                 onBack = { navController.popBackStack() },
             )
         }

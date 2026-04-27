@@ -122,7 +122,7 @@ fun SettingsScreen(
 
     val startRescan: () -> Unit = {
         val prefs = context.getSharedPreferences("trackitt", 0)
-        val days = prefs.getInt("backfill_days", 90)
+        val days = prefs.getInt("backfill_days", 30)
         prefs.edit().putBoolean("backfill_completed", false).apply()
         val request = androidx.work.OneTimeWorkRequestBuilder<
             com.ayko.trackitt.service.sms.SmsBackfillWorker>()
@@ -250,6 +250,26 @@ fun SettingsScreen(
                                 ),
                             )
                         },
+                        showDivider = true,
+                    )
+
+                    var showFees by remember { mutableStateOf(displayPrefs.getBoolean("show_fees", false)) }
+                    SettingsRow(
+                        icon = Icons.Filled.ArrowDownward,
+                        label = "Include fees",
+                        subtitle = "Add MoMo fees to expense totals",
+                        trailing = {
+                            androidx.compose.material3.Switch(
+                                checked = showFees,
+                                onCheckedChange = {
+                                    showFees = it
+                                    displayPrefs.edit().putBoolean("show_fees", it).apply()
+                                },
+                                colors = androidx.compose.material3.SwitchDefaults.colors(
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        },
                         showDivider = false,
                     )
                 }
@@ -291,10 +311,16 @@ fun SettingsScreen(
 
             item {
                 SettingsGroup {
+                    val smsPrefs = remember { context.getSharedPreferences("sms_sources", 0) }
+                    val activeSourceNames = listOf(
+                        "MobileMoney" to "MTN MoMo",
+                        "T-CASH" to "Telecel Cash",
+                        "ECOBANK" to "Ecobank",
+                    ).filter { smsPrefs.getBoolean("source_${it.first}", true) }.map { it.second }
                     SettingsRow(
                         icon = Icons.Filled.Sms,
                         label = "SMS sources",
-                        subtitle = "MTN MoMo",
+                        subtitle = if (activeSourceNames.isEmpty()) "None active" else activeSourceNames.joinToString(", "),
                         showChevron = true,
                         showDivider = true,
                         onClick = onNavigateToSmsSources,
@@ -303,9 +329,8 @@ fun SettingsScreen(
                         icon = Icons.Filled.Refresh,
                         label = "Re-scan SMS",
                         subtitle = run {
-                            val days = context.getSharedPreferences("trackitt", 0).getInt("backfill_days", 90)
-                            if (days == 1) "Re-import today's MoMo messages"
-                            else "Re-import MoMo messages from the last $days days"
+                            val days = context.getSharedPreferences("trackitt", 0).getInt("backfill_days", 30)
+                            if (days == 1) "Re-import today's SMS" else "Re-import SMS from the last $days days"
                         },
                         showDivider = true,
                         onClick = {
@@ -326,7 +351,7 @@ fun SettingsScreen(
                         trailing = {
                             var showPicker by remember { mutableStateOf(false) }
                             val prefs = remember { context.getSharedPreferences("trackitt", 0) }
-                            var currentDays by remember { mutableIntStateOf(prefs.getInt("backfill_days", 90)) }
+                            var currentDays by remember { mutableIntStateOf(prefs.getInt("backfill_days", 30)) }
 
                             Text(
                                 if (currentDays == 1) "1 day" else "$currentDays days",
