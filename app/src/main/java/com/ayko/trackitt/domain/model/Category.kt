@@ -31,7 +31,7 @@ enum class TransactionCategory(
     BILLS("Bills", Icons.AutoMirrored.Filled.ReceiptLong, CatBillsBg, CatBillsFg, 280f),
     SHOPPING("Shopping", Icons.Filled.ShoppingBag, CatShoppingBg, CatShoppingFg, 340f),
     TRANSFER("Transfer", Icons.Filled.SwapHoriz, CatTransferBg, CatTransferFg, 40f),
-    HOUSE("House", Icons.Filled.Home, CatHouseBg, CatHouseFg, 160f),
+    HOUSE("House", Icons.Filled.Home, CatHouseBg, CatHouseFg, 30f),
     BEAUTY("Beauty", Icons.Filled.Spa, CatBeautyBg, CatBeautyFg, 320f),
     CHURCH("Church", Icons.Filled.Church, CatChurchBg, CatChurchFg, 270f),
     HEALTH("Health", Icons.Filled.LocalHospital, CatHealthBg, CatHealthFg, 0f),
