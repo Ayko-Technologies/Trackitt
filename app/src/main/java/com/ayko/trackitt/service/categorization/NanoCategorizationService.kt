@@ -15,10 +15,22 @@ class NanoCategorizationService {
         return try {
             val m = Generation.getClient()
             val status = m.checkStatus()
+            Log.d(TAG, "Nano status: $status (AVAILABLE=${FeatureStatus.AVAILABLE}, DOWNLOADABLE=${FeatureStatus.DOWNLOADABLE}, DOWNLOADING=${FeatureStatus.DOWNLOADING}, UNAVAILABLE=${FeatureStatus.UNAVAILABLE})")
             if (status == FeatureStatus.AVAILABLE) {
                 model = m
                 true
             } else {
+                if (status == FeatureStatus.DOWNLOADABLE) {
+                    Log.d(TAG, "Nano model downloadable but not yet downloaded — triggering download")
+                    m.download().collect { dlStatus ->
+                        Log.d(TAG, "Nano download status: $dlStatus")
+                    }
+                    val retryStatus = m.checkStatus()
+                    if (retryStatus == FeatureStatus.AVAILABLE) {
+                        model = m
+                        return true
+                    }
+                }
                 m.close()
                 false
             }
