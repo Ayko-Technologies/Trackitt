@@ -39,7 +39,6 @@ data class MonthlyInsightsSnapshot(
 enum class InsightSource {
     RULES,
     ON_DEVICE_AI,
-    CLOUD_AI,
 }
 
 data class InsightNarrative(

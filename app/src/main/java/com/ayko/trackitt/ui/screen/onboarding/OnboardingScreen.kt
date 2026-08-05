@@ -496,7 +496,7 @@ private fun SmsAccessStep(onBack: () -> Unit, onGranted: () -> Unit, onSkip: () 
         }
 
         Column(modifier = Modifier.padding(horizontal = 28.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            BulletPoint(Icons.Filled.Lock, "Everything happens on your phone, not in the cloud")
+            BulletPoint(Icons.Filled.Lock, "Your records stay here unless you choose your Google Drive backup")
             BulletPoint(Icons.Filled.VisibilityOff, "We skip anything that isn't a transaction")
             BulletPoint(Icons.Filled.Delete, "Turn it off in Settings whenever you like")
         }

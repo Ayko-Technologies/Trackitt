@@ -2,9 +2,15 @@
 
 [![Android CI](https://github.com/Ayko-Technologies/trackitt/actions/workflows/ci.yml/badge.svg)](https://github.com/Ayko-Technologies/trackitt/actions/workflows/ci.yml)
 
-Trackitt is a local-first Android personal-finance tracker for Ghanaian mobile-money users. It reads supported transaction SMS messages on the device, turns them into editable transactions, and helps people understand spending, budgets, and monthly patterns.
+Trackitt is a privacy-first, local-first Android personal-finance tracker for Ghanaian mobile-money users. It reads supported transaction SMS messages on the device, turns them into editable transactions, and helps people understand spending, budgets, and monthly patterns.
 
 Trackitt is early software. Review the source before trusting it with financial information, and keep independent records of any information that matters to you.
+
+## Privacy promise
+
+Trackitt does not send financial records to Ayko, a Trackitt server, analytics provider, advertiser, or data broker. There is no Trackitt account and no Trackitt-operated backend. SMS processing, transactions, categories, budgets, and insights remain in the app's private storage on the device.
+
+The only exception is a manual Google Drive backup that you explicitly start. When you choose it, Trackitt uploads the local database only to the Google Drive App Data area of the Google account you select. It never runs automatically; Android cloud backup and device-to-device data migration are disabled.
 
 ## What it does
 
@@ -14,9 +20,9 @@ Trackitt is early software. Review the source before trusting it with financial 
 - Supports manual transactions, custom categories, search, budgets, and budget alerts.
 - Creates on-device monthly insights and optional on-device AI assistance when Gemini Nano is available.
 - Can protect access with a PIN and device biometrics.
-- Offers optional Google Drive App Data backups and restores.
+- Offers manual, opt-in Google Drive App Data backups for the Google account you choose.
 
-The cloud AI fallback is deliberately disabled until Firebase is configured. Trackitt does not include an analytics SDK or a Trackitt-operated backend.
+Trackitt has no cloud-AI fallback, analytics SDK, or Trackitt-operated backend.
 
 ## Get the APK
 
@@ -26,7 +32,7 @@ Preview releases are debug-signed while production release signing is being set 
 
 ## Privacy and permissions
 
-Trackitt needs SMS access to import and process supported financial transaction messages. The app processes those messages locally. Google Drive access is used only after you choose to connect an account and create or restore an App Data backup.
+Trackitt needs SMS access to import and process supported financial transaction messages. The app processes those messages locally. Google Drive access is used only after you choose a Google account and explicitly create or restore an App Data backup; no records are sent to Ayko.
 
 Read the full [privacy and data-handling notes](docs/PRIVACY.md) before using the app.
 
@@ -54,7 +60,7 @@ Open the project root in Android Studio to run it on an emulator or device.
 
 ## Contributing
 
-Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), use the supplied issue templates, and do not include real SMS messages, database files, API keys, keystores, or Google service configuration in issues or pull requests.
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), use the supplied issue templates, and do not include real SMS messages, database files, Google account details, API keys, or keystores in issues or pull requests.
 
 For security-sensitive reports, follow [SECURITY.md](SECURITY.md) instead of opening a public issue.
 

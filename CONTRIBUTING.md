@@ -6,7 +6,7 @@ Thank you for helping improve Trackitt.
 
 - Search existing issues before opening a new one.
 - Use the bug-report template for reproducible defects and the feature-request template for proposals.
-- Do not include real SMS messages, account numbers, transaction references, database files, Google configuration, API keys, or signing keys in public posts.
+- Do not include real SMS messages, account numbers, transaction references, database files, Google account details, API keys, or signing keys in public posts.
 - Report security-sensitive concerns privately as described in [SECURITY.md](SECURITY.md).
 
 ## Local setup

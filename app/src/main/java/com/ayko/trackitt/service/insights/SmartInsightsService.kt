@@ -8,7 +8,6 @@ class SmartInsightsService(
     private val fallbackComposer: MonthlyInsightsFallbackComposer,
     private val cache: MonthlyInsightsCache,
     private val nano: NanoInsightsService,
-    private val cloud: CloudInsightsService,
     private val useOnDeviceAi: () -> Boolean,
 ) {
 
@@ -47,12 +46,6 @@ class SmartInsightsService(
         } else {
             Log.d(TAG, "On-device AI disabled for insights")
         }
-
-        cloud.generate(snapshot, fallback)?.let {
-            cache.save(snapshot, it)
-            return it
-        }
-        Log.d(TAG, "Cloud insight unavailable for ${snapshot.monthLabel}")
 
         Log.d(TAG, "Falling back to deterministic insights for ${snapshot.monthLabel}")
         return fallback

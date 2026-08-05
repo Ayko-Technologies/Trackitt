@@ -16,4 +16,4 @@ Before publishing a stable release or a Play build:
 4. Configure the release build to use those secrets and verify that updates preserve the signing identity.
 5. Replace the preview-release workflow with a signed release workflow.
 
-Never commit a keystore, `local.properties`, `google-services.json`, database export, or secret to Git.
+Never commit a keystore, `local.properties`, database export, or secret to Git.

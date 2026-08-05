@@ -190,7 +190,6 @@ private fun SourceBadge(
     val label = when {
         loading -> "Refreshing insights…"
         source == InsightSource.ON_DEVICE_AI -> "Generated with on-device AI"
-        source == InsightSource.CLOUD_AI -> "Generated with cloud AI"
         else -> "Structured from your data"
     }
 
