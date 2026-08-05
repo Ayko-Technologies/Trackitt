@@ -19,6 +19,7 @@ import com.ayko.trackitt.ui.screen.add.AddScreen
 import com.ayko.trackitt.ui.screen.budget.BudgetScreen
 import com.ayko.trackitt.ui.screen.detail.DetailScreen
 import com.ayko.trackitt.ui.screen.home.HomeScreen
+import com.ayko.trackitt.ui.screen.insights.InsightsScreen
 import com.ayko.trackitt.ui.screen.onboarding.OnboardingScreen
 import com.ayko.trackitt.ui.screen.search.SearchScreen
 import com.ayko.trackitt.ui.screen.settings.SettingsScreen
@@ -55,6 +56,9 @@ fun TrackittNavGraph(
                 onSettingsTap = { navController.navigate(NavRoute.Settings.route) },
                 onSearchTap = { navController.navigate(NavRoute.Search.route) },
                 onBudgetTap = { navController.navigate(NavRoute.Budget.route) },
+                onInsightsTap = { year, month ->
+                    navController.navigate(NavRoute.Insights.withArgs(year, month))
+                },
                 onTransactionTap = { id ->
                     navController.navigate(NavRoute.Detail.withId(id))
                 },
@@ -110,6 +114,26 @@ fun TrackittNavGraph(
             popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
         ) {
             BudgetScreen(
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            NavRoute.Insights.route,
+            arguments = listOf(
+                navArgument("year") { type = NavType.IntType },
+                navArgument("month") { type = NavType.IntType },
+            ),
+            enterTransition = { slideInHorizontally(initialOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+        ) { backStackEntry ->
+            val year = backStackEntry.arguments?.getInt("year") ?: return@composable
+            val month = backStackEntry.arguments?.getInt("month") ?: return@composable
+            InsightsScreen(
+                year = year,
+                month = month,
                 onBack = { navController.popBackStack() },
             )
         }

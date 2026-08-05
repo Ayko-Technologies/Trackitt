@@ -5,32 +5,33 @@ import java.util.Locale
 
 class MoMoSmsParser {
 
-    fun parse(smsBody: String): ParsedTransaction? {
+    fun parse(smsBody: String, smsTimestamp: Long = System.currentTimeMillis()): ParsedTransaction? {
         val body = smsBody.trim()
         return when {
-            body.startsWith("Payment made for") -> parsePaymentMade(body)
-            body.startsWith("Payment received for") -> parsePaymentReceived(body)
-            body.startsWith("Y'ello. You have Paid") -> parseMerchantYello(body)
-            body.startsWith("Your payment of") -> parseMerchantConfirmation(body)
-            body.startsWith("Cash Out made for") -> parseCashOut(body)
-            body.startsWith("Payment for GHS") && body.contains("Bills.") -> parseBillPayment(body)
-            body.startsWith("You have received") -> parseBankTransfer(body)
-            body.startsWith("Cash transfer recieved:") -> parseCashTransfer(body)
+            body.startsWith("Payment made for") -> parsePaymentMade(body, smsTimestamp)
+            body.startsWith("Payment received for") -> parsePaymentReceived(body, smsTimestamp)
+            body.startsWith("Y'ello. You have Paid") -> parseMerchantYello(body, smsTimestamp)
+            body.startsWith("Your payment of") -> parseMerchantConfirmation(body, smsTimestamp)
+            body.startsWith("Cash Out made for") -> parseCashOut(body, smsTimestamp)
+            body.startsWith("Payment for GHS") && body.contains("Bills.") -> parseBillPayment(body, smsTimestamp)
+            body.startsWith("Payment for GHS") -> parsePaymentFor(body, smsTimestamp)
+            body.startsWith("You have received") -> parseBankTransfer(body, smsTimestamp)
+            body.startsWith("Cash transfer recieved:") -> parseCashTransfer(body, smsTimestamp)
             else -> null
         }
     }
 
-    private fun parsePaymentMade(body: String): ParsedTransaction? {
+    private fun parsePaymentMade(body: String, smsTimestamp: Long): ParsedTransaction? {
         val amount = extractAmount("Payment made for", body) ?: return null
         val merchant = (extractBetween(body, "to ", ". Current Balance")
             ?: extractBetween(body, "to ", " Current Balance")) ?: return null
         val txId = extractTransactionId(body) ?: return null
         val fee = extractFee(body)
         val reference = extractReference(body)
-        return ParsedTransaction(amount, fee, false, merchant.trim(), txId, reference, System.currentTimeMillis(), body)
+        return ParsedTransaction(amount, fee, false, merchant.trim(), txId, reference, smsTimestamp, body)
     }
 
-    private fun parsePaymentReceived(body: String): ParsedTransaction? {
+    private fun parsePaymentReceived(body: String, smsTimestamp: Long): ParsedTransaction? {
         val amount = extractAmount("Payment received for", body) ?: return null
         val merchant = (extractBetween(body, "from ", ". Current Balance")
             ?: extractBetween(body, "from ", "  Current Balance")
@@ -38,59 +39,70 @@ class MoMoSmsParser {
         val txId = extractTransactionId(body) ?: return null
         val fee = extractFee(body)
         val reference = extractReference(body)
-        return ParsedTransaction(amount, fee, true, merchant.trim(), txId, reference, System.currentTimeMillis(), body)
+        return ParsedTransaction(amount, fee, true, merchant.trim(), txId, reference, smsTimestamp, body)
     }
 
-    private fun parseMerchantYello(body: String): ParsedTransaction? {
+    private fun parseMerchantYello(body: String, smsTimestamp: Long): ParsedTransaction? {
         val amount = extractAmount("Y'ello. You have Paid", body) ?: return null
         val merchantMsg = extractBetween(body, "Message from sender: ", ". Your") ?: extractBetween(body, "Message from sender: ", ".") ?: ""
         val txId = extractTransactionId(body) ?: return null
         val fee = extractFee(body)
-        val date = extractDate(body)
+        val date = extractDate(body, smsTimestamp)
         return ParsedTransaction(amount, fee, false, merchantMsg.trim(), txId, null, date, body)
     }
 
-    private fun parseMerchantConfirmation(body: String): ParsedTransaction? {
+    private fun parseMerchantConfirmation(body: String, smsTimestamp: Long): ParsedTransaction? {
         val amount = extractAmount("Your payment of", body) ?: return null
         val merchant = extractBetween(body, "to ", " has been completed") ?: return null
         val txId = extractTransactionId(body) ?: return null
         val fee = extractFee(body)
         val reference = extractReference(body)
-        val date = extractDate(body)
+        val date = extractDate(body, smsTimestamp)
         return ParsedTransaction(amount, fee, false, merchant.trim(), txId, reference, date, body)
     }
 
-    private fun parseCashOut(body: String): ParsedTransaction? {
+    private fun parseCashOut(body: String, smsTimestamp: Long): ParsedTransaction? {
         val amount = extractAmount("Cash Out made for", body) ?: return null
         val merchant = extractBetween(body, "to ", ". Current") ?: extractBetween(body, "to ", ".") ?: return null
         val txId = extractTransactionId(body) ?: return null
         val fee = extractFee(body)
-        return ParsedTransaction(amount, fee, false, merchant.trim(), txId, null, System.currentTimeMillis(), body)
+        return ParsedTransaction(amount, fee, false, merchant.trim(), txId, null, smsTimestamp, body)
     }
 
-    private fun parseBillPayment(body: String): ParsedTransaction? {
+    private fun parsePaymentFor(body: String, smsTimestamp: Long): ParsedTransaction? {
         val amount = extractAmount("Payment for", body) ?: return null
-        val merchant = extractBetween(body, "to ", " ..") ?: extractBetween(body, "to ", "..") ?: return null
+        val merchant = extractMerchantBeforeCurrentBalance(body) ?: return null
         val txId = extractTransactionId(body) ?: return null
         val fee = extractFee(body)
-        return ParsedTransaction(amount, fee, false, merchant.trim(), txId, null, System.currentTimeMillis(), body)
+        return ParsedTransaction(amount, fee, false, merchant, txId, null, smsTimestamp, body)
     }
 
-    private fun parseBankTransfer(body: String): ParsedTransaction? {
+    private fun parseBillPayment(body: String, smsTimestamp: Long): ParsedTransaction? {
+        val amount = extractAmount("Payment for", body) ?: return null
+        val merchant = extractMerchantBeforeCurrentBalance(body)
+            ?: extractBetween(body, "to ", " ..")
+            ?: extractBetween(body, "to ", "..")
+            ?: return null
+        val txId = extractTransactionId(body) ?: return null
+        val fee = extractFee(body)
+        return ParsedTransaction(amount, fee, false, merchant.trim(), txId, null, smsTimestamp, body)
+    }
+
+    private fun parseBankTransfer(body: String, smsTimestamp: Long): ParsedTransaction? {
         val amount = extractAmount("You have received", body) ?: return null
         val merchant = extractBetween(body, "from ", " on your") ?: return null
         val txId = extractTransactionId(body) ?: return null
-        val date = extractDate(body)
+        val date = extractDate(body, smsTimestamp)
         return ParsedTransaction(amount, 0.0, true, merchant.trim(), txId, null, date, body)
     }
 
-    private fun parseCashTransfer(body: String): ParsedTransaction? {
+    private fun parseCashTransfer(body: String, smsTimestamp: Long): ParsedTransaction? {
         val amountMatch = Regex("""received\s+([\d,]+\.?\d*)\s*GHS""").find(body)
         val amount = amountMatch?.groupValues?.get(1)?.replace(",", "")?.toDoubleOrNull() ?: return null
         val agent = extractBetween(body, "through agent ", " - ") ?: extractBetween(body, "through agent ", " on your") ?: return null
         val txId = extractTransactionId(body) ?: return null
         val fee = extractFee(body)
-        val date = extractDate(body)
+        val date = extractDate(body, smsTimestamp)
         return ParsedTransaction(amount, fee, true, agent.trim(), txId, null, date, body)
     }
 
@@ -142,15 +154,20 @@ class MoMoSmsParser {
         return ref.ifEmpty { null }
     }
 
-    private fun extractDate(body: String): Long {
+    private fun extractDate(body: String, fallbackTimestamp: Long): Long {
         val match = Regex("""(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})""").find(body)
         if (match != null) {
             try {
                 val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-                return sdf.parse(match.groupValues[1])?.time ?: System.currentTimeMillis()
+                return sdf.parse(match.groupValues[1])?.time ?: fallbackTimestamp
             } catch (_: Exception) { }
         }
-        return System.currentTimeMillis()
+        return fallbackTimestamp
+    }
+
+    private fun extractMerchantBeforeCurrentBalance(body: String): String? {
+        val match = Regex("""\bto\s+(.+?)\s*\.{0,2}\s*Current Balance""", RegexOption.IGNORE_CASE).find(body)
+        return match?.groupValues?.get(1)?.trim()?.trimEnd('.')
     }
 
     private fun extractBetween(body: String, start: String, end: String): String? {

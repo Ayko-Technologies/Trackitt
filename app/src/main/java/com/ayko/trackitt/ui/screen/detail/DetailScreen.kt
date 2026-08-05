@@ -65,7 +65,7 @@ import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.ui.component.CookieIcon
 import com.ayko.trackitt.ui.component.DisplayNumber
 import com.ayko.trackitt.ui.theme.RobotoMonoFamily
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 import com.ayko.trackitt.ui.theme.SurfaceContainerHigh
 import com.ayko.trackitt.ui.theme.TertiaryContainer
 import java.text.SimpleDateFormat
@@ -222,7 +222,7 @@ fun DetailScreen(
             ) {
                 Icon(Icons.Filled.SwapHoriz, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Transfer", fontSize = 13.sp, fontWeight = FontWeight.Medium, fontFamily = SatoshiFamily)
+                Text("Transfer", fontSize = 13.sp, fontWeight = FontWeight.Medium, fontFamily = TrackittBodyFamily)
             }
             Button(
                 onClick = onConfirm,
@@ -232,7 +232,7 @@ fun DetailScreen(
             ) {
                 Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Confirm", fontSize = 13.sp, fontWeight = FontWeight.Medium, fontFamily = SatoshiFamily)
+                Text("Confirm", fontSize = 13.sp, fontWeight = FontWeight.Medium, fontFamily = TrackittBodyFamily)
             }
         }
     }
@@ -248,7 +248,7 @@ fun DetailScreen(
                 "Change category",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
-                fontFamily = SatoshiFamily,
+                fontFamily = TrackittBodyFamily,
                 modifier = Modifier.padding(start = 24.dp, bottom = 16.dp),
             )
             LazyVerticalGrid(
@@ -272,7 +272,7 @@ fun DetailScreen(
                         ) {
                             Icon(cat.icon, contentDescription = cat.label, tint = if (isSelected) cat.fgColor else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
                         }
-                        Text(cat.label, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium, fontFamily = SatoshiFamily, modifier = Modifier.padding(top = 4.dp))
+                        Text(cat.label, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium, fontFamily = TrackittBodyFamily, modifier = Modifier.padding(top = 4.dp))
                     }
                 }
             }
@@ -285,7 +285,7 @@ fun DetailScreen(
         var text by remember { mutableStateOf(tx.merchant) }
         AlertDialog(
             onDismissRequest = { showEditMerchant = false },
-            title = { Text("Edit merchant", fontFamily = SatoshiFamily) },
+            title = { Text("Edit merchant", fontFamily = TrackittBodyFamily) },
             text = {
                 OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
             },
@@ -303,7 +303,7 @@ fun DetailScreen(
         var text by remember { mutableStateOf(tx.note ?: "") }
         AlertDialog(
             onDismissRequest = { showEditNote = false },
-            title = { Text("Edit note", fontFamily = SatoshiFamily) },
+            title = { Text("Edit note", fontFamily = TrackittBodyFamily) },
             text = {
                 OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
             },
@@ -338,7 +338,7 @@ private fun EditableRow(
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.3.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontFamily = SatoshiFamily,
+                fontFamily = TrackittBodyFamily,
             )
             Text(
                 value,

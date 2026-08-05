@@ -2,12 +2,15 @@ package com.ayko.trackitt.service.sms
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.ayko.trackitt.MainActivity
 import com.ayko.trackitt.R
 import com.ayko.trackitt.TrackittApplication
 
@@ -46,10 +49,12 @@ class SmsBackfillWorker(
         cursor.use {
             val bodyIdx = it.getColumnIndexOrThrow("body")
             val addressIdx = it.getColumnIndexOrThrow("address")
+            val dateIdx = it.getColumnIndexOrThrow("date")
             while (it.moveToNext()) {
                 val body = it.getString(bodyIdx) ?: continue
                 val sender = it.getString(addressIdx)
-                val parsed = container.parseSms(sender, body) ?: continue
+                val smsTimestamp = it.getLong(dateIdx)
+                val parsed = container.parseSms(sender, body, smsTimestamp) ?: continue
                 if (repository.insertFromSms(parsed)) count++
             }
         }
@@ -72,9 +77,22 @@ class SmsBackfillWorker(
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(text)
+            .setContentIntent(buildLaunchAppPendingIntent())
             .setAutoCancel(true)
             .build()
         nm.notify(9999, notification)
+    }
+
+    private fun buildLaunchAppPendingIntent(): PendingIntent {
+        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        return PendingIntent.getActivity(
+            applicationContext,
+            1,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     companion object {

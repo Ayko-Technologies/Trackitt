@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Today
@@ -42,6 +44,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.setValue
 import com.ayko.trackitt.ui.component.CategoryBottomSheet
 import com.ayko.trackitt.ui.component.DayPicker
@@ -51,7 +54,7 @@ import com.ayko.trackitt.ui.component.FloatingNavBar
 import com.ayko.trackitt.ui.component.MonthChart
 import com.ayko.trackitt.ui.component.TrackittChip
 import com.ayko.trackitt.ui.theme.OnSurface
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 import java.util.Locale
 
 @Composable
@@ -61,14 +64,19 @@ fun HomeScreen(
     onSettingsTap: () -> Unit = {},
     onSearchTap: () -> Unit = {},
     onBudgetTap: () -> Unit = {},
+    onInsightsTap: (Int, Int) -> Unit = { _, _ -> },
     onTransactionTap: (Long) -> Unit = {},
 ) {
     val context = LocalContext.current
     val selectedPeriod by viewModel.selectedPeriod.collectAsStateWithLifecycle()
     val total by viewModel.total.collectAsStateWithLifecycle(initialValue = 0.0)
     val allChartCategories by viewModel.chartCategories.collectAsStateWithLifecycle(initialValue = emptyList())
-    val showIncome = remember { context.getSharedPreferences("trackitt_display", 0).getBoolean("show_income", true) }
-    val chartCategories = if (showIncome) allChartCategories else allChartCategories.filter { it.category != com.ayko.trackitt.domain.model.TransactionCategory.INCOME }
+    val displayPrefs = remember { context.getSharedPreferences("trackitt_display", 0) }
+    val showIncome = remember { displayPrefs.getBoolean("show_income", true) }
+    val excludeTransfers = remember { displayPrefs.getBoolean("exclude_transfers", false) }
+    val chartCategories = allChartCategories
+        .filter { showIncome || it.category != com.ayko.trackitt.domain.model.TransactionCategory.INCOME }
+        .filterNot { excludeTransfers && it.category == com.ayko.trackitt.domain.model.TransactionCategory.TRANSFER }
     val smsGranted by viewModel.smsPermissionGranted.collectAsStateWithLifecycle()
 
     val monthName by viewModel.currentMonthName.collectAsStateWithLifecycle(initialValue = "")
@@ -148,7 +156,7 @@ fun HomeScreen(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = "SPENT · $periodLabel",
-                        fontFamily = SatoshiFamily,
+                        fontFamily = TrackittBodyFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.sp,
                         letterSpacing = 1.6.sp,
@@ -161,7 +169,11 @@ fun HomeScreen(
                     modifier = Modifier.padding(top = 4.dp),
                 )
 
-                Row(modifier = Modifier.padding(top = 14.dp)) {
+                Row(
+                    modifier = Modifier
+                        .padding(top = 14.dp)
+                        .horizontalScroll(rememberScrollState()),
+                ) {
                     TrackittChip(
                         label = dayLabel,
                         selected = selectedPeriod == Period.DAY,
@@ -181,6 +193,20 @@ fun HomeScreen(
                         },
                         leadingIcon = Icons.Filled.CalendarMonth,
                     )
+                    if (selectedPeriod == Period.MONTH) {
+                        Spacer(Modifier.width(8.dp))
+                        TrackittChip(
+                            label = "Insights",
+                            selected = false,
+                            onClick = {
+                                onInsightsTap(
+                                    viewModel.selectedYearValue,
+                                    viewModel.selectedMonthValue,
+                                )
+                            },
+                            leadingIcon = Icons.Filled.AutoAwesome,
+                        )
+                    }
                 }
             }
 

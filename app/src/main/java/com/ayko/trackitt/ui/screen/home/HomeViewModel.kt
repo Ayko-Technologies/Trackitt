@@ -31,6 +31,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = (application as TrackittApplication).container.repository
     private val displayPrefs = application.getSharedPreferences("trackitt_display", 0)
     private fun includeFees() = displayPrefs.getBoolean("show_fees", false)
+    private fun excludeTransfers() = displayPrefs.getBoolean("exclude_transfers", false)
 
     init {
         val container = (application as TrackittApplication).container
@@ -84,15 +85,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val year = args[1] as Int
         val month = args[2] as Int
         val day = args[3] as Int
-        when (period) {
+        val totalsFlow = when (period) {
             Period.DAY -> {
                 val date = LocalDate.of(year, month, day)
                 val zone = ZoneId.systemDefault()
                 val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
                 val end = date.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
-                repository.getDayTotal(start, end, includeFees())
+                repository.getCategoryTotalsForRange(start, end, includeFees())
             }
-            Period.MONTH -> repository.getMonthTotal(year, month, includeFees())
+            Period.MONTH -> repository.getCategoryTotals(year, month, includeFees())
+        }
+        totalsFlow.map { totals ->
+            totals
+                .filter { it.category != TransactionCategory.INCOME.name }
+                .filterNot { excludeTransfers() && it.category == TransactionCategory.TRANSFER.name }
+                .sumOf { it.total }
         }
     }
 
@@ -117,7 +124,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             totalsFlow.map { totals ->
                 totals.mapNotNull { ct ->
                     val cat = try { TransactionCategory.valueOf(ct.category) } catch (_: Exception) { null }
-                    cat?.let { ChartCategory(it, ct.total) }
+                    cat?.takeUnless { excludeTransfers() && it == TransactionCategory.TRANSFER }
+                        ?.let { ChartCategory(it, ct.total) }
                 }
             }
         }

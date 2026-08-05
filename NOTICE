@@ -1,0 +1,14 @@
+Trackitt
+Copyright 2026 Ayko Technologies
+
+This repository includes the following third-party font files:
+
+- Fraunces, Copyright 2020 The Fraunces Project Authors.
+  Licensed under the SIL Open Font License, Version 1.1.
+  License text: third_party_licenses/OFL-1.1.txt
+  Source: https://github.com/undercasetype/Fraunces
+
+- Roboto Mono, Copyright 2015 Google Inc.
+  Licensed under the Apache License, Version 2.0.
+  License text: LICENSE
+  Source: https://github.com/googlefonts/roboto-2

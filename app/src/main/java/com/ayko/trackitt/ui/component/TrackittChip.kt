@@ -21,7 +21,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 
 @Composable
 fun TrackittChip(
@@ -61,7 +61,7 @@ fun TrackittChip(
         }
         Text(
             text = label,
-            fontFamily = SatoshiFamily,
+            fontFamily = TrackittBodyFamily,
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             color = textColor,

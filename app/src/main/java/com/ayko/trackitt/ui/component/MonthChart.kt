@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.ui.theme.FrauncesFamily
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 import com.ayko.trackitt.ui.theme.OnSurface
 import com.ayko.trackitt.ui.theme.Primary
 import com.ayko.trackitt.ui.theme.Secondary
@@ -173,7 +173,7 @@ fun MonthChart(
                                 text = "Add one with +",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                fontFamily = SatoshiFamily,
+                                fontFamily = TrackittBodyFamily,
                             )
                         }
                     }
@@ -316,7 +316,12 @@ private fun ChartHeader(
 
 private fun formatBarAmount(value: Double): String {
     return if (value >= 1000) {
-        String.format(Locale.US, "%.0fk", value / 1000)
+        val thousands = value / 1000
+        if (thousands >= 10 || thousands == thousands.toLong().toDouble()) {
+            String.format(Locale.US, "%.0fk", thousands)
+        } else {
+            String.format(Locale.US, "%.1fk", thousands)
+        }
     } else if (value == value.toLong().toDouble()) {
         String.format(Locale.US, "%.0f", value)
     } else {

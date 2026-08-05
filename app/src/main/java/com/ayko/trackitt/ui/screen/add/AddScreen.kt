@@ -56,7 +56,7 @@ import com.ayko.trackitt.ui.component.CalculatorPad
 import com.ayko.trackitt.ui.component.CookieIcon
 import com.ayko.trackitt.ui.component.DisplayNumber
 import com.ayko.trackitt.ui.theme.FrauncesFamily
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 
 private enum class AddStep { AMOUNT, CATEGORY, CONFIRM }
 
@@ -112,7 +112,7 @@ fun AddScreen(
                             AddStep.CATEGORY -> "What's it for?"
                             AddStep.CONFIRM -> ""
                         },
-                        fontFamily = SatoshiFamily,
+                        fontFamily = TrackittBodyFamily,
                         fontWeight = FontWeight.Medium,
                         fontSize = 22.sp,
                         letterSpacing = (-0.3).sp,
@@ -190,7 +190,7 @@ private fun ColumnScope.AmountContent(
                 Text(
                     "GH₵",
                     fontSize = 18.sp,
-                    fontFamily = SatoshiFamily,
+                    fontFamily = TrackittBodyFamily,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.alignByBaseline(),
@@ -287,7 +287,7 @@ private fun CategoryContent(
             Text(
                 "GH₵",
                 fontSize = 13.sp,
-                fontFamily = SatoshiFamily,
+                fontFamily = TrackittBodyFamily,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.alignByBaseline(),
@@ -336,7 +336,7 @@ private fun CategoryContent(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = SatoshiFamily,
+                    fontFamily = TrackittBodyFamily,
                     modifier = Modifier.padding(top = 6.dp),
                 )
             }
@@ -378,7 +378,7 @@ private fun ColumnScope.ConfirmContent(
                 category.label,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                fontFamily = SatoshiFamily,
+                fontFamily = TrackittBodyFamily,
             )
         }
 
@@ -413,7 +413,7 @@ private fun ColumnScope.ConfirmContent(
             "Save expense",
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
-            fontFamily = SatoshiFamily,
+            fontFamily = TrackittBodyFamily,
             color = MaterialTheme.colorScheme.onPrimary,
         )
     }

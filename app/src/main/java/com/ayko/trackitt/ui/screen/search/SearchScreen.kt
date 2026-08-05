@@ -47,7 +47,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ayko.trackitt.domain.model.Transaction
 import com.ayko.trackitt.ui.component.scalePressEffect
 import com.ayko.trackitt.ui.theme.FrauncesFamily
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -118,7 +118,7 @@ fun SearchScreen(
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontFamily = SatoshiFamily,
+                        fontFamily = TrackittBodyFamily,
                         modifier = Modifier.padding(start = 20.dp, top = 20.dp, bottom = 8.dp),
                     )
                 }
@@ -155,7 +155,7 @@ fun SearchScreen(
                             text = "Nothing for \"$query\"",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
-                            fontFamily = SatoshiFamily,
+                            fontFamily = TrackittBodyFamily,
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,
                         )
@@ -163,7 +163,7 @@ fun SearchScreen(
                         Text(
                             text = "Try a different merchant name or check your spelling",
                             fontSize = 13.sp,
-                            fontFamily = SatoshiFamily,
+                            fontFamily = TrackittBodyFamily,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                         )
@@ -180,7 +180,7 @@ fun SearchScreen(
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontFamily = SatoshiFamily,
+                        fontFamily = TrackittBodyFamily,
                         modifier = Modifier.padding(start = 20.dp, top = 20.dp, bottom = 8.dp),
                     )
                 }
@@ -203,7 +203,7 @@ fun SearchScreen(
                             recent,
                             fontSize = 15.sp,
                             color = MaterialTheme.colorScheme.onSurface,
-                            fontFamily = SatoshiFamily,
+                            fontFamily = TrackittBodyFamily,
                         )
                     }
                 }
@@ -222,7 +222,7 @@ fun SearchScreen(
                             text = "Search your transactions",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
-                            fontFamily = SatoshiFamily,
+                            fontFamily = TrackittBodyFamily,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                         )
@@ -267,13 +267,13 @@ private fun SearchResultRow(
                 tx.merchant,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
-                fontFamily = SatoshiFamily,
+                fontFamily = TrackittBodyFamily,
             )
             Text(
                 "${tx.category.label} · $dateFormatted",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontFamily = SatoshiFamily,
+                fontFamily = TrackittBodyFamily,
             )
         }
         Text(

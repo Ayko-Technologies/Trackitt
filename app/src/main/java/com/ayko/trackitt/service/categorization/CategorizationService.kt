@@ -20,19 +20,28 @@ class DictionaryCategorizationService(
         note: String?,
     ): TransactionCategory {
         val normalized = merchant.lowercase().trim()
+        val normalizedNote = note?.lowercase()?.trim()
+        val normalizedRef = reference?.lowercase()?.trim()
+
+        if (normalizedNote != null) {
+            for ((keyword, category) in PRIORITY_NOTE_DICTIONARY) {
+                if (normalizedNote.contains(keyword)) return category
+            }
+        }
 
         val userMapping = userLookup(normalized)
         if (userMapping != null) return userMapping
 
-        if (note != null) {
-            val normalizedNote = note.lowercase().trim()
+        if (normalizedNote != null) {
             for ((keyword, category) in REFERENCE_DICTIONARY) {
                 if (normalizedNote.contains(keyword)) return category
             }
         }
 
-        if (reference != null) {
-            val normalizedRef = reference.lowercase().trim()
+        if (normalizedRef != null) {
+            for ((keyword, category) in PRIORITY_REFERENCE_DICTIONARY) {
+                if (normalizedRef.contains(keyword)) return category
+            }
             for ((keyword, category) in REFERENCE_DICTIONARY) {
                 if (normalizedRef.contains(keyword)) return category
             }

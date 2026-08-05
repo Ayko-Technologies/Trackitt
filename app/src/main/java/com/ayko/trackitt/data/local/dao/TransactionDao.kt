@@ -97,6 +97,22 @@ interface TransactionDao {
     """)
     fun getMonthTotalWithFees(year: String, month: String): Flow<Double>
 
+    @Query("""
+        SELECT COALESCE(SUM(amount), 0.0) FROM transactions
+        WHERE isIncome = 0
+        AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
+        AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
+    """)
+    suspend fun getMonthTotalNow(year: String, month: String): Double
+
+    @Query("""
+        SELECT COALESCE(SUM(amount + fee), 0.0) FROM transactions
+        WHERE isIncome = 0
+        AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
+        AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
+    """)
+    suspend fun getMonthTotalWithFeesNow(year: String, month: String): Double
+
     @Query("SELECT * FROM transactions WHERE merchant LIKE '%' || :query || '%' ORDER BY date DESC")
     fun searchByMerchant(query: String): Flow<List<TransactionEntity>>
 
@@ -119,6 +135,35 @@ interface TransactionDao {
 
     @Query("SELECT * FROM transactions WHERE id = :id")
     fun getById(id: Long): Flow<TransactionEntity?>
+
+    @Query("SELECT * FROM transactions WHERE id = :id")
+    suspend fun getByIdNow(id: Long): TransactionEntity?
+
+    @Query("""
+        SELECT * FROM transactions
+        WHERE isIncome = 0
+        AND date < :beforeDate
+        ORDER BY date DESC
+    """)
+    suspend fun getExpensesBefore(beforeDate: Long): List<TransactionEntity>
+
+    @Query("""
+        SELECT COALESCE(SUM(amount), 0.0) FROM transactions
+        WHERE isIncome = 0
+        AND category = :category
+        AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
+        AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
+    """)
+    suspend fun getCategoryMonthTotal(category: String, year: String, month: String): Double
+
+    @Query("""
+        SELECT COALESCE(SUM(amount + fee), 0.0) FROM transactions
+        WHERE isIncome = 0
+        AND category = :category
+        AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
+        AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
+    """)
+    suspend fun getCategoryMonthTotalWithFees(category: String, year: String, month: String): Double
 
     @Query("UPDATE transactions SET category = :category WHERE id = :id")
     suspend fun updateCategory(id: Long, category: String)

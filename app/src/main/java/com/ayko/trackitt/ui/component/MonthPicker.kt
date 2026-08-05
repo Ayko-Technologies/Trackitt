@@ -37,7 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ayko.trackitt.ui.theme.FrauncesFamily
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 import java.time.LocalDate
 import java.time.Month
 import java.time.format.TextStyle
@@ -148,7 +148,7 @@ fun MonthPicker(
                         ) {
                             Text(
                                 text = month.getDisplayName(TextStyle.SHORT, Locale.US).uppercase(),
-                                fontFamily = SatoshiFamily,
+                                fontFamily = TrackittBodyFamily,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 fontSize = 13.sp,
                                 letterSpacing = 0.8.sp,

@@ -41,7 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 
 private const val PREFS_NAME = "sms_sources"
 
@@ -56,7 +56,7 @@ fun SmsSourcesScreen(onBack: () -> Unit = {}) {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("SMS Sources", fontFamily = SatoshiFamily, fontWeight = FontWeight.SemiBold) },
+                title = { Text("SMS Sources", fontFamily = TrackittBodyFamily, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -119,7 +119,7 @@ private fun SectionLabel(title: String) {
         fontWeight = FontWeight.SemiBold,
         letterSpacing = 0.5.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontFamily = SatoshiFamily,
+        fontFamily = TrackittBodyFamily,
         modifier = Modifier.padding(start = 24.dp, top = 24.dp, bottom = 8.dp),
     )
 }
@@ -149,16 +149,16 @@ private fun ToggleSourceRow(
                 .size(40.dp)
                 .background(bgColor, CircleShape),
         ) {
-            Text(name.first().toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor, fontFamily = SatoshiFamily)
+            Text(name.first().toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor, fontFamily = TrackittBodyFamily)
         }
         Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(name, fontSize = 15.sp, fontWeight = FontWeight.Medium, fontFamily = SatoshiFamily)
+            Text(name, fontSize = 15.sp, fontWeight = FontWeight.Medium, fontFamily = TrackittBodyFamily)
             Text(
                 if (enabled) "Active" else "Off",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontFamily = SatoshiFamily,
+                fontFamily = TrackittBodyFamily,
             )
         }
         Switch(
@@ -197,12 +197,12 @@ private fun SourceRow(
                 .size(40.dp)
                 .background(bgColor.copy(alpha = 0.4f), CircleShape),
         ) {
-            Text(name.first().toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), fontFamily = SatoshiFamily)
+            Text(name.first().toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), fontFamily = TrackittBodyFamily)
         }
         Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(name, fontSize = 15.sp, fontWeight = FontWeight.Medium, fontFamily = SatoshiFamily, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Coming soon", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
+            Text(name, fontSize = 15.sp, fontWeight = FontWeight.Medium, fontFamily = TrackittBodyFamily, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Coming soon", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = TrackittBodyFamily)
         }
     }
 }
