@@ -42,7 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ayko.trackitt.data.local.TrackittDatabase
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.service.categorization.MERCHANT_DICTIONARY
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,7 +67,7 @@ fun MerchantDictionaryScreen(onBack: () -> Unit = {}) {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("Merchant Dictionary", fontFamily = SatoshiFamily, fontWeight = FontWeight.SemiBold) },
+                title = { Text("Merchant Dictionary", fontFamily = TrackittBodyFamily, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -89,7 +89,7 @@ fun MerchantDictionaryScreen(onBack: () -> Unit = {}) {
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontFamily = SatoshiFamily,
+                        fontFamily = TrackittBodyFamily,
                         modifier = Modifier.padding(start = 32.dp, top = 24.dp, bottom = 8.dp),
                     )
                 }
@@ -120,7 +120,7 @@ fun MerchantDictionaryScreen(onBack: () -> Unit = {}) {
                                 Text(
                                     keyword,
                                     fontSize = 14.sp,
-                                    fontFamily = SatoshiFamily,
+                                    fontFamily = TrackittBodyFamily,
                                 )
                             }
                             if (index < entries.size - 1) {

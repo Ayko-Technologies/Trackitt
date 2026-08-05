@@ -28,7 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ayko.trackitt.ui.theme.FrauncesFamily
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
@@ -86,7 +86,7 @@ fun DayPicker(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontFamily = SatoshiFamily,
+                            fontFamily = TrackittBodyFamily,
                         )
                     }
                 }
@@ -146,7 +146,7 @@ fun DayPicker(
                                     fontSize = 14.sp,
                                     fontWeight = if (isSelected || isToday) FontWeight.SemiBold else FontWeight.Normal,
                                     color = textColor,
-                                    fontFamily = SatoshiFamily,
+                                    fontFamily = TrackittBodyFamily,
                                     textAlign = TextAlign.Center,
                                 )
                             }

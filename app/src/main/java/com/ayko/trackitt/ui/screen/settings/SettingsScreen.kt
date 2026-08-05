@@ -64,8 +64,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ayko.trackitt.data.backup.DriveBackupManager
 import com.ayko.trackitt.data.local.TrackittDatabase
 import com.ayko.trackitt.data.local.entity.CustomCategoryEntity
+import com.ayko.trackitt.service.security.AppLockManager
 import com.ayko.trackitt.ui.component.scalePressEffect
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
@@ -102,9 +103,15 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val backupManager = remember { DriveBackupManager(context) }
     val db = remember { TrackittDatabase.getInstance(context) }
+    val appLockManager = remember { AppLockManager(context) }
     val customCategories by db.customCategoryDao().getAll().collectAsStateWithLifecycle(initialValue = emptyList())
 
     var showAddCategoryDialog by remember { mutableStateOf(false) }
+    var showSetPinDialog by remember { mutableStateOf(false) }
+    var showChangePinDialog by remember { mutableStateOf(false) }
+    var appLockEnabled by remember { mutableStateOf(appLockManager.isLockEnabled()) }
+    var biometricEnabled by remember { mutableStateOf(appLockManager.isBiometricEnabled()) }
+    val biometricAvailable = remember { appLockManager.canUseBiometrics() }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
@@ -152,7 +159,7 @@ fun SettingsScreen(
                 title = {
                     Text(
                         "Settings",
-                        fontFamily = SatoshiFamily,
+                        fontFamily = TrackittBodyFamily,
                         fontWeight = FontWeight.SemiBold,
                     )
                 },
@@ -227,12 +234,81 @@ fun SettingsScreen(
                 }
             }
 
+            // ── Security ──
+            item { SectionHeader("Security") }
+
+            item {
+                SettingsGroup {
+                    SettingsRow(
+                        icon = Icons.Filled.Lock,
+                        label = "App lock",
+                        subtitle = "Require a PIN when opening Trackitt",
+                        trailing = {
+                            androidx.compose.material3.Switch(
+                                checked = appLockEnabled,
+                                onCheckedChange = {
+                                    if (it) {
+                                        if (appLockManager.hasPin()) {
+                                            appLockManager.setLockEnabled(true)
+                                            appLockEnabled = true
+                                            biometricEnabled = appLockManager.isBiometricEnabled()
+                                        } else {
+                                            showSetPinDialog = true
+                                        }
+                                    } else {
+                                        appLockManager.setLockEnabled(false)
+                                        appLockEnabled = false
+                                    }
+                                },
+                                colors = androidx.compose.material3.SwitchDefaults.colors(
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        },
+                        showDivider = appLockEnabled,
+                    )
+
+                    if (appLockEnabled && biometricAvailable) {
+                        SettingsRow(
+                            icon = Icons.Filled.Fingerprint,
+                            label = "Use biometrics",
+                            subtitle = "Unlock faster with fingerprint or face",
+                            trailing = {
+                                androidx.compose.material3.Switch(
+                                    checked = biometricEnabled,
+                                    onCheckedChange = {
+                                        biometricEnabled = it
+                                        appLockManager.setBiometricEnabled(it)
+                                    },
+                                    colors = androidx.compose.material3.SwitchDefaults.colors(
+                                        checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                    ),
+                                )
+                            },
+                            showDivider = true,
+                        )
+                    }
+
+                    if (appLockEnabled) {
+                        SettingsRow(
+                            icon = Icons.Filled.Lock,
+                            label = "Change PIN",
+                            subtitle = "Update your 4-digit app PIN",
+                            onClick = { showChangePinDialog = true },
+                            showChevron = true,
+                            showDivider = false,
+                        )
+                    }
+                }
+            }
+
             // ── Display ──
             item { SectionHeader("Display") }
 
             item {
                 val displayPrefs = remember { context.getSharedPreferences("trackitt_display", 0) }
                 var showIncome by remember { mutableStateOf(displayPrefs.getBoolean("show_income", true)) }
+                var excludeTransfers by remember { mutableStateOf(displayPrefs.getBoolean("exclude_transfers", false)) }
 
                 SettingsGroup {
                     SettingsRow(
@@ -245,6 +321,25 @@ fun SettingsScreen(
                                 onCheckedChange = {
                                     showIncome = it
                                     displayPrefs.edit().putBoolean("show_income", it).apply()
+                                },
+                                colors = androidx.compose.material3.SwitchDefaults.colors(
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        },
+                        showDivider = true,
+                    )
+
+                    SettingsRow(
+                        icon = Icons.Filled.SwapHoriz,
+                        label = "Exclude transfers",
+                        subtitle = "Do not count transfers in spending totals and insights",
+                        trailing = {
+                            androidx.compose.material3.Switch(
+                                checked = excludeTransfers,
+                                onCheckedChange = {
+                                    excludeTransfers = it
+                                    displayPrefs.edit().putBoolean("exclude_transfers", it).apply()
                                 },
                                 colors = androidx.compose.material3.SwitchDefaults.colors(
                                     checkedTrackColor = MaterialTheme.colorScheme.primary,
@@ -387,14 +482,14 @@ fun SettingsScreen(
                                 if (currentDays == 1) "1 day" else "$currentDays days",
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontFamily = SatoshiFamily,
+                                fontFamily = TrackittBodyFamily,
                                 modifier = Modifier.clickable { showPicker = true },
                             )
 
                             if (showPicker) {
                                 AlertDialog(
                                     onDismissRequest = { showPicker = false },
-                                    title = { Text("Lookback period", fontFamily = SatoshiFamily) },
+                                    title = { Text("Lookback period", fontFamily = TrackittBodyFamily) },
                                     text = {
                                         Column {
                                             listOf(1, 7, 30, 60, 90, 180, 365).forEach { days ->
@@ -422,7 +517,7 @@ fun SettingsScreen(
                                                             365 -> "365 days (1 year)"
                                                             else -> "$days days"
                                                         },
-                                                        fontFamily = SatoshiFamily,
+                                                        fontFamily = TrackittBodyFamily,
                                                         fontWeight = if (days == currentDays) FontWeight.SemiBold else FontWeight.Normal,
                                                     )
                                                 }
@@ -458,7 +553,7 @@ fun SettingsScreen(
                 if (showConfirm) {
                     AlertDialog(
                         onDismissRequest = { showConfirm = false },
-                        title = { Text("Reset all data?", fontFamily = SatoshiFamily, fontWeight = FontWeight.Medium) },
+                        title = { Text("Reset all data?", fontFamily = TrackittBodyFamily, fontWeight = FontWeight.Medium) },
                         text = { Text("This will permanently delete all your transactions, custom categories, and merchant mappings. This cannot be undone.") },
                         confirmButton = {
                             Button(
@@ -498,7 +593,7 @@ fun SettingsScreen(
                                 "0.1.0",
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontFamily = SatoshiFamily,
+                                fontFamily = TrackittBodyFamily,
                             )
                         },
                         showDivider = true,
@@ -528,6 +623,36 @@ fun SettingsScreen(
             },
         )
     }
+
+    if (showSetPinDialog) {
+        PinSetupDialog(
+            title = "Set app PIN",
+            onDismiss = { showSetPinDialog = false },
+            onSave = { pin ->
+                appLockManager.savePin(pin)
+                appLockManager.setLockEnabled(true)
+                if (biometricAvailable) {
+                    appLockManager.setBiometricEnabled(true)
+                }
+                appLockEnabled = true
+                biometricEnabled = appLockManager.isBiometricEnabled()
+                showSetPinDialog = false
+            },
+        )
+    }
+
+    if (showChangePinDialog) {
+        PinSetupDialog(
+            title = "Change PIN",
+            onDismiss = { showChangePinDialog = false },
+            onSave = { pin ->
+                appLockManager.savePin(pin)
+                appLockEnabled = appLockManager.isLockEnabled()
+                biometricEnabled = appLockManager.isBiometricEnabled()
+                showChangePinDialog = false
+            },
+        )
+    }
 }
 
 @Composable
@@ -538,7 +663,7 @@ private fun SectionHeader(title: String) {
         fontWeight = FontWeight.SemiBold,
         letterSpacing = 0.5.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontFamily = SatoshiFamily,
+        fontFamily = TrackittBodyFamily,
         modifier = Modifier.padding(start = 32.dp, top = 28.dp, bottom = 8.dp),
     )
 }
@@ -595,14 +720,14 @@ private fun SettingsRow(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Normal,
                     color = labelColor,
-                    fontFamily = SatoshiFamily,
+                    fontFamily = TrackittBodyFamily,
                 )
                 if (subtitle != null) {
                     Text(
                         subtitle,
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontFamily = SatoshiFamily,
+                        fontFamily = TrackittBodyFamily,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }
@@ -708,7 +833,7 @@ private fun AddCategoryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New category", fontFamily = SatoshiFamily, fontWeight = FontWeight.Medium) },
+        title = { Text("New category", fontFamily = TrackittBodyFamily, fontWeight = FontWeight.Medium) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
@@ -721,7 +846,7 @@ private fun AddCategoryDialog(
 
                 // Icon section
                 Spacer(Modifier.height(16.dp))
-                Text("Icon", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
+                Text("Icon", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = TrackittBodyFamily)
                 Spacer(Modifier.height(8.dp))
 
                 // Icon grid — 4 columns when expanded, scrollable row when collapsed
@@ -750,7 +875,7 @@ private fun AddCategoryDialog(
                             Spacer(Modifier.height(6.dp))
                         }
                         TextButton(onClick = { showAllIcons = false }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                            Text("Show less", fontFamily = SatoshiFamily, fontSize = 12.sp)
+                            Text("Show less", fontFamily = TrackittBodyFamily, fontSize = 12.sp)
                         }
                     }
                 } else {
@@ -770,13 +895,13 @@ private fun AddCategoryDialog(
                         }
                     }
                     TextButton(onClick = { showAllIcons = true }) {
-                        Text("More icons →", fontFamily = SatoshiFamily, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text("More icons →", fontFamily = TrackittBodyFamily, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     }
                 }
 
                 // Color section
                 Spacer(Modifier.height(16.dp))
-                Text("Color", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
+                Text("Color", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = TrackittBodyFamily)
                 Spacer(Modifier.height(8.dp))
 
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -801,7 +926,7 @@ private fun AddCategoryDialog(
                 TextButton(onClick = { showCustomColor = !showCustomColor }) {
                     Text(
                         if (showCustomColor) "Hide hex input" else "Custom hex →",
-                        fontFamily = SatoshiFamily,
+                        fontFamily = TrackittBodyFamily,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                     )
@@ -870,6 +995,68 @@ private fun AddCategoryDialog(
                 },
                 enabled = name.isNotBlank(),
             ) { Text("Save") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
+}
+
+@Composable
+private fun PinSetupDialog(
+    title: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+) {
+    var pin by remember { mutableStateOf("") }
+    var confirmPin by remember { mutableStateOf("") }
+    val pinMatches = pin.length == 4 && pin == confirmPin
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, fontFamily = TrackittBodyFamily, fontWeight = FontWeight.Medium) },
+        text = {
+            Column {
+                Text(
+                    "Use a 4-digit PIN. You can still unlock with biometrics if your device supports it.",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontFamily = TrackittBodyFamily,
+                )
+                Spacer(Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { pin = it.filter(Char::isDigit).take(4) },
+                    label = { Text("PIN") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = confirmPin,
+                    onValueChange = { confirmPin = it.filter(Char::isDigit).take(4) },
+                    label = { Text("Confirm PIN") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (confirmPin.isNotEmpty() && !pinMatches) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "PINs must match and be 4 digits.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.error,
+                        fontFamily = TrackittBodyFamily,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(pin) },
+                enabled = pinMatches,
+            ) {
+                Text("Save")
+            }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }

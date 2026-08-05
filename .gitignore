@@ -35,6 +35,9 @@ captures/
 # Google Services
 google-services.json
 
+# Local data exports and device database snapshots. These can contain financial data.
+/backups/
+
 # Proguard
 proguard/
 

@@ -13,6 +13,9 @@ interface BudgetDao {
     @Query("SELECT * FROM budgets ORDER BY CASE WHEN category = 'OTHER' THEN 1 ELSE 0 END, amount DESC")
     fun getAll(): Flow<List<BudgetEntity>>
 
+    @Query("SELECT * FROM budgets ORDER BY CASE WHEN category = 'OTHER' THEN 1 ELSE 0 END, amount DESC")
+    suspend fun getAllNow(): List<BudgetEntity>
+
     @Query("SELECT * FROM budgets WHERE category = :category LIMIT 1")
     suspend fun getByCategory(category: String): BudgetEntity?
 

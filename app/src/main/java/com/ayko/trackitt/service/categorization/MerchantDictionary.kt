@@ -65,6 +65,8 @@ val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "bank2wallet" to TransactionCategory.TRANSFER,
     "momo → bank" to TransactionCategory.TRANSFER,
     "bank → momo" to TransactionCategory.TRANSFER,
+    "zenith momo pos" to TransactionCategory.TRANSFER,
+    "zen online" to TransactionCategory.EDUCATION,
     "atm" to TransactionCategory.OTHER,
 
     // Transfer / Remittance
@@ -86,6 +88,39 @@ val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "life centre" to TransactionCategory.CHURCH,
     "cornerstone chapel" to TransactionCategory.CHURCH,
     "dayspring" to TransactionCategory.CHURCH,
+
+    // Pocket money / family support
+    "adwoa frimpong" to TransactionCategory.POCKET_MONEY,
+    "esi quaye" to TransactionCategory.POCKET_MONEY,
+
+    // Repeat food vendors identified from labeled notes
+    "nana yeboah" to TransactionCategory.FOOD,
+    "akua addo" to TransactionCategory.FOOD,
+)
+
+val PRIORITY_NOTE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
+    "ac payment" to TransactionCategory.HOME_PROJECT,
+    "ac workmanship" to TransactionCategory.HOME_PROJECT,
+    "ac materials" to TransactionCategory.HOME_PROJECT,
+    "pocket money" to TransactionCategory.POCKET_MONEY,
+    "birthday present" to TransactionCategory.GIFTS,
+    "gift" to TransactionCategory.GIFTS,
+    "transcript payment" to TransactionCategory.EDUCATION,
+    "transcript" to TransactionCategory.EDUCATION,
+    "lesson" to TransactionCategory.EDUCATION,
+    "snacks" to TransactionCategory.SNACKS,
+    "biscuits" to TransactionCategory.SNACKS,
+    "pie" to TransactionCategory.SNACKS,
+    "screen" to TransactionCategory.ELECTRONICS,
+    "laptop" to TransactionCategory.ELECTRONICS,
+    "charger" to TransactionCategory.ELECTRONICS,
+    "phone" to TransactionCategory.ELECTRONICS,
+    "ups" to TransactionCategory.ELECTRONICS,
+)
+
+val PRIORITY_REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
+    "transcript" to TransactionCategory.EDUCATION,
+    "lesson" to TransactionCategory.EDUCATION,
 )
 
 val REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
@@ -111,7 +146,6 @@ val REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "cleaning" to TransactionCategory.HOUSE,
     "detergent" to TransactionCategory.HOUSE,
     "dustbin" to TransactionCategory.HOUSE,
-    "electricals" to TransactionCategory.HOUSE,
     "electricity" to TransactionCategory.HOUSE,
 
     // Food
@@ -131,7 +165,6 @@ val REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "malt" to TransactionCategory.FOOD,
     "coke" to TransactionCategory.FOOD,
     "delivery" to TransactionCategory.FOOD,
-    "pie" to TransactionCategory.FOOD,
     "meat" to TransactionCategory.FOOD,
     "rice" to TransactionCategory.FOOD,
     "egg" to TransactionCategory.FOOD,
@@ -166,10 +199,20 @@ val REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "shirt" to TransactionCategory.SHOPPING,
     "clothe" to TransactionCategory.SHOPPING,
     "clothes" to TransactionCategory.SHOPPING,
-    "screen" to TransactionCategory.SHOPPING,
-    "laptop" to TransactionCategory.SHOPPING,
-    "charger" to TransactionCategory.SHOPPING,
     "card" to TransactionCategory.SHOPPING,
+
+    // Electronics
+    "screen" to TransactionCategory.ELECTRONICS,
+    "laptop" to TransactionCategory.ELECTRONICS,
+    "charger" to TransactionCategory.ELECTRONICS,
+    "phone" to TransactionCategory.ELECTRONICS,
+    "tablet" to TransactionCategory.ELECTRONICS,
+    "electricals" to TransactionCategory.ELECTRONICS,
+    "tv" to TransactionCategory.ELECTRONICS,
+    "ups" to TransactionCategory.ELECTRONICS,
+    "earbuds" to TransactionCategory.ELECTRONICS,
+    "airpods" to TransactionCategory.ELECTRONICS,
+    "electronics" to TransactionCategory.ELECTRONICS,
 
     // Church
     "offering" to TransactionCategory.CHURCH,

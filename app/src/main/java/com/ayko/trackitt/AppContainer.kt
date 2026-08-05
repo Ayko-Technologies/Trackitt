@@ -8,6 +8,17 @@ import com.ayko.trackitt.service.categorization.CloudCategorizationService
 import com.ayko.trackitt.service.categorization.DictionaryCategorizationService
 import com.ayko.trackitt.service.categorization.NanoCategorizationService
 import com.ayko.trackitt.service.categorization.SmartCategorizationService
+import com.ayko.trackitt.service.budget.BudgetAlertService
+import com.ayko.trackitt.service.budget.BudgetEstimateCache
+import com.ayko.trackitt.service.budget.BudgetEstimateNotificationService
+import com.ayko.trackitt.service.budget.BudgetEstimateService
+import com.ayko.trackitt.service.budget.NanoBudgetEstimateService
+import com.ayko.trackitt.service.insights.CloudInsightsService
+import com.ayko.trackitt.service.insights.MonthlyInsightsAnalyzer
+import com.ayko.trackitt.service.insights.MonthlyInsightsCache
+import com.ayko.trackitt.service.insights.MonthlyInsightsFallbackComposer
+import com.ayko.trackitt.service.insights.NanoInsightsService
+import com.ayko.trackitt.service.insights.SmartInsightsService
 import com.ayko.trackitt.service.network.NetworkMonitor
 import com.ayko.trackitt.service.sms.EcobankSmsParser
 import com.ayko.trackitt.service.sms.MoMoSmsParser
@@ -28,6 +39,43 @@ class AppContainer(private val context: Context) {
 
     private val nanoService = NanoCategorizationService()
     private val cloudService = CloudCategorizationService()
+    private val nanoInsightsService = NanoInsightsService()
+    private val nanoBudgetEstimateService = NanoBudgetEstimateService()
+    private val cloudInsightsService = CloudInsightsService()
+    private val insightsCache = MonthlyInsightsCache(
+        context.getSharedPreferences("insights_cache", 0)
+    )
+    private val budgetEstimateCache = BudgetEstimateCache(
+        context.getSharedPreferences("budget_estimate_cache", 0)
+    )
+    private val budgetAlertService = BudgetAlertService(
+        context = context,
+        budgetDao = database.budgetDao(),
+        transactionDao = database.transactionDao(),
+    )
+    val budgetEstimateService = BudgetEstimateService(
+        budgetDao = database.budgetDao(),
+        transactionDao = database.transactionDao(),
+        cache = budgetEstimateCache,
+        nano = nanoBudgetEstimateService,
+        showFees = {
+            context.getSharedPreferences("trackitt_display", 0)
+                .getBoolean("show_fees", false)
+        },
+        excludeTransfers = {
+            context.getSharedPreferences("trackitt_display", 0)
+                .getBoolean("exclude_transfers", false)
+        },
+        useOnDeviceAi = {
+            context.getSharedPreferences("trackitt", 0)
+                .getBoolean("use_on_device_ai", true)
+        },
+    )
+    val budgetEstimateNotifications = BudgetEstimateNotificationService(
+        context = context,
+        estimateService = budgetEstimateService,
+        prefs = context.getSharedPreferences("budget_estimate_notifications", 0),
+    )
 
     private val smartCategorization = SmartCategorizationService(
         dictionary = dictionaryService,
@@ -43,6 +91,19 @@ class AppContainer(private val context: Context) {
         transactionDao = database.transactionDao(),
         merchantMappingDao = database.merchantMappingDao(),
         smartCategorization = smartCategorization,
+        budgetAlerts = budgetAlertService,
+    )
+
+    val insightsService = SmartInsightsService(
+        analyzer = MonthlyInsightsAnalyzer(),
+        fallbackComposer = MonthlyInsightsFallbackComposer(),
+        cache = insightsCache,
+        nano = nanoInsightsService,
+        cloud = cloudInsightsService,
+        useOnDeviceAi = {
+            context.getSharedPreferences("trackitt", 0)
+                .getBoolean("use_on_device_ai", true)
+        },
     )
 
     val networkMonitor = NetworkMonitor(context)
@@ -63,12 +124,12 @@ class AppContainer(private val context: Context) {
             return allSenders.keys.filter { prefs.getBoolean("source_$it", true) }
         }
 
-    fun parseSms(sender: String?, body: String): ParsedTransaction? {
+    fun parseSms(sender: String?, body: String, smsTimestamp: Long = System.currentTimeMillis()): ParsedTransaction? {
         val prefs = context.getSharedPreferences("sms_sources", 0)
 
         return when {
             sender.equals("MobileMoney", ignoreCase = true) -> {
-                if (prefs.getBoolean("source_MobileMoney", true)) momoParser.parse(body) else null
+                if (prefs.getBoolean("source_MobileMoney", true)) momoParser.parse(body, smsTimestamp) else null
             }
             sender.equals("ECOBANK", ignoreCase = true) -> {
                 if (prefs.getBoolean("source_ECOBANK", true)) ecobankParser.parse(body) else null
@@ -77,7 +138,7 @@ class AppContainer(private val context: Context) {
                 if (prefs.getBoolean("source_T-CASH", true)) telecelParser.parse(body) else null
             }
             else -> {
-                if (prefs.getBoolean("source_MobileMoney", true)) momoParser.parse(body)?.let { return it }
+                if (prefs.getBoolean("source_MobileMoney", true)) momoParser.parse(body, smsTimestamp)?.let { return it }
                 if (prefs.getBoolean("source_ECOBANK", true)) ecobankParser.parse(body)?.let { return it }
                 if (prefs.getBoolean("source_T-CASH", true)) telecelParser.parse(body)?.let { return it }
                 null

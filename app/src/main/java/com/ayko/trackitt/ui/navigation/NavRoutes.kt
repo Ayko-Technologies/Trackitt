@@ -7,6 +7,9 @@ sealed class NavRoute(val route: String) {
     data object Settings : NavRoute("settings")
     data object Search : NavRoute("search")
     data object Budget : NavRoute("budget")
+    data object Insights : NavRoute("insights/{year}/{month}") {
+        fun withArgs(year: Int, month: Int) = "insights/$year/$month"
+    }
     data object SmsSources : NavRoute("settings/sms-sources")
     data object MerchantDictionary : NavRoute("settings/merchant-dictionary")
     data object Detail : NavRoute("detail/{transactionId}") {

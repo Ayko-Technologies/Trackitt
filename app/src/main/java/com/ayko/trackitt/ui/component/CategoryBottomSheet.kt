@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.ayko.trackitt.domain.model.Transaction
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.ui.theme.FrauncesFamily
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -82,13 +82,13 @@ fun CategoryBottomSheet(
                     category.label,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
-                    fontFamily = SatoshiFamily,
+                    fontFamily = TrackittBodyFamily,
                 )
                 Text(
                     "$count transaction${if (count != 1) "s" else ""} · GH₵ ${String.format(Locale.US, "%.2f", total)}",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = SatoshiFamily,
+                    fontFamily = TrackittBodyFamily,
                 )
             }
         }
@@ -132,13 +132,13 @@ fun CategoryBottomSheet(
                             tx.merchant,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
-                            fontFamily = SatoshiFamily,
+                            fontFamily = TrackittBodyFamily,
                         )
                         Text(
                             dateFormatted,
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontFamily = SatoshiFamily,
+                            fontFamily = TrackittBodyFamily,
                         )
                     }
                     val displayAmount = tx.amount + if (includeFees) tx.fee else 0.0

@@ -7,6 +7,7 @@ import com.ayko.trackitt.data.local.entity.MerchantMappingEntity
 import com.ayko.trackitt.data.local.entity.TransactionEntity
 import com.ayko.trackitt.domain.model.Transaction
 import com.ayko.trackitt.domain.model.TransactionCategory
+import com.ayko.trackitt.service.budget.BudgetAlertService
 import com.ayko.trackitt.service.categorization.ClassificationResult
 import com.ayko.trackitt.service.categorization.SmartCategorizationService
 import com.ayko.trackitt.service.sms.ParsedTransaction
@@ -22,6 +23,7 @@ class TransactionRepository(
     private val transactionDao: TransactionDao,
     private val merchantMappingDao: MerchantMappingDao,
     private val smartCategorization: SmartCategorizationService,
+    private val budgetAlerts: BudgetAlertService,
 ) {
 
     fun getByMonth(year: Int, month: Int): Flow<List<Transaction>> {
@@ -107,7 +109,11 @@ class TransactionRepository(
         }
 
         val entity = parsed.toEntity(category, needsClassification)
-        return transactionDao.insert(entity) != -1L
+        val inserted = transactionDao.insert(entity) != -1L
+        if (inserted) {
+            budgetAlerts.onInserted(entity)
+        }
+        return inserted
     }
 
     suspend fun insertManual(transaction: Transaction) {
@@ -125,10 +131,14 @@ class TransactionRepository(
             isFromSms = false,
             rawSms = null,
         )
-        transactionDao.insert(entity)
+        val inserted = transactionDao.insert(entity)
+        if (inserted != -1L) {
+            budgetAlerts.onInserted(entity)
+        }
     }
 
     suspend fun updateCategory(id: Long, category: TransactionCategory, merchant: String) {
+        val before = transactionDao.getByIdNow(id) ?: return
         transactionDao.updateCategory(id, category.name)
         transactionDao.updateNeedsClassification(id, false)
         merchantMappingDao.upsert(
@@ -137,6 +147,7 @@ class TransactionRepository(
                 category = category.name,
             )
         )
+        budgetAlerts.onUpdated(before, before.copy(category = category.name, needsClassification = false))
     }
 
     suspend fun updateMerchant(id: Long, merchant: String) {
@@ -144,6 +155,7 @@ class TransactionRepository(
     }
 
     suspend fun updateNote(id: Long, note: String?, merchant: String = "", reference: String? = null) {
+        val before = transactionDao.getByIdNow(id) ?: return
         transactionDao.updateNote(id, note)
         if (!note.isNullOrBlank()) {
             withContext(NonCancellable) {
@@ -159,14 +171,19 @@ class TransactionRepository(
                 }
             }
         }
+        budgetAlerts.onUpdated(before, transactionDao.getByIdNow(id))
     }
 
     suspend fun updateAmount(id: Long, amount: Double) {
+        val before = transactionDao.getByIdNow(id) ?: return
         transactionDao.updateAmount(id, amount)
+        budgetAlerts.onUpdated(before, before.copy(amount = amount))
     }
 
     suspend fun delete(id: Long) {
+        val before = transactionDao.getByIdNow(id) ?: return
         transactionDao.delete(id)
+        budgetAlerts.onUpdated(before, null)
     }
 
     suspend fun retryPendingClassifications() {
@@ -176,6 +193,9 @@ class TransactionRepository(
             if (result is ClassificationResult.Classified) {
                 transactionDao.updateCategory(entity.id, result.category.name)
                 transactionDao.updateNeedsClassification(entity.id, false)
+                if (result.category.name != entity.category) {
+                    budgetAlerts.onUpdated(entity, entity.copy(category = result.category.name, needsClassification = false))
+                }
             }
         }
     }

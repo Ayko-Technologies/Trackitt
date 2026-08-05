@@ -3,14 +3,20 @@ package com.ayko.trackitt.domain.model
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Church
+import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalGroceryStore
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -36,6 +42,12 @@ enum class TransactionCategory(
     CHURCH("Church", Icons.Filled.Church, CatChurchBg, CatChurchFg, 270f),
     HEALTH("Health", Icons.Filled.LocalHospital, CatHealthBg, CatHealthFg, 0f),
     AIRTIME("Airtime", Icons.Filled.PhoneAndroid, CatAirtimeBg, CatAirtimeFg, 200f),
+    POCKET_MONEY("Pocket Money", Icons.Filled.AttachMoney, CatPocketMoneyBg, CatPocketMoneyFg, 42f),
+    SNACKS("Snacks", Icons.Filled.Fastfood, CatSnacksBg, CatSnacksFg, 52f),
+    EDUCATION("Education", Icons.Filled.School, CatEducationBg, CatEducationFg, 212f),
+    GIFTS("Gifts", Icons.Filled.CardGiftcard, CatGiftsBg, CatGiftsFg, 308f),
+    ELECTRONICS("Electronics", Icons.Filled.Devices, CatElectronicsBg, CatElectronicsFg, 206f),
+    HOME_PROJECT("Home Project", Icons.Filled.Build, CatHomeProjectBg, CatHomeProjectFg, 122f),
     INCOME("Income", Icons.Filled.ArrowDownward, CatIncomeBg, CatIncomeFg, 148f),
     OTHER("Other", Icons.Filled.Category, CatOtherBg, CatOtherFg, 100f),
 }

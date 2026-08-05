@@ -23,7 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 
 @Composable
 fun CalculatorPad(
@@ -114,7 +114,7 @@ fun CalculatorPad(
                 buttonText,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
-                fontFamily = SatoshiFamily,
+                fontFamily = TrackittBodyFamily,
                 color = if (saveEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -144,7 +144,7 @@ private fun CalcKey(
             label,
             fontSize = if (accent) 20.sp else 22.sp,
             fontWeight = if (accent) FontWeight.SemiBold else FontWeight.Medium,
-            fontFamily = SatoshiFamily,
+            fontFamily = TrackittBodyFamily,
             color = if (accent) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
         )
     }

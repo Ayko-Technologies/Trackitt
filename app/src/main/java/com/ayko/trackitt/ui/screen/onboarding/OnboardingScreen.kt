@@ -96,7 +96,7 @@ import com.ayko.trackitt.ui.theme.FrauncesFamily
 import com.ayko.trackitt.ui.theme.OnSurface
 import com.ayko.trackitt.ui.theme.Primary
 import com.ayko.trackitt.ui.theme.PrimaryContainer
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 import com.ayko.trackitt.ui.theme.Surface
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -225,7 +225,7 @@ private fun MicroLabel(text: String, color: Color = OnSurface) {
         Text(
             text.uppercase(),
             fontSize = 10.sp, fontWeight = FontWeight.Bold,
-            letterSpacing = 1.6.sp, color = color, fontFamily = SatoshiFamily,
+            letterSpacing = 1.6.sp, color = color, fontFamily = TrackittBodyFamily,
         )
     }
 }
@@ -252,7 +252,7 @@ private fun PrimaryCta(text: String, icon: ImageVector? = Icons.Filled.ArrowForw
             .background(OnSurface)
             .clickable { onClick() },
     ) {
-        Text(text, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Surface, fontFamily = SatoshiFamily, letterSpacing = 0.2.sp)
+        Text(text, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Surface, fontFamily = TrackittBodyFamily, letterSpacing = 0.2.sp)
         if (icon != null) {
             Spacer(Modifier.width(10.dp))
             Icon(icon, contentDescription = null, tint = Surface, modifier = Modifier.size(18.dp))
@@ -271,7 +271,7 @@ private fun GhostCta(text: String, onClick: () -> Unit) {
             .clip(RoundedCornerShape(24.dp))
             .clickable { onClick() },
     ) {
-        Text(text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
+        Text(text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = TrackittBodyFamily)
     }
 }
 
@@ -296,7 +296,7 @@ private fun OrganicBlob(color: Color, modifier: Modifier = Modifier) {
 private fun BulletPoint(icon: ImageVector, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Icon(icon, contentDescription = null, tint = Primary, modifier = Modifier.size(18.dp))
-        Text(text, fontSize = 13.sp, fontWeight = FontWeight.Medium, fontFamily = SatoshiFamily)
+        Text(text, fontSize = 13.sp, fontWeight = FontWeight.Medium, fontFamily = TrackittBodyFamily)
     }
 }
 
@@ -339,7 +339,7 @@ private fun WelcomeStep(onGetStarted: () -> Unit) {
             Text(
                 "Trackitt reads your MoMo and bank SMS on-device, and shows you where the month went. No logins. No bookkeeping.",
                 fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 22.sp, fontFamily = SatoshiFamily,
+                lineHeight = 22.sp, fontFamily = TrackittBodyFamily,
             )
 
             Spacer(Modifier.weight(1f))
@@ -398,7 +398,7 @@ private fun HowItWorksStep(onBack: () -> Unit, onContinue: () -> Unit) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(title, fontFamily = FrauncesFamily, fontSize = 22.sp, color = inks[i], fontWeight = FontWeight.Medium, letterSpacing = (-0.4).sp, lineHeight = 24.sp)
                         Spacer(Modifier.height(6.dp))
-                        Text(body, fontSize = 14.sp, color = inks[i].copy(alpha = 0.78f), lineHeight = 20.sp, fontFamily = SatoshiFamily)
+                        Text(body, fontSize = 14.sp, color = inks[i].copy(alpha = 0.78f), lineHeight = 20.sp, fontFamily = TrackittBodyFamily)
                     }
                 }
             }
@@ -434,7 +434,7 @@ private fun SmsAccessStep(onBack: () -> Unit, onGranted: () -> Unit, onSkip: () 
             Text(
                 "It's how we catch every MoMo payment automatically. Your messages stay on your phone; we don't see them, ever.",
                 fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 21.sp, fontFamily = SatoshiFamily,
+                lineHeight = 21.sp, fontFamily = TrackittBodyFamily,
             )
         }
 
@@ -452,17 +452,17 @@ private fun SmsAccessStep(onBack: () -> Unit, onGranted: () -> Unit, onSkip: () 
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFFFD96E)),
                 ) {
-                    Text("M", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3D2A00), fontFamily = SatoshiFamily)
+                    Text("M", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3D2A00), fontFamily = TrackittBodyFamily)
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("MTN MoMo", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, fontFamily = SatoshiFamily)
-                    Text("Today · 2:14 PM", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
+                    Text("MTN MoMo", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, fontFamily = TrackittBodyFamily)
+                    Text("Today · 2:14 PM", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = TrackittBodyFamily)
                 }
             }
             Spacer(Modifier.height(14.dp))
             Text(
                 "Payment of GHS215.00 to LYDIA ENTERP. Available bal: GHS1,847.50. Ref 8827104.",
-                fontSize = 13.sp, fontFamily = SatoshiFamily, lineHeight = 19.sp,
+                fontSize = 13.sp, fontFamily = TrackittBodyFamily, lineHeight = 19.sp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
@@ -488,8 +488,8 @@ private fun SmsAccessStep(onBack: () -> Unit, onGranted: () -> Unit, onSkip: () 
                     Icon(Icons.Filled.ArrowDownward, contentDescription = null, tint = CatShoppingFg, modifier = Modifier.size(22.dp))
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Lydia Enterp", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, fontFamily = SatoshiFamily)
-                    Text("Shopping · MTN MoMo", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
+                    Text("Lydia Enterp", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, fontFamily = TrackittBodyFamily)
+                    Text("Shopping · MTN MoMo", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = TrackittBodyFamily)
                 }
                 Text("−215.00", fontFamily = FrauncesFamily, fontSize = 20.sp, fontWeight = FontWeight.Medium, letterSpacing = (-0.3).sp)
             }
@@ -536,7 +536,7 @@ private fun NotificationsStep(onBack: () -> Unit, onGranted: () -> Unit, onSkip:
             Text(
                 "Only when it actually matters: going over budget, an unusual charge, your weekly recap. That's it.",
                 fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 21.sp, fontFamily = SatoshiFamily,
+                lineHeight = 21.sp, fontFamily = TrackittBodyFamily,
             )
         }
 
@@ -564,11 +564,11 @@ private fun NotificationsStep(onBack: () -> Unit, onGranted: () -> Unit, onSkip:
                     CookieIcon(fillColor = PrimaryContainer, size = 22.dp)
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("TRACKITT", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.3.sp, fontFamily = SatoshiFamily)
+                    Text("TRACKITT", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.3.sp, fontFamily = TrackittBodyFamily)
                     Spacer(Modifier.height(4.dp))
-                    Text("You're close to your Food budget", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, fontFamily = SatoshiFamily)
+                    Text("You're close to your Food budget", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, fontFamily = TrackittBodyFamily)
                     Spacer(Modifier.height(2.dp))
-                    Text("GH₵612 of GH₵700 used; 87%. 5 days left.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 18.sp, fontFamily = SatoshiFamily)
+                    Text("GH₵612 of GH₵700 used; 87%. 5 days left.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 18.sp, fontFamily = TrackittBodyFamily)
                 }
             }
         }
@@ -625,7 +625,7 @@ private fun PickSourcesStep(onBack: () -> Unit, onContinue: (hasAnySources: Bool
             Text(
                 "Untick anything you don't want tracked.",
                 fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 21.sp, fontFamily = SatoshiFamily,
+                lineHeight = 21.sp, fontFamily = TrackittBodyFamily,
             )
         }
 
@@ -656,8 +656,8 @@ private fun PickSourcesStep(onBack: () -> Unit, onContinue: (hasAnySources: Bool
                         Text(s.glyph, fontFamily = FrauncesFamily, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = s.textColor)
                     }
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(s.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, fontFamily = SatoshiFamily)
-                        Text(s.sub, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
+                        Text(s.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, fontFamily = TrackittBodyFamily)
+                        Text(s.sub, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = TrackittBodyFamily)
                     }
                     Box(
                         contentAlignment = Alignment.Center,
@@ -738,7 +738,7 @@ private fun SetBudgetStep(onBack: () -> Unit, onSet: () -> Unit, onSkip: () -> U
                 MicroLabel("Monthly cap", color = Color(0xFF1F4D1B))
                 Spacer(Modifier.height(18.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("GH₵", fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1F4D1B), fontFamily = SatoshiFamily)
+                    Text("GH₵", fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1F4D1B), fontFamily = TrackittBodyFamily)
                     Spacer(Modifier.width(6.dp))
                     Text(
                         budgetText.ifEmpty { "0" },
@@ -758,7 +758,7 @@ private fun SetBudgetStep(onBack: () -> Unit, onSet: () -> Unit, onSkip: () -> U
                                 .clickable { budgetText = v.replace(",", "") }
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                         ) {
-                            Text(v, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (selected) Surface else Color(0xFF1F4D1B), fontFamily = SatoshiFamily)
+                            Text(v, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (selected) Surface else Color(0xFF1F4D1B), fontFamily = TrackittBodyFamily)
                         }
                     }
                 }
@@ -788,8 +788,8 @@ private fun SetBudgetStep(onBack: () -> Unit, onSet: () -> Unit, onSkip: () -> U
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Split across categories", fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFamily = SatoshiFamily)
-                    Text("We'll create budgets for Food, Transport, etc.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = SatoshiFamily)
+                    Text("Split across categories", fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFamily = TrackittBodyFamily)
+                    Text("We'll create budgets for Food, Transport, etc.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = TrackittBodyFamily)
                 }
                 Switch(
                     checked = useSplit,
@@ -822,11 +822,11 @@ private fun SetBudgetStep(onBack: () -> Unit, onSet: () -> Unit, onSkip: () -> U
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Box(modifier = Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(SPLIT_COLORS[i]))
-                                    Text(name, fontSize = 13.sp, fontFamily = SatoshiFamily)
+                                    Text(name, fontSize = 13.sp, fontFamily = TrackittBodyFamily)
                                 }
                                 Text(
                                     "GH₵${String.format(java.util.Locale.US, "%.0f", budgetAmount * pct)}",
-                                    fontSize = 13.sp, fontWeight = FontWeight.SemiBold, fontFamily = SatoshiFamily,
+                                    fontSize = 13.sp, fontWeight = FontWeight.SemiBold, fontFamily = TrackittBodyFamily,
                                 )
                             }
                         }
@@ -930,7 +930,7 @@ private fun BackfillingStep(onDone: () -> Unit) {
             Text(
                 if (finished) "Done!" else "Scanning messages…",
                 fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontFamily = SatoshiFamily,
+                fontFamily = TrackittBodyFamily,
             )
             Spacer(Modifier.height(18.dp))
             Box(
@@ -954,7 +954,7 @@ private fun BackfillingStep(onDone: () -> Unit) {
             Text(
                 "Keep the app open until this finishes. It only happens once.",
                 fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontFamily = SatoshiFamily, lineHeight = 18.sp,
+                fontFamily = TrackittBodyFamily, lineHeight = 18.sp,
             )
         }
     }
@@ -1007,7 +1007,7 @@ private fun ReadyStep(onOpen: () -> Unit) {
             Spacer(Modifier.height(16.dp))
             Text(
                 "From now on, every new MoMo SMS lands in trackitt automatically.",
-                fontSize = 15.sp, color = Color(0xFF1F4D1B), lineHeight = 21.sp, fontFamily = SatoshiFamily,
+                fontSize = 15.sp, color = Color(0xFF1F4D1B), lineHeight = 21.sp, fontFamily = TrackittBodyFamily,
             )
 
             Spacer(Modifier.weight(1f))

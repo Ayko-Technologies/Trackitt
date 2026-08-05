@@ -12,7 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ayko.trackitt.ui.theme.FrauncesFamily
-import com.ayko.trackitt.ui.theme.SatoshiFamily
+import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 
 import java.text.NumberFormat
 import java.util.Locale
@@ -43,7 +43,7 @@ fun DisplayNumber(
         Text(
             text = prefixText,
             style = TextStyle(
-                fontFamily = SatoshiFamily,
+                fontFamily = TrackittBodyFamily,
                 fontWeight = FontWeight.Medium,
                 fontSize = (sizeSp * 0.3f).sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
