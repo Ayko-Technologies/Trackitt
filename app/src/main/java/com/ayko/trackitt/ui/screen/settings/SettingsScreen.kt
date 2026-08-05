@@ -123,7 +123,9 @@ fun SettingsScreen(
             val accountName = account?.email ?: return@rememberLauncherForActivityResult
             scope.launch {
                 val success = backupManager.backup(accountName)
-                snackbarHostState.showSnackbar(if (success) "Backup complete" else "Backup failed")
+                snackbarHostState.showSnackbar(
+                    if (success) "Backup saved to your Google Drive" else "Backup failed"
+                )
             }
         }
     }
@@ -407,8 +409,8 @@ fun SettingsScreen(
                 SettingsGroup {
                     SettingsRow(
                         icon = Icons.Filled.CloudUpload,
-                        label = "Back up to Google Drive",
-                        subtitle = "Saves your database to a private Drive folder",
+                        label = "Back up to your Google Drive",
+                        subtitle = "Only uploads when you choose the Google account",
                         onClick = {
                             val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                                 .requestEmail()
@@ -421,8 +423,8 @@ fun SettingsScreen(
                     )
                     SettingsRow(
                         icon = Icons.Filled.History,
-                        label = "Restore from backup",
-                        subtitle = "Download a previous backup from Drive",
+                        label = "Restore from your Google Drive",
+                        subtitle = "Use a backup from the Google account you select",
                         onClick = {
                             scope.launch { snackbarHostState.showSnackbar("Restore coming soon") }
                         },

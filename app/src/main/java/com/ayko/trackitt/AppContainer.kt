@@ -4,7 +4,6 @@ import android.content.Context
 import com.ayko.trackitt.data.local.TrackittDatabase
 import com.ayko.trackitt.data.repository.TransactionRepository
 import com.ayko.trackitt.domain.model.TransactionCategory
-import com.ayko.trackitt.service.categorization.CloudCategorizationService
 import com.ayko.trackitt.service.categorization.DictionaryCategorizationService
 import com.ayko.trackitt.service.categorization.NanoCategorizationService
 import com.ayko.trackitt.service.categorization.SmartCategorizationService
@@ -13,13 +12,11 @@ import com.ayko.trackitt.service.budget.BudgetEstimateCache
 import com.ayko.trackitt.service.budget.BudgetEstimateNotificationService
 import com.ayko.trackitt.service.budget.BudgetEstimateService
 import com.ayko.trackitt.service.budget.NanoBudgetEstimateService
-import com.ayko.trackitt.service.insights.CloudInsightsService
 import com.ayko.trackitt.service.insights.MonthlyInsightsAnalyzer
 import com.ayko.trackitt.service.insights.MonthlyInsightsCache
 import com.ayko.trackitt.service.insights.MonthlyInsightsFallbackComposer
 import com.ayko.trackitt.service.insights.NanoInsightsService
 import com.ayko.trackitt.service.insights.SmartInsightsService
-import com.ayko.trackitt.service.network.NetworkMonitor
 import com.ayko.trackitt.service.sms.EcobankSmsParser
 import com.ayko.trackitt.service.sms.MoMoSmsParser
 import com.ayko.trackitt.service.sms.ParsedTransaction
@@ -38,10 +35,8 @@ class AppContainer(private val context: Context) {
     )
 
     private val nanoService = NanoCategorizationService()
-    private val cloudService = CloudCategorizationService()
     private val nanoInsightsService = NanoInsightsService()
     private val nanoBudgetEstimateService = NanoBudgetEstimateService()
-    private val cloudInsightsService = CloudInsightsService()
     private val insightsCache = MonthlyInsightsCache(
         context.getSharedPreferences("insights_cache", 0)
     )
@@ -80,7 +75,6 @@ class AppContainer(private val context: Context) {
     private val smartCategorization = SmartCategorizationService(
         dictionary = dictionaryService,
         nano = nanoService,
-        cloud = cloudService,
         useOnDeviceAi = {
             context.getSharedPreferences("trackitt", 0)
                 .getBoolean("use_on_device_ai", true)
@@ -99,14 +93,11 @@ class AppContainer(private val context: Context) {
         fallbackComposer = MonthlyInsightsFallbackComposer(),
         cache = insightsCache,
         nano = nanoInsightsService,
-        cloud = cloudInsightsService,
         useOnDeviceAi = {
             context.getSharedPreferences("trackitt", 0)
                 .getBoolean("use_on_device_ai", true)
         },
     )
-
-    val networkMonitor = NetworkMonitor(context)
 
     private val momoParser = MoMoSmsParser()
     private val ecobankParser = EcobankSmsParser()

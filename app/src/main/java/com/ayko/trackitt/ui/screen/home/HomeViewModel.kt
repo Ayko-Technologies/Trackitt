@@ -14,7 +14,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -34,16 +33,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private fun excludeTransfers() = displayPrefs.getBoolean("exclude_transfers", false)
 
     init {
-        val container = (application as TrackittApplication).container
         viewModelScope.launch {
             repository.retryPendingClassifications()
-        }
-        viewModelScope.launch {
-            container.networkMonitor.isConnected.collectLatest { connected ->
-                if (connected) {
-                    repository.retryPendingClassifications()
-                }
-            }
         }
     }
 

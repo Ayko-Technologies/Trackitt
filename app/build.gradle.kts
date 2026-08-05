@@ -3,8 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
-    // Uncomment after placing google-services.json in app/
-    // alias(libs.plugins.google.services)
 }
 
 android {
@@ -15,8 +13,8 @@ android {
         applicationId = "com.ayko.trackitt"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -97,10 +95,6 @@ dependencies {
 
     // ML Kit GenAI (on-device Gemini Nano)
     implementation(libs.mlkit.genai.prompt)
-
-    // Firebase AI Logic (cloud Gemini Flash-Lite) — uncomment after placing google-services.json
-    // implementation(platform(libs.firebase.bom))
-    // implementation("com.google.firebase:firebase-ai")
 
     // Test
     testImplementation("junit:junit:4.13.2")
