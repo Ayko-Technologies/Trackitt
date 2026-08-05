@@ -43,7 +43,12 @@ jobs:
         run: |
           asset="app/build/outputs/apk/debug/Trackitt-${TAG#v}-debug.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "$asset"
-          shasum -a 256 "$asset" > "$asset.sha256"
+          asset_dir=$(dirname "$asset")
+          asset_name=$(basename "$asset")
+          (
+            cd "$asset_dir"
+            shasum -a 256 "$asset_name" > "$asset_name.sha256"
+          )
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --title "Trackitt $TAG" --notes "Installable debug-signed preview APK. See docs/RELEASING.md for signing details."
           fi
