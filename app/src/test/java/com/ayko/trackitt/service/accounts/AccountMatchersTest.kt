@@ -137,6 +137,16 @@ class AccountMatchersTest {
     }
 
     @Test
+    fun does_not_tie_a_cash_withdrawal_to_unrelated_money_arriving_later() {
+        val withdrawal = tx("Telecel Cash", 50.0, false, "Acme Agent Ventures")
+        val laterPush = tx("MTN MoMo", 50.0, true, "Interpush OVA", at = start + 30 * minute)
+        val nearbyPush = tx("MTN MoMo", 50.0, true, "Interpush OVA", at = start + 5 * minute)
+
+        assertFalse(OwnTransferMatcher.isPair(withdrawal, laterPush))
+        assertTrue(OwnTransferMatcher.isPair(withdrawal, nearbyPush))
+    }
+
+    @Test
     fun treats_ecobank_linked_account_moves_as_own_even_without_a_pair() {
         assertTrue(OwnTransferMatcher.isLinkedAccountMove(tx("Ecobank", 2160.0, false, "Bank → MoMo")))
         assertFalse(OwnTransferMatcher.isLinkedAccountMove(tx("Ecobank", 50.0, false, "SPAR ACCRA")))

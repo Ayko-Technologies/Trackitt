@@ -16,6 +16,7 @@ object OwnTransferMatcher {
     /** Some wallets text minutes late; a move that names the other account can be this far apart. */
     const val WINDOW_MILLIS = 60L * 60 * 1000
     private const val SIMULTANEOUS_MILLIS = 2L * 60 * 1000
+    private const val NEARBY_MILLIS = 10L * 60 * 1000
 
     /** Ecobank's linked-account moves name both ends, so they're the user's own even without a pair. */
     private val LINKED_ACCOUNT = Regex("""wallet2bank|bank2wallet|momo → bank|bank → momo""", RegexOption.IGNORE_CASE)
@@ -31,7 +32,13 @@ object OwnTransferMatcher {
         if (abs(outgoing.amount - incoming.amount) >= 0.005) return false
         val gap = abs(outgoing.date - incoming.date)
         if (gap > WINDOW_MILLIS) return false
-        return gap <= SIMULTANEOUS_MILLIS || referencesEachOther(outgoing, incoming)
+        return when {
+            gap <= SIMULTANEOUS_MILLIS -> true
+            gap <= NEARBY_MILLIS -> referencesEachOther(outgoing, incoming)
+            // A late SMS needs specific evidence: a generic word like "push" isn't enough to tie a
+            // cash withdrawal to money that happened to arrive half an hour later.
+            else -> namesEachOther(outgoing, incoming)
+        }
     }
 
     /** The closest unpaired counterpart for [transaction] among [candidates], if any. */
@@ -63,11 +70,14 @@ object OwnTransferMatcher {
     }
 
     private fun referencesEachOther(outgoing: TransactionEntity, incoming: TransactionEntity): Boolean {
-        val outText = describe(outgoing)
-        val inText = describe(incoming)
-        if (networkWords(incoming.source).any { it in outText }) return true
-        if (networkWords(outgoing.source).any { it in inText }) return true
-        if (TRANSFER_MARKERS.any { it in outText || it in inText }) return true
+        if (namesEachOther(outgoing, incoming)) return true
+        return TRANSFER_MARKERS.any { it in describe(outgoing) || it in describe(incoming) }
+    }
+
+    /** One side names the other's network or bank, or both name the same person (the user). */
+    private fun namesEachOther(outgoing: TransactionEntity, incoming: TransactionEntity): Boolean {
+        if (networkWords(incoming.source).any { it in describe(outgoing) }) return true
+        if (networkWords(outgoing.source).any { it in describe(incoming) }) return true
         return sameName(outgoing.merchant, incoming.merchant)
     }
 
