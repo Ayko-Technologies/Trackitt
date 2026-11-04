@@ -1,5 +1,6 @@
 package com.ayko.trackitt.ui.screen.add
 
+import com.ayko.trackitt.ui.component.CATEGORY_CELL_MIN_WIDTH
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -8,6 +9,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +20,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import com.ayko.trackitt.ui.component.isCompactHeight
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -167,10 +172,27 @@ private fun ColumnScope.AmountContent(
     viewModel: AddViewModel,
     onNext: () -> Unit,
 ) {
+    if (isCompactHeight()) {
+        // Landscape: the keypad would squeeze the amount out of view, so they sit side by side.
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AmountDisplay(amount, Modifier.weight(1f).fillMaxHeight())
+            AmountPad(amount, viewModel, onNext, Modifier.weight(1.4f))
+        }
+    } else {
+        AmountDisplay(amount, Modifier.weight(1f).fillMaxWidth())
+        AmountPad(amount, viewModel, onNext)
+    }
+}
+
+@Composable
+private fun AmountDisplay(amount: String, modifier: Modifier) {
     Column(
-        modifier = Modifier
-            .weight(1f)
-            .fillMaxWidth(),
+        modifier = modifier,
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -220,7 +242,15 @@ private fun ColumnScope.AmountContent(
                 .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(1.dp)),
         )
     }
+}
 
+@Composable
+private fun AmountPad(
+    amount: String,
+    viewModel: AddViewModel,
+    onNext: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     CalculatorPad(
         expression = amount,
         buttonText = "Next",
@@ -263,6 +293,7 @@ private fun ColumnScope.AmountContent(
         },
         onSave = onNext,
         saveEnabled = (evaluateExpression(amount) ?: 0.0) > 0,
+        modifier = modifier,
     )
 }
 
@@ -307,7 +338,7 @@ private fun CategoryContent(
     Spacer(Modifier.height(32.dp))
 
     LazyVerticalGrid(
-        columns = GridCells.Fixed(4),
+        columns = GridCells.Adaptive(CATEGORY_CELL_MIN_WIDTH),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -356,6 +387,7 @@ private fun ColumnScope.ConfirmContent(
         modifier = Modifier
             .weight(1f)
             .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

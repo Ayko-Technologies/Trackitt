@@ -2,6 +2,8 @@ package com.ayko.trackitt.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,16 +32,21 @@ fun BalanceStrip(
 ) {
     if (balances.isEmpty()) return
     val dateFormat = SimpleDateFormat("d MMM", Locale.getDefault())
+    BoxWithConstraints(modifier = modifier) {
+    // On a wide screen the cards share the full width instead of bunching up on the left.
+    val fits = balances.size * MIN_CARD_WIDTH.value + (balances.size - 1) * 8 + 40 <= maxWidth.value
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier
-            .horizontalScroll(rememberScrollState())
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (fits) Modifier else Modifier.horizontalScroll(rememberScrollState()))
             .padding(horizontal = 20.dp),
     ) {
         balances.forEach { account ->
             val recentGaps = account.gaps.count { it.before >= recentGapsSince }
             Column(
                 modifier = Modifier
+                    .then(if (fits) Modifier.weight(1f) else Modifier)
                     .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(14.dp))
                     .padding(horizontal = 14.dp, vertical = 10.dp),
             ) {
@@ -68,4 +75,8 @@ fun BalanceStrip(
             }
         }
     }
+    }
 }
+
+/** Wide enough for a label like "2 possible missed SMS". */
+private val MIN_CARD_WIDTH = 140.dp
