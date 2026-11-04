@@ -362,7 +362,6 @@ fun SettingsScreen(
             item {
                 val displayPrefs = remember { context.getSharedPreferences("trackitt_display", 0) }
                 var showIncome by remember { mutableStateOf(displayPrefs.getBoolean("show_income", true)) }
-                var excludeTransfers by remember { mutableStateOf(displayPrefs.getBoolean("exclude_transfers", false)) }
 
                 SettingsGroup {
                     SettingsRow(
@@ -384,24 +383,6 @@ fun SettingsScreen(
                         showDivider = true,
                     )
 
-                    SettingsRow(
-                        icon = Icons.Filled.SwapHoriz,
-                        label = "Exclude transfers",
-                        subtitle = "Do not count transfers in spending totals and insights",
-                        trailing = {
-                            androidx.compose.material3.Switch(
-                                checked = excludeTransfers,
-                                onCheckedChange = {
-                                    excludeTransfers = it
-                                    displayPrefs.edit().putBoolean("exclude_transfers", it).apply()
-                                },
-                                colors = androidx.compose.material3.SwitchDefaults.colors(
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                ),
-                            )
-                        },
-                        showDivider = true,
-                    )
 
                     var showFees by remember { mutableStateOf(displayPrefs.getBoolean("show_fees", false)) }
                     SettingsRow(

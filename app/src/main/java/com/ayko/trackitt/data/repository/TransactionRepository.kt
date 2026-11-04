@@ -172,11 +172,38 @@ class TransactionRepository(
 
     /** Re-pairs own-account transfers across all history, e.g. after importing old SMS. */
     suspend fun relinkOwnTransfers() {
-        OwnTransferMatcher.findPairs(transactionDao.getAllChronological()).forEach { (outgoing, incoming) ->
+        val all = transactionDao.getAllChronological()
+        OwnTransferMatcher.findPairs(all).forEach { (outgoing, incoming) ->
             transactionDao.updateOwnTransfer(outgoing, true, TransactionCategory.TRANSFER.name)
             transactionDao.updateOwnTransfer(incoming, true, TransactionCategory.TRANSFER.name)
         }
+        all.filter { !it.isOwnTransfer && !it.ownTransferDismissed && OwnTransferMatcher.isLinkedAccountMove(it) }
+            .forEach { transactionDao.updateOwnTransfer(it.id, true, TransactionCategory.TRANSFER.name) }
         smsReceiptDao.deleteUnmatchedBefore(System.currentTimeMillis() - RECEIPT_RETENTION_MILLIS)
+    }
+
+    /**
+     * Older versions categorised payments to people as "Transfer" (and could hide them from spending).
+     * Only money moved between the user's own accounts is a transfer now, so look at those payments
+     * again by what they were for. Categories the user chose for a merchant are kept.
+     */
+    suspend fun reviewAutoTransfers() {
+        val payments = transactionDao.getAllChronological().filter {
+            !it.isIncome && !it.isOwnTransfer && it.category == TransactionCategory.TRANSFER.name
+        }
+        for (payment in payments) {
+            if (merchantMappingDao.getMapping(payment.merchant.lowercase().trim()) != null) continue
+            when (val result = smartCategorization.classify(payment.merchant, payment.reference, payment.note, allowAi = false)) {
+                is ClassificationResult.Classified -> if (result.category != TransactionCategory.TRANSFER) {
+                    transactionDao.updateCategory(payment.id, result.category.name)
+                }
+                // The on-device AI looks at the rest in the background.
+                is ClassificationResult.Unavailable -> {
+                    transactionDao.updateCategory(payment.id, TransactionCategory.OTHER.name)
+                    transactionDao.updateNeedsClassification(payment.id, true)
+                }
+            }
+        }
     }
 
     /** The user says this isn't money moved between their own accounts: restore both sides. */
@@ -208,8 +235,13 @@ class TransactionRepository(
             transaction.date - OwnTransferMatcher.WINDOW_MILLIS,
             transaction.date + OwnTransferMatcher.WINDOW_MILLIS + 1,
         )
-        val counterpart = OwnTransferMatcher.counterpart(transaction, nearby) ?: return
-        listOf(transaction, counterpart).forEach { side ->
+        val counterpart = OwnTransferMatcher.counterpart(transaction, nearby)
+        val sides = when {
+            counterpart != null -> listOf(transaction, counterpart)
+            OwnTransferMatcher.isLinkedAccountMove(transaction) -> listOf(transaction)
+            else -> return
+        }
+        sides.forEach { side ->
             transactionDao.updateOwnTransfer(side.id, true, TransactionCategory.TRANSFER.name)
             budgetAlerts.onUpdated(side, side.copy(isOwnTransfer = true, category = TransactionCategory.TRANSFER.name))
         }

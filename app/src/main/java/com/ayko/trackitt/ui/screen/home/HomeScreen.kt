@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,10 +75,8 @@ fun HomeScreen(
     val allChartCategories by viewModel.chartCategories.collectAsStateWithLifecycle(initialValue = emptyList())
     val displayPrefs = remember { context.getSharedPreferences("trackitt_display", 0) }
     val showIncome = remember { displayPrefs.getBoolean("show_income", true) }
-    val excludeTransfers = remember { displayPrefs.getBoolean("exclude_transfers", false) }
     val chartCategories = allChartCategories
         .filter { showIncome || it.category != com.ayko.trackitt.domain.model.TransactionCategory.INCOME }
-        .filterNot { excludeTransfers && it.category == com.ayko.trackitt.domain.model.TransactionCategory.TRANSFER }
     val smsGranted by viewModel.smsPermissionGranted.collectAsStateWithLifecycle()
     val balances by viewModel.balances.collectAsStateWithLifecycle(initialValue = emptyList())
 
@@ -91,6 +90,13 @@ fun HomeScreen(
     var showDayPicker by remember { mutableStateOf(false) }
     var selectedCategoryForSheet by remember { mutableStateOf<com.ayko.trackitt.domain.model.TransactionCategory?>(null) }
     val categoryTransactions by viewModel.getCategoryTransactions(selectedCategoryForSheet?.name).collectAsStateWithLifecycle(initialValue = emptyList())
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            viewModel.classifyPending()
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.refresh()

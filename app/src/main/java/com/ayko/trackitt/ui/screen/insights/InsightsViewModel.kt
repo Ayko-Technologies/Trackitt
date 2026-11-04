@@ -47,7 +47,6 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
                     year = year,
                     month = month,
                     transactions = transactions,
-                    excludeTransfers = displayPrefs.getBoolean("exclude_transfers", false),
                 )
                 val fallback = insightsService.fallbackNarrative(snapshot)
                 _uiState.value = InsightsUiState(

@@ -56,10 +56,6 @@ class AppContainer(private val context: Context) {
             context.getSharedPreferences("trackitt_display", 0)
                 .getBoolean("show_fees", false)
         },
-        excludeTransfers = {
-            context.getSharedPreferences("trackitt_display", 0)
-                .getBoolean("exclude_transfers", false)
-        },
         useOnDeviceAi = {
             context.getSharedPreferences("trackitt", 0)
                 .getBoolean("use_on_device_ai", true)

@@ -58,7 +58,7 @@ class AccountMatchersTest {
         val out = tx("GhanaPay", 100.0, false, "MTN MOBILE MONEY")
         assertFalse(OwnTransferMatcher.isPair(out, tx("MTN MoMo", 99.0, true, "X", at = start + minute)))
         assertFalse(OwnTransferMatcher.isPair(out, tx("GhanaPay", 100.0, true, "X", at = start + minute)))
-        assertFalse(OwnTransferMatcher.isPair(out, tx("MTN MoMo", 100.0, true, "X", at = start + 30 * minute)))
+        assertFalse(OwnTransferMatcher.isPair(out, tx("MTN MoMo", 100.0, true, "X", at = start + 90 * minute)))
     }
 
     @Test
@@ -124,5 +124,21 @@ class AccountMatchersTest {
         assertEquals(1, momo.gaps.size)
         assertEquals(-20.0, momo.gaps.single().unexplained, 0.001)
         assertTrue(balances.getValue("GhanaPay").gaps.isEmpty())
+    }
+
+    @Test
+    fun pairs_a_late_sms_when_both_sides_name_each_other() {
+        val out = tx("MTN MoMo", 1200.0, false, "GHANAPAY PUSH")
+        val into = tx("GhanaPay", 1200.0, true, "2335****150 (MTN MOBILE MONEY)", at = start + 30 * minute)
+        val stranger = tx("GhanaPay", 1200.0, true, "AMA OWUSU", at = start + 30 * minute)
+
+        assertTrue(OwnTransferMatcher.isPair(out, into))
+        assertFalse(OwnTransferMatcher.isPair(tx("MTN MoMo", 1200.0, false, "KOFI MENSAH"), stranger))
+    }
+
+    @Test
+    fun treats_ecobank_linked_account_moves_as_own_even_without_a_pair() {
+        assertTrue(OwnTransferMatcher.isLinkedAccountMove(tx("Ecobank", 2160.0, false, "Bank → MoMo")))
+        assertFalse(OwnTransferMatcher.isLinkedAccountMove(tx("Ecobank", 50.0, false, "SPAR ACCRA")))
     }
 }

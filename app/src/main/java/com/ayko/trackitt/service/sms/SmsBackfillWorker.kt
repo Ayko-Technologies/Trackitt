@@ -82,9 +82,8 @@ class SmsBackfillWorker(
         cancelProgress()
         showDoneNotification(count)
 
-        // On-device AI categorises what the dictionary couldn't, as separate work so it never delays
-        // the import and resumes on its own if Android stops it.
-        PendingClassificationWorker.enqueue(applicationContext)
+        // On-device AI categorises what the dictionary couldn't the next time the app is open:
+        // Android only lets Gemini Nano run for the app on screen.
         return Result.success()
     }
 

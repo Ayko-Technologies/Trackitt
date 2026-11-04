@@ -73,7 +73,7 @@ val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "bigpay" to TransactionCategory.TRANSFER,
     "interoperability push" to TransactionCategory.TRANSFER,
     "interoperability pull" to TransactionCategory.TRANSFER,
-    "itc" to TransactionCategory.TRANSFER,
+    "itc ltd" to TransactionCategory.TRANSFER,
     "taptapsend" to TransactionCategory.TRANSFER,
     "send wave" to TransactionCategory.TRANSFER,
 
@@ -208,6 +208,9 @@ val REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
 
     // Church
     "offering" to TransactionCategory.CHURCH,
+    "thanksgiving" to TransactionCategory.CHURCH,
+    "house" to TransactionCategory.HOUSE,
+    "paint" to TransactionCategory.HOME_PROJECT,
     "tithe" to TransactionCategory.CHURCH,
     "seed offering" to TransactionCategory.CHURCH,
     "church" to TransactionCategory.CHURCH,

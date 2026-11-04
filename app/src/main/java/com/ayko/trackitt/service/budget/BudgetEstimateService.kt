@@ -18,7 +18,6 @@ class BudgetEstimateService(
     private val cache: BudgetEstimateCache,
     private val nano: NanoBudgetEstimateService,
     private val showFees: () -> Boolean,
-    private val excludeTransfers: () -> Boolean,
     private val useOnDeviceAi: () -> Boolean,
 ) {
 
@@ -99,7 +98,6 @@ class BudgetEstimateService(
             .toInstant()
             .toEpochMilli()
         val transactions = transactionDao.getExpensesBefore(startOfMonth)
-            .filterNot { excludeTransfers() && it.category == TransactionCategory.TRANSFER.name }
 
         if (transactions.isEmpty()) return null
 
@@ -142,7 +140,6 @@ class BudgetEstimateService(
         return budgetDao.getAllNow()
             .asSequence()
             .filterNot { it.category == TransactionCategory.INCOME.name }
-            .filterNot { excludeTransfers() && it.category == TransactionCategory.TRANSFER.name }
             .sumOf { it.amount }
     }
 
@@ -172,7 +169,7 @@ class BudgetEstimateService(
 
     private fun fingerprint(date: LocalDate, sources: List<BudgetEstimateSource>): String {
         val canonical = buildString {
-            append("year=${date.year}|month=${date.monthValue}|showFees=${showFees()}|excludeTransfers=${excludeTransfers()}\n")
+            append("year=${date.year}|month=${date.monthValue}|showFees=${showFees()}\n")
             sources.sortedBy { it.type.name }.forEach { source ->
                 append(source.type.name)
                 append('|')

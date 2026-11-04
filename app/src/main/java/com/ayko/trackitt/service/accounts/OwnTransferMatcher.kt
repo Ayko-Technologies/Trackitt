@@ -13,8 +13,14 @@ import kotlin.math.abs
  */
 object OwnTransferMatcher {
 
-    const val WINDOW_MILLIS = 10L * 60 * 1000
+    /** Some wallets text minutes late; a move that names the other account can be this far apart. */
+    const val WINDOW_MILLIS = 60L * 60 * 1000
     private const val SIMULTANEOUS_MILLIS = 2L * 60 * 1000
+
+    /** Ecobank's linked-account moves name both ends, so they're the user's own even without a pair. */
+    private val LINKED_ACCOUNT = Regex("""wallet2bank|bank2wallet|momo → bank|bank → momo""", RegexOption.IGNORE_CASE)
+
+    fun isLinkedAccountMove(transaction: TransactionEntity) = LINKED_ACCOUNT.containsMatchIn(transaction.merchant)
 
     fun isPair(outgoing: TransactionEntity, incoming: TransactionEntity): Boolean {
         if (outgoing.isIncome || !incoming.isIncome) return false
