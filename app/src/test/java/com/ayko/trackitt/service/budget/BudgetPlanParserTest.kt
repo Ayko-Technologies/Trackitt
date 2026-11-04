@@ -17,14 +17,14 @@ class BudgetPlanParserTest {
             Date ~ 300
             Glasses ~ 700
             Tithe ~ 400
-            Ashiley ~ 800 + 700
+            Allowance ~ 800 + 700
             Pure Water ~ 120
             Water ~ 500
             Electricity ~ 1,500
             Fiber ~ 350
             Claude ~ 200
             Chat GPT ~ 1,000
-            Prissy ~ 400
+            Upkeep ~ 400
             Grocries & Snacks ~ 1,700
             UPS ~ 3,500
             Transportation ~ 350

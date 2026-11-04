@@ -65,7 +65,7 @@ class MonthlyInsightsAnalyzerTest {
     }
 
     @Test
-    fun analyze_can_exclude_transfers_from_spend() {
+    fun analyze_leaves_transfers_out_of_spend() {
         val snapshot = analyzer.analyze(
             year = 2026,
             month = 4,
@@ -75,13 +75,13 @@ class MonthlyInsightsAnalyzerTest {
                 category = TransactionCategory.TRANSFER,
                 merchant = "Zenith MoMo POS",
                 date = 7L,
+                isOwnTransfer = true,
             ),
-            excludeTransfers = true,
         )
 
+        // The own transfer's 200 isn't spending, but its 3.00 fee is.
         assertEquals(470.0, snapshot.spend, 0.001)
-        assertEquals(6.0, snapshot.fees, 0.001)
-        assertTrue(snapshot.topCategories.none { it.category == TransactionCategory.TRANSFER })
+        assertEquals(13.0, snapshot.fees, 0.001)
         assertTrue(snapshot.topMerchants.none { it.merchant == "Zenith MoMo POS" })
     }
 
@@ -106,7 +106,7 @@ class MonthlyInsightsAnalyzerTest {
                 amount = 60.0,
                 fee = 0.0,
                 category = TransactionCategory.FOOD,
-                merchant = "RUTH NIMOTHY",
+                merchant = "AMA DARKO",
                 note = "jollof",
                 date = 3L,
             ),
@@ -114,7 +114,7 @@ class MonthlyInsightsAnalyzerTest {
                 amount = 40.0,
                 fee = 0.0,
                 category = TransactionCategory.CHURCH,
-                merchant = "ICGC DAYSPRING",
+                merchant = "CITY CHAPEL",
                 date = 4L,
             ),
             Transaction(

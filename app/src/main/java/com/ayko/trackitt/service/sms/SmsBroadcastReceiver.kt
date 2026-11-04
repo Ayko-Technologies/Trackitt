@@ -1,5 +1,6 @@
 package com.ayko.trackitt.service.sms
 
+import com.ayko.trackitt.service.security.privateOnLockScreen
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -40,8 +41,7 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 grouped.forEach { (sender, body, smsTimestamp) ->
-                    val parsed = container.parseSms(sender, body, smsTimestamp) ?: return@forEach
-                    container.repository.insertFromSms(parsed)
+                    val parsed = container.importSms(sender, body, smsTimestamp) ?: return@forEach
                     showNotification(context, parsed)
                 }
             } finally {
@@ -72,6 +72,7 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
             .setContentText(text)
             .setContentIntent(buildLaunchAppPendingIntent(context))
             .setAutoCancel(true)
+            .privateOnLockScreen(context, CHANNEL_ID, "New transaction")
             .build()
 
         notificationManager.notify(parsed.transactionId.hashCode(), notification)

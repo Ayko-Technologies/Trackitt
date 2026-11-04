@@ -1,5 +1,6 @@
 package com.ayko.trackitt.service.budget
 
+import com.ayko.trackitt.service.security.privateOnLockScreen
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -65,6 +66,7 @@ class BudgetEstimateNotificationService(
             )
             .setContentIntent(buildLaunchAppPendingIntent())
             .setAutoCancel(true)
+            .privateOnLockScreen(context, CHANNEL_ID, "Budget estimate ready")
             .build()
 
         notificationManager.notify(BUDGET_ESTIMATE_NOTIFICATION_ID, notification)

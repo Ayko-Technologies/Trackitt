@@ -11,15 +11,17 @@ class MonthlyInsightsAnalyzer {
         year: Int,
         month: Int,
         transactions: List<Transaction>,
-        excludeTransfers: Boolean = false,
     ): MonthlyInsightsSnapshot {
-        val expenseTransactions = transactions.filter { transaction ->
+        val counted = transactions.filterNot { it.isExcluded }
+        val expenseTransactions = counted.filter { transaction ->
             !transaction.isIncome &&
-                (!excludeTransfers || transaction.category != TransactionCategory.TRANSFER)
+                !transaction.isOwnTransfer
         }
-        val incomeTransactions = transactions.filter { it.isIncome }
+        val incomeTransactions = counted.filter { it.isIncome && !it.isOwnTransfer }
         val spend = expenseTransactions.sumOf { it.amount }
-        val fees = expenseTransactions.sumOf { it.fee }
+        // A fee for moving money between the user's own accounts is still money spent.
+        val fees = expenseTransactions.sumOf { it.fee } +
+            counted.filter { !it.isIncome && it.isOwnTransfer }.sumOf { it.fee }
         val income = incomeTransactions.sumOf { it.amount }
         val net = income - spend - fees
 
@@ -70,7 +72,7 @@ class MonthlyInsightsAnalyzer {
 
         val monthLabel = "${Month.of(month).name.lowercase().replaceFirstChar { it.uppercase() }} $year"
         val uncategorizedSpend = topCategories.find { it.category == TransactionCategory.OTHER }?.amount ?: 0.0
-        val fingerprint = fingerprintFor(transactions, excludeTransfers)
+        val fingerprint = fingerprintFor(transactions)
 
         return MonthlyInsightsSnapshot(
             year = year,
@@ -91,7 +93,7 @@ class MonthlyInsightsAnalyzer {
         )
     }
 
-    private fun fingerprintFor(transactions: List<Transaction>, excludeTransfers: Boolean): String {
+    private fun fingerprintFor(transactions: List<Transaction>): String {
         val canonical = transactions
             .sortedWith(
                 compareBy<Transaction> { it.date }
@@ -113,9 +115,10 @@ class MonthlyInsightsAnalyzer {
                     transaction.source,
                     transaction.note.orEmpty(),
                     transaction.isFromSms.toString(),
+                    transaction.isOwnTransfer.toString(),
+                    transaction.isExcluded.toString(),
                 ).joinToString("|")
             }
-            .let { "excludeTransfers=$excludeTransfers\n$it" }
 
         val digest = MessageDigest.getInstance("SHA-256")
             .digest(canonical.toByteArray(Charsets.UTF_8))

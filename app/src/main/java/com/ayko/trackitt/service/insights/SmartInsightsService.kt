@@ -15,9 +15,8 @@ class SmartInsightsService(
         year: Int,
         month: Int,
         transactions: List<Transaction>,
-        excludeTransfers: Boolean = false,
     ): MonthlyInsightsSnapshot {
-        return analyzer.analyze(year, month, transactions, excludeTransfers)
+        return analyzer.analyze(year, month, transactions)
     }
 
     fun fallbackNarrative(snapshot: MonthlyInsightsSnapshot): InsightNarrative {

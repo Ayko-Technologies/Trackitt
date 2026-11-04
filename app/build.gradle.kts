@@ -1,9 +1,37 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
+
+/*
+ * Signing keys live outside the repository, in ~/.config/trackitt/signing (or the directory given by
+ * -Ptrackitt.signingDir), or come from TRACKITT_* environment variables in CI:
+ *  - trackitt-dev.keystore: debug builds. One shared key means any machine's build installs over
+ *    another's without wiping data, and Google sign-in keeps working.
+ *  - release-credentials.properties (storeFile, storePassword, keyAlias, keyPassword): release builds.
+ * Without them, debug builds fall back to the machine's own debug key and release builds are unsigned.
+ */
+val signingDir = file(
+    providers.gradleProperty("trackitt.signingDir").orNull
+        ?: "${System.getProperty("user.home")}/.config/trackitt/signing"
+)
+val devKeystore = (System.getenv("TRACKITT_DEV_STORE_FILE")?.let(::file) ?: File(signingDir, "trackitt-dev.keystore"))
+    .takeIf { it.exists() }
+val releaseSigning = Properties().apply {
+    File(signingDir, "release-credentials.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+    mapOf(
+        "storeFile" to "TRACKITT_RELEASE_STORE_FILE",
+        "storePassword" to "TRACKITT_RELEASE_STORE_PASSWORD",
+        "keyAlias" to "TRACKITT_RELEASE_KEY_ALIAS",
+        "keyPassword" to "TRACKITT_RELEASE_KEY_PASSWORD",
+    ).forEach { (key, env) -> System.getenv(env)?.let { setProperty(key, it) } }
+}
+val hasReleaseSigning = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+    .all { !releaseSigning.getProperty(it).isNullOrBlank() }
 
 android {
     namespace = "com.ayko.trackitt"
@@ -19,8 +47,28 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        getByName("debug") {
+            if (devKeystore != null) {
+                storeFile = devKeystore
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseSigning.getProperty("storeFile"))
+                storePassword = releaseSigning.getProperty("storePassword")
+                keyAlias = releaseSigning.getProperty("keyAlias")
+                keyPassword = releaseSigning.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -43,6 +91,11 @@ android {
         compose = true
     }
 
+    sourceSets {
+        // Exported Room schemas let MigrationTestHelper build every past database version.
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
+
     packaging {
         resources {
             excludes += setOf(
@@ -55,6 +108,10 @@ android {
             )
         }
     }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -88,10 +145,6 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
-    // Google Drive backup
-    implementation(libs.google.play.services.auth)
-    implementation(libs.google.api.client.android)
-    implementation(libs.google.api.services.drive)
 
     // ML Kit GenAI (on-device Gemini Nano)
     implementation(libs.mlkit.genai.prompt)
