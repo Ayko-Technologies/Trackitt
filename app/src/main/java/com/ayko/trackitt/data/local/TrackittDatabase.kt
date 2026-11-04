@@ -9,10 +9,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ayko.trackitt.data.local.dao.BudgetDao
 import com.ayko.trackitt.data.local.dao.CustomCategoryDao
 import com.ayko.trackitt.data.local.dao.MerchantMappingDao
+import com.ayko.trackitt.data.local.dao.SmsReceiptDao
 import com.ayko.trackitt.data.local.dao.TransactionDao
 import com.ayko.trackitt.data.local.entity.BudgetEntity
 import com.ayko.trackitt.data.local.entity.CustomCategoryEntity
 import com.ayko.trackitt.data.local.entity.MerchantMappingEntity
+import com.ayko.trackitt.data.local.entity.SmsReceiptEntity
 import com.ayko.trackitt.data.local.entity.TransactionEntity
 
 val MIGRATION_3_4 = object : Migration(3, 4) {
@@ -21,18 +23,62 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE transactions ADD COLUMN balance REAL")
+        db.execSQL("ALTER TABLE transactions ADD COLUMN isOwnTransfer INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE transactions ADD COLUMN ownTransferDismissed INTEGER NOT NULL DEFAULT 0")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `sms_receipts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`sender` TEXT NOT NULL, `amount` REAL NOT NULL, `party` TEXT NOT NULL, `date` INTEGER NOT NULL, " +
+                "`rawSmsHash` TEXT NOT NULL, `matchedTransactionId` INTEGER)"
+        )
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_sms_receipts_rawSmsHash` ON `sms_receipts` (`rawSmsHash`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_sms_receipts_date` ON `sms_receipts` (`date`)")
+    }
+}
+
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE transactions ADD COLUMN isExcluded INTEGER NOT NULL DEFAULT 0")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `own_account_rules` (`merchant` TEXT NOT NULL, " +
+                "`isIncome` INTEGER NOT NULL, PRIMARY KEY(`merchant`, `isIncome`))"
+        )
+    }
+}
+
+/** "Own money" rules were replaced by marking a transaction as a transfer; never part of a release. */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE IF EXISTS `own_account_rules`")
+    }
+}
+
+/** Every migration, oldest first. A schema change without one here fails loudly instead of wiping data. */
+val ALL_MIGRATIONS = arrayOf(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+
 @Database(
-    entities = [TransactionEntity::class, MerchantMappingEntity::class, CustomCategoryEntity::class, BudgetEntity::class],
-    version = 4,
-    exportSchema = false,
+    entities = [
+        TransactionEntity::class, MerchantMappingEntity::class, CustomCategoryEntity::class, BudgetEntity::class,
+        SmsReceiptEntity::class,
+    ],
+    version = TrackittDatabase.VERSION,
+    exportSchema = true,
 )
 abstract class TrackittDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun merchantMappingDao(): MerchantMappingDao
     abstract fun customCategoryDao(): CustomCategoryDao
     abstract fun budgetDao(): BudgetDao
+    abstract fun smsReceiptDao(): SmsReceiptDao
 
     companion object {
+        const val VERSION = 7
+
+        /** Oldest schema with a migration path; anything older would be wiped on open. */
+        const val MIN_MIGRATABLE_VERSION = 3
+
         @Volatile
         private var INSTANCE: TrackittDatabase? = null
 
@@ -43,10 +89,19 @@ abstract class TrackittDatabase : RoomDatabase() {
                     TrackittDatabase::class.java,
                     "trackitt.db"
                 )
-                    .addMigrations(MIGRATION_3_4)
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(*ALL_MIGRATIONS)
+                    // Schemas 1 and 2 only existed in pre-release development builds and have no migration.
+                    .fallbackToDestructiveMigrationFrom(1, 2)
                     .build()
                     .also { INSTANCE = it }
+            }
+        }
+
+        /** Closes the open database so its file can be replaced; the next getInstance reopens it. */
+        fun closeInstance() {
+            synchronized(this) {
+                INSTANCE?.close()
+                INSTANCE = null
             }
         }
     }

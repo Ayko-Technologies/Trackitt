@@ -1,5 +1,6 @@
 package com.ayko.trackitt.service.budget
 
+import com.ayko.trackitt.service.security.privateOnLockScreen
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -110,6 +111,7 @@ class BudgetAlertService(
             )
             .setContentIntent(buildLaunchAppPendingIntent())
             .setAutoCancel(true)
+            .privateOnLockScreen(context, CHANNEL_ID, "Budget alert")
             .build()
 
         notificationManager.notify("${key.year}-${key.month}-${key.category}".hashCode(), notification)
@@ -128,7 +130,7 @@ class BudgetAlertService(
     }
 
     private fun TransactionEntity?.toContribution(): BudgetAlertContribution? {
-        if (this == null || isIncome) return null
+        if (this == null || isIncome || isOwnTransfer || isExcluded) return null
         val localDate = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()
         return BudgetAlertContribution(
             key = BudgetAlertKey(

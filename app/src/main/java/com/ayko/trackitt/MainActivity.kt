@@ -1,6 +1,7 @@
 package com.ayko.trackitt
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -31,6 +32,10 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         appLockManager = AppLockManager(this)
+        if (appLockManager.isLockEnabled()) {
+            // With app lock on, keep finances out of screenshots and the recent-apps preview too.
+            window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        }
         sessionUnlocked = !appLockManager.isLockEnabled()
         showLock = appLockManager.isLockEnabled()
         enableEdgeToEdge(

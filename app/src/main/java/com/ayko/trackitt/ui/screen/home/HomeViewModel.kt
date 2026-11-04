@@ -3,11 +3,9 @@ package com.ayko.trackitt.ui.screen.home
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.ayko.trackitt.TrackittApplication
 import com.ayko.trackitt.domain.model.TransactionCategory
+import com.ayko.trackitt.service.sms.PendingClassificationWorker
 import com.ayko.trackitt.service.sms.SmsBackfillWorker
 import com.ayko.trackitt.ui.component.ChartCategory
 import androidx.lifecycle.viewModelScope
@@ -34,8 +32,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         viewModelScope.launch {
-            repository.retryPendingClassifications()
+            // Cheap, and fixes transfers between the user's own accounts stored before pairing existed.
+            repository.relinkOwnTransfers()
         }
+        PendingClassificationWorker.enqueue(application)
+        SmsBackfillWorker.resumeIfUnfinished(application)
     }
 
     private val _refreshTrigger = MutableStateFlow(0)
@@ -139,6 +140,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Wallets and banks heard from in the last few months, with their latest reported balance. */
+    val balances: Flow<List<com.ayko.trackitt.service.accounts.AccountBalance>> =
+        repository.observeAccountBalances().map { accounts ->
+            val activeSince = System.currentTimeMillis() - ACTIVE_ACCOUNT_MILLIS
+            accounts.filter { it.asOf >= activeSince }
+        }
+
+    val recentGapsSince: Long get() = System.currentTimeMillis() - RECENT_GAP_MILLIS
+
     val smsPermissionGranted = MutableStateFlow(false)
 
     fun selectPeriod(period: Period) {
@@ -161,13 +171,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onSmsPermissionResult(granted: Boolean, context: Context) {
         smsPermissionGranted.value = granted
-        if (granted) {
-            val request = OneTimeWorkRequestBuilder<SmsBackfillWorker>().build()
-            WorkManager.getInstance(context).enqueueUniqueWork(
-                "sms_backfill",
-                ExistingWorkPolicy.KEEP,
-                request,
-            )
-        }
+        if (granted) SmsBackfillWorker.resumeIfUnfinished(context)
+    }
+
+    private companion object {
+        const val ACTIVE_ACCOUNT_MILLIS = 120L * 24 * 60 * 60 * 1000
+        const val RECENT_GAP_MILLIS = 30L * 24 * 60 * 60 * 1000
     }
 }

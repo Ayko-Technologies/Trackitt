@@ -1,6 +1,5 @@
 package com.ayko.trackitt.ui.screen.settings
 
-import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -39,6 +38,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -61,17 +61,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ayko.trackitt.data.backup.DriveBackupManager
+import com.ayko.trackitt.service.sms.SmsBackfillWorker
+import com.ayko.trackitt.data.backup.AutoBackup
+import com.ayko.trackitt.data.backup.BackupLocation
+import com.ayko.trackitt.data.backup.BackupResult
+import com.ayko.trackitt.data.backup.LocalBackupManager
 import com.ayko.trackitt.data.local.TrackittDatabase
 import com.ayko.trackitt.data.local.entity.CustomCategoryEntity
 import com.ayko.trackitt.service.security.AppLockManager
 import com.ayko.trackitt.ui.component.scalePressEffect
 import com.ayko.trackitt.ui.theme.TrackittBodyFamily
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.Scope
-import com.google.api.services.drive.DriveScopes
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private val PRESET_COLORS = listOf(
     Color(0xFFE57373) to Color(0xFFB71C1C),
@@ -101,7 +102,6 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val backupManager = remember { DriveBackupManager(context) }
     val db = remember { TrackittDatabase.getInstance(context) }
     val appLockManager = remember { AppLockManager(context) }
     val customCategories by db.customCategoryDao().getAll().collectAsStateWithLifecycle(initialValue = emptyList())
@@ -115,38 +115,90 @@ fun SettingsScreen(
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    val signInLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val account = GoogleSignIn.getSignedInAccountFromIntent(result.data).result
-            val accountName = account?.email ?: return@rememberLauncherForActivityResult
+    val localBackupManager = remember { LocalBackupManager(context) }
+    var pendingImport by remember { mutableStateOf<android.net.Uri?>(null) }
+    var backupBusy by remember { mutableStateOf(false) }
+    var autoBackupEnabled by remember { mutableStateOf(AutoBackup.isEnabled(context)) }
+    var backupName by remember { mutableStateOf(BackupLocation.name(context)) }
+    var lastBackup by remember { mutableStateOf(BackupLocation.lastSuccess(context)) }
+    var backupError by remember { mutableStateOf(BackupLocation.lastError(context)) }
+    // What to do once the user has picked a backup location.
+    var enableAutoAfterPick by remember { mutableStateOf(false) }
+
+    val restartApp: () -> Unit = {
+        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK or android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+        Runtime.getRuntime().exit(0)
+    }
+
+    val backUpNow: () -> Unit = {
+        scope.launch {
+            backupBusy = true
+            val result = BackupLocation.backUp(context)
+            backupBusy = false
+            lastBackup = BackupLocation.lastSuccess(context)
+            backupError = BackupLocation.lastError(context)
+            snackbarHostState.showSnackbar(
+                when (result) {
+                    BackupResult.Success -> "Backed up to ${BackupLocation.name(context)}"
+                    is BackupResult.Failure -> result.message
+                }
+            )
+        }
+    }
+
+    val chooseLocationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        if (uri == null) {
+            enableAutoAfterPick = false
+            return@rememberLauncherForActivityResult
+        }
+        BackupLocation.choose(context, uri)
+        backupName = BackupLocation.name(context)
+        if (enableAutoAfterPick) {
+            AutoBackup.enable(context)
+            autoBackupEnabled = true
+            enableAutoAfterPick = false
+        }
+        backUpNow()
+    }
+    val chooseLocation: () -> Unit = { chooseLocationLauncher.launch("Trackitt backup.db") }
+
+    val saveCopyLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        if (uri != null) {
             scope.launch {
-                val success = backupManager.backup(accountName)
                 snackbarHostState.showSnackbar(
-                    if (success) "Backup saved to your Google Drive" else "Backup failed"
+                    when (val result = BackupLocation.saveCopy(context, uri)) {
+                        BackupResult.Success -> "Backup copy saved"
+                        is BackupResult.Failure -> result.message
+                    }
                 )
             }
         }
     }
 
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> if (uri != null) pendingImport = uri }
+
     val startRescan: () -> Unit = {
-        val prefs = context.getSharedPreferences("trackitt", 0)
-        val days = prefs.getInt("backfill_days", 30)
-        prefs.edit().putBoolean("backfill_completed", false).apply()
-        val request = androidx.work.OneTimeWorkRequestBuilder<
-            com.ayko.trackitt.service.sms.SmsBackfillWorker>()
-            .setInputData(androidx.work.workDataOf("lookback_days" to days))
-            .build()
-        androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
-            "sms_backfill",
-            androidx.work.ExistingWorkPolicy.REPLACE,
-            request,
-        )
+        val days = context.getSharedPreferences("trackitt", 0)
+            .getInt("backfill_days", SmsBackfillWorker.DEFAULT_DAYS)
         scope.launch {
-            snackbarHostState.showSnackbar(
-                if (days == 1) "Scanning today's SMS..." else "Scanning last $days days of SMS..."
-            )
+            // A second tap mustn't cancel a scan that's already running.
+            val running = withContext(kotlinx.coroutines.Dispatchers.IO) { SmsBackfillWorker.isRunning(context) }
+            if (running) {
+                snackbarHostState.showSnackbar("Already scanning. Progress is in your notifications.")
+            } else {
+                SmsBackfillWorker.start(context, days)
+                snackbarHostState.showSnackbar(
+                    "Scanning SMS from ${SmsBackfillWorker.describe(days)}. It keeps going if you leave the app."
+                )
+            }
         }
     }
 
@@ -407,27 +459,71 @@ fun SettingsScreen(
 
             item {
                 SettingsGroup {
+                    val dateFormat = remember { java.text.SimpleDateFormat("d MMM yyyy, HH:mm", java.util.Locale.getDefault()) }
                     SettingsRow(
                         icon = Icons.Filled.CloudUpload,
-                        label = "Back up to your Google Drive",
-                        subtitle = "Only uploads when you choose the Google account",
+                        label = "Back up now",
+                        subtitle = when {
+                            backupName == null -> "Choose where to keep it. Pick Drive in the file picker to use your Google Drive."
+                            backupError != null -> backupError
+                            lastBackup > 0L -> "To $backupName · last backup ${dateFormat.format(java.util.Date(lastBackup))}"
+                            else -> "To $backupName"
+                        },
                         onClick = {
-                            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                                .requestEmail()
-                                .requestScopes(Scope(DriveScopes.DRIVE_APPDATA))
-                                .build()
-                            val client = GoogleSignIn.getClient(context, gso)
-                            signInLauncher.launch(client.signInIntent)
+                            if (!backupBusy) {
+                                if (backupName == null || backupError == BackupLocation.LOST_ACCESS) chooseLocation() else backUpNow()
+                            }
                         },
                         showDivider = true,
                     )
                     SettingsRow(
-                        icon = Icons.Filled.History,
-                        label = "Restore from your Google Drive",
-                        subtitle = "Use a backup from the Google account you select",
-                        onClick = {
-                            scope.launch { snackbarHostState.showSnackbar("Restore coming soon") }
+                        icon = Icons.Filled.Schedule,
+                        label = "Back up automatically",
+                        subtitle = if (autoBackupEnabled) "Every week, to ${backupName ?: "your backup file"}" else "Off",
+                        trailing = {
+                            Switch(
+                                checked = autoBackupEnabled,
+                                onCheckedChange = { on ->
+                                    when {
+                                        !on -> {
+                                            AutoBackup.disable(context)
+                                            autoBackupEnabled = false
+                                        }
+                                        backupName == null -> {
+                                            enableAutoAfterPick = true
+                                            chooseLocation()
+                                        }
+                                        else -> {
+                                            AutoBackup.enable(context)
+                                            autoBackupEnabled = true
+                                        }
+                                    }
+                                },
+                            )
                         },
+                        showDivider = true,
+                    )
+                    if (backupName != null) {
+                        SettingsRow(
+                            icon = Icons.Filled.FolderOpen,
+                            label = "Change where backups go",
+                            subtitle = "Currently $backupName",
+                            onClick = chooseLocation,
+                            showDivider = true,
+                        )
+                    }
+                    SettingsRow(
+                        icon = Icons.Filled.SaveAlt,
+                        label = "Save a copy elsewhere",
+                        subtitle = "A one-off copy, such as to a USB drive",
+                        onClick = { saveCopyLauncher.launch(localBackupManager.suggestedFileName()) },
+                        showDivider = true,
+                    )
+                    SettingsRow(
+                        icon = Icons.Filled.History,
+                        label = "Restore from a backup",
+                        subtitle = "Pick a backup file, including one in Google Drive. Replaces what's on this phone.",
+                        onClick = { importLauncher.launch(arrayOf("*/*")) },
                         showDivider = false,
                     )
                 }
@@ -439,15 +535,17 @@ fun SettingsScreen(
             item {
                 SettingsGroup {
                     val smsPrefs = remember { context.getSharedPreferences("sms_sources", 0) }
-                    val activeSourceNames = listOf(
-                        "MobileMoney" to "MTN MoMo",
-                        "T-CASH" to "Telecel Cash",
-                        "ECOBANK" to "Ecobank",
-                    ).filter { smsPrefs.getBoolean("source_${it.first}", true) }.map { it.second }
+                    val activeSourceCount = com.ayko.trackitt.service.sms.SmsProviders.known
+                        .count { smsPrefs.getBoolean(com.ayko.trackitt.service.sms.SmsProviders.prefKey(it), true) }
+                    val detectsOthers = smsPrefs.getBoolean(com.ayko.trackitt.service.sms.SmsProviders.OTHER_SENDERS_PREF, true)
                     SettingsRow(
                         icon = Icons.Filled.Sms,
                         label = "SMS sources",
-                        subtitle = if (activeSourceNames.isEmpty()) "None active" else activeSourceNames.joinToString(", "),
+                        subtitle = when {
+                            activeSourceCount == 0 && !detectsOthers -> "None active"
+                            detectsOthers -> "$activeSourceCount banks & wallets, plus new ones automatically"
+                            else -> "$activeSourceCount banks & wallets"
+                        },
                         showChevron = true,
                         showDivider = true,
                         onClick = onNavigateToSmsSources,
@@ -456,8 +554,8 @@ fun SettingsScreen(
                         icon = Icons.Filled.Refresh,
                         label = "Re-scan SMS",
                         subtitle = run {
-                            val days = context.getSharedPreferences("trackitt", 0).getInt("backfill_days", 30)
-                            if (days == 1) "Re-import today's SMS" else "Re-import SMS from the last $days days"
+                            val days = context.getSharedPreferences("trackitt", 0).getInt("backfill_days", SmsBackfillWorker.DEFAULT_DAYS)
+                            "Re-import SMS from ${com.ayko.trackitt.service.sms.SmsBackfillWorker.describe(days)}"
                         },
                         showDivider = true,
                         onClick = {
@@ -478,10 +576,14 @@ fun SettingsScreen(
                         trailing = {
                             var showPicker by remember { mutableStateOf(false) }
                             val prefs = remember { context.getSharedPreferences("trackitt", 0) }
-                            var currentDays by remember { mutableIntStateOf(prefs.getInt("backfill_days", 30)) }
+                            var currentDays by remember { mutableIntStateOf(prefs.getInt("backfill_days", SmsBackfillWorker.DEFAULT_DAYS)) }
 
                             Text(
-                                if (currentDays == 1) "1 day" else "$currentDays days",
+                                when (currentDays) {
+                                    0 -> "All time"
+                                    1 -> "1 day"
+                                    else -> "$currentDays days"
+                                },
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontFamily = TrackittBodyFamily,
@@ -494,7 +596,7 @@ fun SettingsScreen(
                                     title = { Text("Lookback period", fontFamily = TrackittBodyFamily) },
                                     text = {
                                         Column {
-                                            listOf(1, 7, 30, 60, 90, 180, 365).forEach { days ->
+                                            listOf(1, 7, 30, 60, 90, 180, 365, 0).forEach { days ->
                                                 Row(
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     modifier = Modifier
@@ -517,6 +619,7 @@ fun SettingsScreen(
                                                             90 -> "90 days (3 months)"
                                                             180 -> "180 days (6 months)"
                                                             365 -> "365 days (1 year)"
+                                                            0 -> "All time (every SMS on this phone)"
                                                             else -> "$days days"
                                                         },
                                                         fontFamily = TrackittBodyFamily,
@@ -592,7 +695,9 @@ fun SettingsScreen(
                         label = "Version",
                         trailing = {
                             Text(
-                                "0.1.0",
+                                remember {
+                                    context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: ""
+                                },
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontFamily = TrackittBodyFamily,
@@ -603,13 +708,45 @@ fun SettingsScreen(
                     SettingsRow(
                         icon = Icons.Filled.Palette,
                         label = "Made by Ayko Technologies",
+                        subtitle = "aykotechnologies.com",
+                        showChevron = true,
                         showDivider = false,
+                        onClick = {
+                            // Opens in the browser; Trackitt itself has no internet access.
+                            try {
+                                context.startActivity(
+                                    android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(AYKO_WEBSITE))
+                                )
+                            } catch (_: android.content.ActivityNotFoundException) {
+                                scope.launch { snackbarHostState.showSnackbar("No browser installed to open $AYKO_WEBSITE") }
+                            }
+                        },
                     )
                 }
             }
 
             item { Spacer(Modifier.height(40.dp)) }
         }
+    }
+
+    pendingImport?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { pendingImport = null },
+            title = { Text("Restore this backup file?", fontFamily = TrackittBodyFamily, fontWeight = FontWeight.Medium) },
+            text = { Text("Everything on this phone will be replaced with the backup. Trackitt restarts when it's done.") },
+            confirmButton = {
+                Button(onClick = {
+                    pendingImport = null
+                    scope.launch {
+                        when (val result = localBackupManager.import(uri)) {
+                            BackupResult.Success -> restartApp()
+                            is BackupResult.Failure -> snackbarHostState.showSnackbar(result.message)
+                        }
+                    }
+                }) { Text("Restore") }
+            },
+            dismissButton = { TextButton(onClick = { pendingImport = null }) { Text("Cancel") } },
+        )
     }
 
     if (showAddCategoryDialog) {
@@ -1065,3 +1202,5 @@ private fun PinSetupDialog(
         },
     )
 }
+
+private const val AYKO_WEBSITE = "https://aykotechnologies.com/"

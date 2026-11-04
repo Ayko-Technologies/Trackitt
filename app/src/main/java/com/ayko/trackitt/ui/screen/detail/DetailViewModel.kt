@@ -46,6 +46,20 @@ class DetailViewModel(
         }
     }
 
+    fun setExcluded(excluded: Boolean) {
+        viewModelScope.launch { repository.setExcluded(transactionId, excluded) }
+    }
+
+    fun markAsTransfer() {
+        viewModelScope.launch { repository.markAsTransfer(transactionId) }
+    }
+
+    fun unlinkOwnTransfer() {
+        viewModelScope.launch {
+            repository.unlinkOwnTransfer(transactionId)
+        }
+    }
+
     fun delete() {
         viewModelScope.launch {
             repository.delete(transactionId)

@@ -17,10 +17,9 @@ import com.ayko.trackitt.service.insights.MonthlyInsightsCache
 import com.ayko.trackitt.service.insights.MonthlyInsightsFallbackComposer
 import com.ayko.trackitt.service.insights.NanoInsightsService
 import com.ayko.trackitt.service.insights.SmartInsightsService
-import com.ayko.trackitt.service.sms.EcobankSmsParser
-import com.ayko.trackitt.service.sms.MoMoSmsParser
 import com.ayko.trackitt.service.sms.ParsedTransaction
-import com.ayko.trackitt.service.sms.TelecelCashParser
+import com.ayko.trackitt.service.sms.SmsProviders
+import com.ayko.trackitt.service.sms.SmsTransactionParser
 
 class AppContainer(private val context: Context) {
     val database = TrackittDatabase.getInstance(context)
@@ -86,6 +85,7 @@ class AppContainer(private val context: Context) {
         merchantMappingDao = database.merchantMappingDao(),
         smartCategorization = smartCategorization,
         budgetAlerts = budgetAlertService,
+        smsReceiptDao = database.smsReceiptDao(),
     )
 
     val insightsService = SmartInsightsService(
@@ -99,41 +99,31 @@ class AppContainer(private val context: Context) {
         },
     )
 
-    private val momoParser = MoMoSmsParser()
-    private val ecobankParser = EcobankSmsParser()
-    private val telecelParser = TelecelCashParser()
-
-    private val allSenders = mapOf(
-        "MobileMoney" to momoParser,
-        "ECOBANK" to ecobankParser,
-        "T-CASH" to telecelParser,
-    )
-
-    val smsSenders: List<String>
-        get() {
-            val prefs = context.getSharedPreferences("sms_sources", 0)
-            return allSenders.keys.filter { prefs.getBoolean("source_$it", true) }
-        }
+    private val smsParser = SmsTransactionParser()
 
     fun parseSms(sender: String?, body: String, smsTimestamp: Long = System.currentTimeMillis()): ParsedTransaction? {
-        val prefs = context.getSharedPreferences("sms_sources", 0)
+        if (!isSourceEnabled(sender)) return null
+        return smsParser.parse(sender, body, smsTimestamp)
+    }
 
-        return when {
-            sender.equals("MobileMoney", ignoreCase = true) -> {
-                if (prefs.getBoolean("source_MobileMoney", true)) momoParser.parse(body, smsTimestamp) else null
-            }
-            sender.equals("ECOBANK", ignoreCase = true) -> {
-                if (prefs.getBoolean("source_ECOBANK", true)) ecobankParser.parse(body) else null
-            }
-            sender.equals("T-CASH", ignoreCase = true) -> {
-                if (prefs.getBoolean("source_T-CASH", true)) telecelParser.parse(body) else null
-            }
-            else -> {
-                if (prefs.getBoolean("source_MobileMoney", true)) momoParser.parse(body, smsTimestamp)?.let { return it }
-                if (prefs.getBoolean("source_ECOBANK", true)) ecobankParser.parse(body)?.let { return it }
-                if (prefs.getBoolean("source_T-CASH", true)) telecelParser.parse(body)?.let { return it }
-                null
-            }
+    /** Stores an SMS: a transaction when it is one, else a merchant receipt that may rename one. */
+    suspend fun importSms(sender: String?, body: String, smsTimestamp: Long, bulk: Boolean = false): ParsedTransaction? {
+        if (!isSourceEnabled(sender)) return null
+        val parsed = smsParser.parse(sender, body, smsTimestamp)
+        if (parsed != null) {
+            return parsed.takeIf { repository.insertFromSms(it, bulk) }
+        }
+        smsParser.parseReceipt(sender, body, smsTimestamp)?.let { repository.recordReceipt(it) }
+        return null
+    }
+
+    private fun isSourceEnabled(sender: String?): Boolean {
+        val prefs = context.getSharedPreferences("sms_sources", 0)
+        val provider = SmsProviders.forSender(sender)
+        return if (provider != null) {
+            prefs.getBoolean(SmsProviders.prefKey(provider), true)
+        } else {
+            prefs.getBoolean(SmsProviders.OTHER_SENDERS_PREF, true)
         }
     }
 }

@@ -106,7 +106,7 @@ class MonthlyInsightsAnalyzerTest {
                 amount = 60.0,
                 fee = 0.0,
                 category = TransactionCategory.FOOD,
-                merchant = "RUTH NIMOTHY",
+                merchant = "AMA DARKO",
                 note = "jollof",
                 date = 3L,
             ),
@@ -114,7 +114,7 @@ class MonthlyInsightsAnalyzerTest {
                 amount = 40.0,
                 fee = 0.0,
                 category = TransactionCategory.CHURCH,
-                merchant = "ICGC DAYSPRING",
+                merchant = "CITY CHAPEL",
                 date = 4L,
             ),
             Transaction(

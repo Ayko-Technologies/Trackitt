@@ -13,11 +13,13 @@ class MonthlyInsightsAnalyzer {
         transactions: List<Transaction>,
         excludeTransfers: Boolean = false,
     ): MonthlyInsightsSnapshot {
-        val expenseTransactions = transactions.filter { transaction ->
+        val counted = transactions.filterNot { it.isExcluded }
+        val expenseTransactions = counted.filter { transaction ->
             !transaction.isIncome &&
+                !transaction.isOwnTransfer &&
                 (!excludeTransfers || transaction.category != TransactionCategory.TRANSFER)
         }
-        val incomeTransactions = transactions.filter { it.isIncome }
+        val incomeTransactions = counted.filter { it.isIncome && !it.isOwnTransfer }
         val spend = expenseTransactions.sumOf { it.amount }
         val fees = expenseTransactions.sumOf { it.fee }
         val income = incomeTransactions.sumOf { it.amount }

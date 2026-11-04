@@ -356,94 +356,94 @@ class MoMoSmsParserTest {
 
     @Test
     fun `parse payment made P2P`() {
-        val sms = "Payment made for GHS 355.00 to REBECCA NUETEY Current Balance: GHS 13.06 . Available Balance: GHS 13.06. Reference: . Transaction ID: 79917286657. Fee charged: GHS2.66 Tax charged: 0. Download the MoMo App for a Faster & Easier Experience. Click here: https://mtnmymomo.onelink.me/XJOt/MoMo"
+        val sms = "Payment made for GHS 355.00 to AKOSUA BOATENG Current Balance: GHS 13.06 . Available Balance: GHS 13.06. Reference: . Transaction ID: 70000000001. Fee charged: GHS2.66 Tax charged: 0. Download the MoMo App for a Faster & Easier Experience. Click here: https://mtnmymomo.onelink.me/XJOt/MoMo"
         val result = parser.parse(sms)
         assertNotNull(result)
         assertEquals(355.00, result!!.amount, 0.01)
         assertEquals(2.66, result.fee, 0.01)
         assertFalse(result.isIncome)
-        assertEquals("REBECCA NUETEY", result.merchant)
-        assertEquals("79917286657", result.transactionId)
+        assertEquals("AKOSUA BOATENG", result.merchant)
+        assertEquals("70000000001", result.transactionId)
     }
 
     @Test
     fun `parse payment received`() {
-        val sms = "Payment received for GHS 365.00 from Express Pay ova  Current Balance: GHS 370.72 . Available Balance: GHS 370.72. Reference: expressPay. Transaction ID: 79917181506. TRANSACTION FEE: 0.00"
+        val sms = "Payment received for GHS 365.00 from Express Pay ova  Current Balance: GHS 370.72 . Available Balance: GHS 370.72. Reference: expressPay. Transaction ID: 70000000013. TRANSACTION FEE: 0.00"
         val result = parser.parse(sms)
         assertNotNull(result)
         assertEquals(365.00, result!!.amount, 0.01)
         assertTrue(result.isIncome)
         assertEquals("Express Pay ova", result.merchant)
-        assertEquals("79917181506", result.transactionId)
+        assertEquals("70000000013", result.transactionId)
         assertEquals("expressPay", result.reference)
     }
 
     @Test
     fun `parse merchant payment yello`() {
-        val sms = "Y'ello. You have Paid GHS 85.47 to Merchant 032234 on your mobile money account at 202623110051. Message from sender: melcom. Your new balance: GHS 240.72 . Fee was GHS 0.85 . Financial Transaction Id: 79851134041.Download the MoMo App for a Faster & Easier Experience Click here: http://mtnghana.app.link/nsBnhItDoob"
+        val sms = "Y'ello. You have Paid GHS 85.47 to Merchant 032234 on your mobile money account at 200000000014. Message from sender: melcom. Your new balance: GHS 240.72 . Fee was GHS 0.85 . Financial Transaction Id: 70000000002.Download the MoMo App for a Faster & Easier Experience Click here: http://mtnghana.app.link/nsBnhItDoob"
         val result = parser.parse(sms)
         assertNotNull(result)
         assertEquals(85.47, result!!.amount, 0.01)
         assertEquals(0.85, result.fee, 0.01)
         assertFalse(result.isIncome)
         assertEquals("melcom", result.merchant)
-        assertEquals("79851134041", result.transactionId)
+        assertEquals("70000000002", result.transactionId)
     }
 
     @Test
     fun `parse merchant payment confirmation`() {
-        val sms = "Your payment of GHS 85.47 to MELCOM COMMUNITY 25 has been completed at 2026-04-23 11:00:51. Reference: melcom. Your new balance: GHS 240.72. Fee was GHS 0.85 Tax charged: GHS0. Financial Transaction Id: 79851134041. External Transaction Id: -.Download the MoMo App for a Faster & Easier Experience Click here: https://bit.ly/downloadMyMoMo"
+        val sms = "Your payment of GHS 85.47 to MELCOM COMMUNITY 25 has been completed at 2026-04-23 11:00:51. Reference: melcom. Your new balance: GHS 240.72. Fee was GHS 0.85 Tax charged: GHS0. Financial Transaction Id: 70000000002. External Transaction Id: -.Download the MoMo App for a Faster & Easier Experience Click here: https://bit.ly/downloadMyMoMo"
         val result = parser.parse(sms)
         assertNotNull(result)
         assertEquals(85.47, result!!.amount, 0.01)
         assertEquals("MELCOM COMMUNITY 25", result.merchant)
-        assertEquals("79851134041", result.transactionId)
+        assertEquals("70000000002", result.transactionId)
         assertEquals("melcom", result.reference)
     }
 
     @Test
     fun `parse cash out`() {
-        val sms = "Cash Out made for GHS200.00 to VICTORIOUS EUNILUV VENTURES. Current Balance: GHS38.72 Financial Transaction Id: 79851433208. Cash-out fee is charged automatically from your MTN MoMo wallet. Please do not pay any fees to the Agent. Thank you for using MTN MobileMoney. Fee charged: GHS2.00."
+        val sms = "Cash Out made for GHS200.00 to ACME AGENT VENTURES. Current Balance: GHS38.72 Financial Transaction Id: 70000000005. Cash-out fee is charged automatically from your MTN MoMo wallet. Please do not pay any fees to the Agent. Thank you for using MTN MobileMoney. Fee charged: GHS2.00."
         val result = parser.parse(sms)
         assertNotNull(result)
         assertEquals(200.00, result!!.amount, 0.01)
         assertEquals(2.00, result.fee, 0.01)
         assertFalse(result.isIncome)
-        assertEquals("VICTORIOUS EUNILUV VENTURES", result.merchant)
-        assertEquals("79851433208", result.transactionId)
+        assertEquals("ACME AGENT VENTURES", result.merchant)
+        assertEquals("70000000005", result.transactionId)
     }
 
     @Test
     fun `parse bank transfer received`() {
-        val sms = "You have received GHS 400.00 from Ecobank ova on your mobile money account at 2026-04-23 11:30:29. Message from sender: . Your new balance:GHS 408.72. Financial Transaction Id: 79852151833."
+        val sms = "You have received GHS 400.00 from Ecobank ova on your mobile money account at 2026-04-23 11:30:29. Message from sender: . Your new balance:GHS 408.72. Financial Transaction Id: 70000000006."
         val result = parser.parse(sms)
         assertNotNull(result)
         assertEquals(400.00, result!!.amount, 0.01)
         assertTrue(result.isIncome)
         assertEquals("Ecobank ova", result.merchant)
-        assertEquals("79852151833", result.transactionId)
+        assertEquals("70000000006", result.transactionId)
     }
 
     @Test
     fun `parse cash transfer received`() {
-        val sms = "Cash transfer recieved: You have received 344.08 GHS in a cash transfer from 17000000003 17000000003 through agent Bigpay Ghana Limited - 233559990091 on your mobile money account at 2026-04-23 10:38:07. Message from sender: TransactionId - 2242353910809367129-n8NrjBgl. Your new balance: 367.04 GHS. Fee was 0.00 GHS. Financial Transaction Id: 79849724169."
+        val sms = "Cash transfer recieved: You have received 344.08 GHS in a cash transfer from 17000000003 17000000003 through agent Bigpay Ghana Limited - 200000000015 on your mobile money account at 2026-04-23 10:38:07. Message from sender: TransactionId - 2242353910809367129-n8NrjBgl. Your new balance: 367.04 GHS. Fee was 0.00 GHS. Financial Transaction Id: 70000000012."
         val result = parser.parse(sms)
         assertNotNull(result)
         assertEquals(344.08, result!!.amount, 0.01)
         assertTrue(result.isIncome)
         assertEquals("Bigpay Ghana Limited", result.merchant)
-        assertEquals("79849724169", result.transactionId)
+        assertEquals("70000000012", result.transactionId)
     }
 
     @Test
     fun `parse bill payment`() {
-        val sms = "Payment for GHS4510.00 to Bills.INV ..Current Balance: GHS 22.96. Transaction Id: 79799129949. Fee charged: GHS0.00,Tax Charged 0.Download the MoMo App for a Faster & Easier Experience. Click here: https://bit.ly/downloadMyMoMo"
+        val sms = "Payment for GHS4510.00 to Bills.INV ..Current Balance: GHS 22.96. Transaction Id: 70000000003. Fee charged: GHS0.00,Tax Charged 0.Download the MoMo App for a Faster & Easier Experience. Click here: https://bit.ly/downloadMyMoMo"
         val result = parser.parse(sms)
         assertNotNull(result)
         assertEquals(4510.00, result!!.amount, 0.01)
         assertFalse(result.isIncome)
         assertEquals("Bills.INV", result.merchant)
-        assertEquals("79799129949", result.transactionId)
+        assertEquals("70000000003", result.transactionId)
     }
 
     @Test
@@ -690,17 +690,17 @@ class CategorizationServiceTest {
 
     @Test
     fun `unknown merchant maps to OTHER`() {
-        assertEquals(TransactionCategory.OTHER, service.categorize("REBECCA NUETEY"))
+        assertEquals(TransactionCategory.OTHER, service.categorize("AKOSUA BOATENG"))
     }
 
     @Test
     fun `user override takes priority`() {
         val serviceWithOverride = DictionaryCategorizationService(
             userLookup = { merchant ->
-                if (merchant == "rebecca nuetey") TransactionCategory.FOOD else null
+                if (merchant == "akosua boateng") TransactionCategory.FOOD else null
             }
         )
-        assertEquals(TransactionCategory.FOOD, serviceWithOverride.categorize("REBECCA NUETEY"))
+        assertEquals(TransactionCategory.FOOD, serviceWithOverride.categorize("AKOSUA BOATENG"))
     }
 
     @Test

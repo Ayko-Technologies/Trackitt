@@ -88,14 +88,6 @@ val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = mapOf(
     "life centre" to TransactionCategory.CHURCH,
     "cornerstone chapel" to TransactionCategory.CHURCH,
     "dayspring" to TransactionCategory.CHURCH,
-
-    // Pocket money / family support
-    "sandra ashiley armah" to TransactionCategory.POCKET_MONEY,
-    "priscilla ewuradjoa asmah" to TransactionCategory.POCKET_MONEY,
-
-    // Repeat food vendors identified from labeled notes
-    "damata mamudu" to TransactionCategory.FOOD,
-    "ruth sarpomaa sarpong akrofi" to TransactionCategory.FOOD,
 )
 
 val PRIORITY_NOTE_DICTIONARY: Map<String, TransactionCategory> = mapOf(

@@ -72,7 +72,7 @@ class BudgetPlanParser {
 
         return when {
             normalized.containsAny("offering", "tithe", "seed", "church") -> TransactionCategory.CHURCH
-            normalized.containsAny("ashiley", "ashley", "prissy", "priscilla", "pocket money") -> TransactionCategory.POCKET_MONEY
+            normalized.containsAny("pocket money", "allowance", "upkeep", "kids") -> TransactionCategory.POCKET_MONEY
             normalized.containsAny("glasses", "glass", "hospital", "clinic", "pharmacy", "health") -> TransactionCategory.HEALTH
             normalized.containsAny("transport", "transportation", "uber", "bolt", "taxi", "trotro", "fuel") -> TransactionCategory.TRANSPORT
             normalized.containsAny("electricity", "fiber", "fibre", "internet", "wifi", "claude", "chat gpt", "chatgpt", "light", "ecg") -> TransactionCategory.BILLS

@@ -30,6 +30,8 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -78,7 +80,6 @@ fun DetailScreen(
     transactionId: Long,
     onBack: () -> Unit = {},
     onConfirm: () -> Unit = {},
-    onMarkTransfer: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
@@ -93,6 +94,7 @@ fun DetailScreen(
 
     val transaction by viewModel.transaction.collectAsStateWithLifecycle(initialValue = null)
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
+    var showMenu by remember { mutableStateOf(false) }
 
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showEditMerchant by remember { mutableStateOf(false) }
@@ -125,8 +127,19 @@ fun DetailScreen(
             IconButton(onClick = { viewModel.delete() }) {
                 Icon(Icons.Filled.Delete, contentDescription = "Delete", modifier = Modifier.size(22.dp))
             }
-            IconButton(onClick = {}) {
-                Icon(Icons.Filled.MoreVert, contentDescription = "More", modifier = Modifier.size(22.dp))
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "More", modifier = Modifier.size(22.dp))
+                }
+                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(if (tx.isExcluded) "Include in totals" else "Exclude from totals") },
+                        onClick = {
+                            showMenu = false
+                            viewModel.setExcluded(!tx.isExcluded)
+                        },
+                    )
+                }
             }
         }
 
@@ -140,7 +153,7 @@ fun DetailScreen(
             ) {
                 Icon(Icons.Filled.Sms, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Parsed from MoMo SMS", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Text("Parsed from ${tx.source} SMS", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
 
@@ -207,6 +220,45 @@ fun DetailScreen(
 
         Column(modifier = Modifier.padding(start = 20.dp, top = 12.dp)) {
             Text("${tx.source}${if (tx.fee > 0) " · Fee GH₵${String.format(Locale.US, "%.2f", tx.fee)}" else ""}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            tx.balance?.let { balance ->
+                Text(
+                    "Balance after: GH₵${String.format(Locale.US, "%,.2f", balance)}",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        if (tx.isExcluded) {
+            StatusBanner(
+                text = "Left out of your totals.",
+                action = "Include",
+                onAction = { viewModel.setExcluded(false) },
+            )
+        }
+
+        if (tx.isOwnTransfer) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp))
+                    .padding(start = 14.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+            ) {
+                Icon(Icons.Filled.SwapHoriz, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    "A transfer, so it isn't counted as spending or income.",
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = { viewModel.unlinkOwnTransfer() }) {
+                    Text("Not a transfer", fontSize = 13.sp)
+                }
+            }
         }
 
         Spacer(Modifier.weight(1f))
@@ -216,13 +268,18 @@ fun DetailScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             OutlinedButton(
-                onClick = onMarkTransfer,
+                onClick = { if (tx.isOwnTransfer) viewModel.unlinkOwnTransfer() else viewModel.markAsTransfer() },
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.weight(1f).height(40.dp),
             ) {
                 Icon(Icons.Filled.SwapHoriz, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Transfer", fontSize = 13.sp, fontWeight = FontWeight.Medium, fontFamily = TrackittBodyFamily)
+                Text(
+                    if (tx.isOwnTransfer) "Not a transfer" else "Transfer",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = TrackittBodyFamily,
+                )
             }
             Button(
                 onClick = onConfirm,
@@ -354,5 +411,26 @@ private fun EditableRow(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(16.dp),
         )
+    }
+}
+
+@Composable
+private fun StatusBanner(text: String, action: String, onAction: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(horizontal = 20.dp, vertical = 6.dp)
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp))
+            .padding(start = 14.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+    ) {
+        Text(
+            text,
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onAction) { Text(action, fontSize = 13.sp) }
     }
 }

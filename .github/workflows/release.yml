@@ -34,15 +34,49 @@ jobs:
           else
             echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
-      - name: Build preview APK
-        run: ./gradlew assembleDebug
+      # With the signing secrets set, releases are signed with the permanent Trackitt key so each
+      # one installs over the last. Without them, fall back to the debug-signed preview APK.
+      - name: Decode signing keys
+        id: signing
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.TRACKITT_RELEASE_KEYSTORE_BASE64 }}
+          DEV_KEYSTORE_BASE64: ${{ secrets.TRACKITT_DEV_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$DEV_KEYSTORE_BASE64" ]; then
+            echo "$DEV_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/trackitt-dev.keystore"
+            echo "TRACKITT_DEV_STORE_FILE=$RUNNER_TEMP/trackitt-dev.keystore" >> "$GITHUB_ENV"
+          fi
+          if [ -n "$RELEASE_KEYSTORE_BASE64" ]; then
+            echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/trackitt-release.keystore"
+            echo "TRACKITT_RELEASE_STORE_FILE=$RUNNER_TEMP/trackitt-release.keystore" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build APK
+        env:
+          TRACKITT_RELEASE_STORE_PASSWORD: ${{ secrets.TRACKITT_RELEASE_STORE_PASSWORD }}
+          TRACKITT_RELEASE_KEY_ALIAS: ${{ secrets.TRACKITT_RELEASE_KEY_ALIAS }}
+          TRACKITT_RELEASE_KEY_PASSWORD: ${{ secrets.TRACKITT_RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then
+            ./gradlew assembleRelease
+          else
+            ./gradlew assembleDebug
+          fi
       - name: Publish GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
+          SIGNED: ${{ steps.signing.outputs.signed }}
         run: |
-          asset="app/build/outputs/apk/debug/Trackitt-${TAG#v}-debug.apk"
-          cp app/build/outputs/apk/debug/app-debug.apk "$asset"
+          if [ "$SIGNED" = "true" ]; then
+            asset="app/build/outputs/apk/release/Trackitt-${TAG#v}.apk"
+            cp app/build/outputs/apk/release/app-release.apk "$asset"
+          else
+            asset="app/build/outputs/apk/debug/Trackitt-${TAG#v}-debug.apk"
+            cp app/build/outputs/apk/debug/app-debug.apk "$asset"
+          fi
           asset_dir=$(dirname "$asset")
           asset_name=$(basename "$asset")
           (
@@ -50,6 +84,6 @@ jobs:
             shasum -a 256 "$asset_name" > "$asset_name.sha256"
           )
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --title "Trackitt $TAG" --notes "Installable debug-signed preview APK. See docs/RELEASING.md for signing details."
+            gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --title "Trackitt $TAG" --notes "Installable preview APK. See docs/RELEASING.md for signing details."
           fi
           gh release upload "$TAG" "$asset" "$asset.sha256" --clobber

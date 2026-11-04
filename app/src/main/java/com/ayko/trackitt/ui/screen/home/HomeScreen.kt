@@ -46,6 +46,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.setValue
+import com.ayko.trackitt.ui.component.BalanceStrip
 import com.ayko.trackitt.ui.component.CategoryBottomSheet
 import com.ayko.trackitt.ui.component.DayPicker
 import com.ayko.trackitt.ui.component.DisplayNumber
@@ -78,6 +79,7 @@ fun HomeScreen(
         .filter { showIncome || it.category != com.ayko.trackitt.domain.model.TransactionCategory.INCOME }
         .filterNot { excludeTransfers && it.category == com.ayko.trackitt.domain.model.TransactionCategory.TRANSFER }
     val smsGranted by viewModel.smsPermissionGranted.collectAsStateWithLifecycle()
+    val balances by viewModel.balances.collectAsStateWithLifecycle(initialValue = emptyList())
 
     val monthName by viewModel.currentMonthName.collectAsStateWithLifecycle(initialValue = "")
     val currentYear by viewModel.currentYear.collectAsStateWithLifecycle(initialValue = 2026)
@@ -228,7 +230,7 @@ fun HomeScreen(
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        text = "Allow SMS access to track MoMo transactions",
+                        text = "Allow SMS access to track your bank and wallet transactions",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.weight(1f),
@@ -250,6 +252,12 @@ fun HomeScreen(
                     }
                 }
             }
+
+            BalanceStrip(
+                balances = balances,
+                recentGapsSince = viewModel.recentGapsSince,
+                modifier = Modifier.padding(top = 12.dp),
+            )
 
             MonthChart(
                 categories = chartCategories,

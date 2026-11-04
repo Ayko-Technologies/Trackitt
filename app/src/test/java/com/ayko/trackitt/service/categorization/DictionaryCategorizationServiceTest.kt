@@ -7,12 +7,17 @@ import org.junit.Test
 
 class DictionaryCategorizationServiceTest {
 
-    private val service = DictionaryCategorizationService(userLookup = { null })
+    // People are categorised from the user's own mappings on the device, never from the shipped dictionary.
+    private val userMappings = mapOf(
+        "adwoa frimpong" to TransactionCategory.POCKET_MONEY,
+        "akua addo" to TransactionCategory.FOOD,
+    )
+    private val service = DictionaryCategorizationService(userLookup = { userMappings[it] })
 
     @Test
     fun pocket_money_note_maps_to_pocket_money() = runBlocking {
         val category = service.categorize(
-            merchant = "PRISCILLA EWURADJOA ASMAH",
+            merchant = "ESI QUAYE",
             note = "Pocket money",
         )
 
@@ -32,7 +37,7 @@ class DictionaryCategorizationServiceTest {
     @Test
     fun education_note_maps_to_education() = runBlocking {
         val category = service.categorize(
-            merchant = "EBENEZER KOBINAH OFFEN",
+            merchant = "TEST TUTOR",
             note = "ga lessons",
         )
 
@@ -42,7 +47,7 @@ class DictionaryCategorizationServiceTest {
     @Test
     fun home_project_note_maps_to_home_project() = runBlocking {
         val category = service.categorize(
-            merchant = "REBECCA NUETEY",
+            merchant = "AKOSUA BOATENG",
             note = "AC materials",
         )
 
@@ -50,9 +55,9 @@ class DictionaryCategorizationServiceTest {
     }
 
     @Test
-    fun merchant_hint_maps_sandra_to_pocket_money() = runBlocking {
+    fun user_mapping_maps_a_person_to_pocket_money() = runBlocking {
         val category = service.categorize(
-            merchant = "SANDRA ASHILEY ARMAH",
+            merchant = "ADWOA FRIMPONG",
             note = null,
         )
 
@@ -60,9 +65,9 @@ class DictionaryCategorizationServiceTest {
     }
 
     @Test
-    fun merchant_hint_maps_repeat_food_vendor_to_food() = runBlocking {
+    fun user_mapping_maps_repeat_food_vendor_to_food() = runBlocking {
         val category = service.categorize(
-            merchant = "RUTH SARPOMAA SARPONG AKROFI",
+            merchant = "AKUA ADDO",
             note = null,
         )
 
