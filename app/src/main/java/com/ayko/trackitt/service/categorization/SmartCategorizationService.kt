@@ -13,6 +13,7 @@ class SmartCategorizationService(
         merchant: String,
         reference: String? = null,
         note: String? = null,
+        allowAi: Boolean = true,
     ): ClassificationResult {
         Log.d(TAG, "Classifying transaction locally")
 
@@ -23,7 +24,7 @@ class SmartCategorizationService(
         }
         Log.d(TAG, "Dictionary returned OTHER, trying on-device AI")
 
-        val onDeviceEnabled = useOnDeviceAi()
+        val onDeviceEnabled = allowAi && useOnDeviceAi()
         if (onDeviceEnabled && nano.isAvailable()) {
             val nanoResult = nano.classify(merchant, reference, note)
             if (nanoResult is ClassificationResult.Classified) {

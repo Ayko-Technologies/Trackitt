@@ -8,7 +8,11 @@ import com.ayko.trackitt.data.local.TrackittDatabase
 import com.ayko.trackitt.data.local.entity.MerchantMappingEntity
 import com.ayko.trackitt.data.repository.TransactionRepository
 import com.ayko.trackitt.domain.model.TransactionCategory
+import com.ayko.trackitt.service.budget.BudgetAlertService
 import com.ayko.trackitt.service.categorization.DictionaryCategorizationService
+import com.ayko.trackitt.service.categorization.NanoCategorizationService
+import com.ayko.trackitt.service.categorization.SmartCategorizationService
+import com.ayko.trackitt.service.sms.SmsTransactionParser
 import com.ayko.trackitt.service.sms.MoMoSmsParser
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -33,7 +37,7 @@ class TransactionPipelineTest {
             .allowMainThreadQueries()
             .build()
 
-        val categorizationService = DictionaryCategorizationService(
+        val dictionary = DictionaryCategorizationService(
             userLookup = { merchant ->
                 val mapping = db.merchantMappingDao().getMapping(merchant)
                 mapping?.let {
@@ -45,7 +49,9 @@ class TransactionPipelineTest {
         repository = TransactionRepository(
             transactionDao = db.transactionDao(),
             merchantMappingDao = db.merchantMappingDao(),
-            categorizationService = categorizationService,
+            smartCategorization = SmartCategorizationService(dictionary, NanoCategorizationService(), useOnDeviceAi = { false }),
+            budgetAlerts = BudgetAlertService(context, db.budgetDao(), db.transactionDao()),
+            smsReceiptDao = db.smsReceiptDao(),
         )
     }
 
@@ -133,7 +139,8 @@ class TransactionPipelineTest {
         repository.insertFromSms(parser.parse(sms)!!)
 
         val tx = repository.getById(1).first()!!
-        assertEquals(TransactionCategory.OTHER, tx.category)
+        // The reference "Baber" makes the dictionary guess Beauty; the user then overrides it.
+        assertEquals(TransactionCategory.BEAUTY, tx.category)
 
         repository.updateCategory(tx.id, TransactionCategory.FOOD, tx.merchant)
 
@@ -199,7 +206,8 @@ class TransactionPipelineTest {
 
         val billTx = transactions.find { it.merchant == "Bills.INV" }!!
         assertEquals(4510.00, billTx.amount, 0.01)
-        assertEquals(TransactionCategory.BILLS, billTx.category)
+        // "Bills.INV" is a generic MoMo merchant code, deliberately not in the dictionary.
+        assertEquals(TransactionCategory.OTHER, billTx.category)
     }
 
     @Test
@@ -212,7 +220,8 @@ class TransactionPipelineTest {
         assertEquals("80000000009", parsed.transactionId)
         repository.insertFromSms(parsed)
         val tx = repository.getById(1).first()!!
-        assertEquals(TransactionCategory.OTHER, tx.category)
+        // The reference "motor" is a transport keyword in the dictionary.
+        assertEquals(TransactionCategory.TRANSPORT, tx.category)
     }
 
     @Test
@@ -245,5 +254,80 @@ class TransactionPipelineTest {
         val now = LocalDate.now()
         val transactions = repository.getByMonth(now.year, now.monthValue).first()
         assertEquals(1, transactions.size)
+    }
+
+    @Test
+    fun transfer_between_own_wallets_is_paired_and_left_out_of_totals() = runTest {
+        val router = SmsTransactionParser()
+        val now = System.currentTimeMillis()
+        val out = "You have transferred GHS 600.00 to 0240000001 MTN MOBILE MONEY. Ref: Me. Transaction ID: 621300000001. Balance: GHS 390.00."
+        val into = "Payment received for GHS 600.00 from GHANAPAY PUSH Current Balance: GHS 610.00 . Available Balance: GHS 610.00. Reference: Me. Transaction ID: 88800000001. TRANSACTION FEE: 0.00"
+
+        repository.insertFromSms(router.parse("GhanaPay", out, now)!!)
+        repository.insertFromSms(router.parse("MobileMoney", into, now + 60_000)!!)
+
+        val month = LocalDate.now()
+        val stored = repository.getByMonth(month.year, month.monthValue).first()
+        assertEquals(2, stored.size)
+        assertTrue(stored.all { it.isOwnTransfer && it.category == TransactionCategory.TRANSFER })
+        assertEquals(0.0, repository.getMonthTotal(month.year, month.monthValue).first(), 0.001)
+        assertTrue(repository.getCategoryTotals(month.year, month.monthValue).first().isEmpty())
+
+        repository.unlinkOwnTransfer(stored.first().id)
+        val unlinked = repository.getByMonth(month.year, month.monthValue).first()
+        assertTrue(unlinked.none { it.isOwnTransfer })
+        assertEquals(600.0, repository.getMonthTotal(month.year, month.monthValue).first(), 0.001)
+
+        repository.relinkOwnTransfers()
+        assertTrue(repository.getByMonth(month.year, month.monthValue).first().none { it.isOwnTransfer })
+    }
+
+    @Test
+    fun merchant_receipt_renames_the_payment_service_on_the_wallet_transaction() = runTest {
+        val router = SmsTransactionParser()
+        val now = System.currentTimeMillis()
+        val wallet = "Payment for GHS156.55 to JUNIPAY  .Current Balance: GHS 95.80. Transaction Id: 87500000001. Fee charged: GHS0.00,Tax Charged 0."
+        val receipt = "GHS155 has been debited from your mtn account as payment to Acme Store Osu as Acme . Charges GHS 1.55. Reference: COL100000000001."
+
+        repository.insertFromSms(router.parse("MobileMoney", wallet, now)!!)
+        assertNull(router.parse("JuniPay", receipt, now + 5 * 60_000))
+        repository.recordReceipt(router.parseReceipt("JuniPay", receipt, now + 5 * 60_000)!!)
+
+        val tx = repository.getById(1).first()!!
+        assertEquals("Acme Store Osu", tx.merchant)
+        assertEquals(95.80, tx.balance!!, 0.001)
+    }
+
+    @Test
+    fun excluded_purchase_drops_out_of_totals_and_comes_back() = runTest {
+        val sms = "Payment made for GHS 100.00 to SOMEONE ELSE Current Balance: GHS 500.00 . Available Balance: GHS 500.00. Reference: . Transaction ID: 4001. Fee charged: GHS1.00 Tax charged: 0."
+        repository.insertFromSms(parser.parse(sms)!!)
+        val month = LocalDate.now()
+
+        repository.setExcluded(1, true)
+        assertEquals(0.0, repository.getMonthTotal(month.year, month.monthValue, includeFees = true).first(), 0.001)
+
+        repository.setExcluded(1, false)
+        assertEquals(101.0, repository.getMonthTotal(month.year, month.monthValue, includeFees = true).first(), 0.001)
+    }
+
+    @Test
+    fun marking_a_transaction_as_a_transfer_takes_it_out_of_income_and_back() = runTest {
+        val sms = "Payment received for GHS 1750.00 from Express Pay ova  Current Balance: GHS 1800.00 . Available Balance: GHS 1800.00. Reference: expressPay. Transaction ID: 93000000001. TRANSACTION FEE: 0.00"
+        repository.insertFromSms(parser.parse(sms)!!)
+        val month = LocalDate.now()
+        fun income() = repository.getCategoryTotals(month.year, month.monthValue)
+
+        assertEquals(1750.0, income().first().single { it.category == "INCOME" }.total, 0.001)
+
+        repository.markAsTransfer(1)
+        assertTrue(repository.getById(1).first()!!.isOwnTransfer)
+        assertTrue(income().first().isEmpty())
+
+        repository.unlinkOwnTransfer(1)
+        val restored = repository.getById(1).first()!!
+        assertFalse(restored.isOwnTransfer)
+        assertEquals(TransactionCategory.INCOME, restored.category)
+        assertEquals(1750.0, income().first().single { it.category == "INCOME" }.total, 0.001)
     }
 }

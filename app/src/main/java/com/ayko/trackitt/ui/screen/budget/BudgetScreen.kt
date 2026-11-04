@@ -109,7 +109,6 @@ fun BudgetScreen(
     val previousMonthValue = previousMonth.monthValue.toString().padStart(2, '0')
     val displayPrefs = remember { context.getSharedPreferences("trackitt_display", 0) }
     val showFees = remember { displayPrefs.getBoolean("show_fees", false) }
-    val excludeTransfers = remember { displayPrefs.getBoolean("exclude_transfers", false) }
     val categoryTotals by (if (showFees) db.transactionDao().getCategoryTotalsWithFees(year, month)
         else db.transactionDao().getCategoryTotals(year, month))
         .collectAsStateWithLifecycle(initialValue = emptyList())
@@ -122,8 +121,8 @@ fun BudgetScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     val showIncome = remember { displayPrefs.getBoolean("show_income", true) }
-    val visibleBudgets = budgets.filterNot { excludeTransfers && it.category == TransactionCategory.TRANSFER.name }
-    val visibleCategoryTotals = categoryTotals.filterNot { excludeTransfers && it.category == TransactionCategory.TRANSFER.name }
+    val visibleBudgets = budgets
+    val visibleCategoryTotals = categoryTotals
     val totalBudget = visibleBudgets.sumOf { it.amount }
     val expenseTotals = visibleCategoryTotals.filter { it.category != TransactionCategory.INCOME.name }
     val totalSpent = expenseTotals.sumOf { it.total }
@@ -133,7 +132,6 @@ fun BudgetScreen(
         budgets,
         previousCategoryTotals,
         showFees,
-        excludeTransfers,
         now.year,
         now.monthValue,
     ) {

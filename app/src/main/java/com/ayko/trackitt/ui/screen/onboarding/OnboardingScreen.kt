@@ -74,11 +74,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.ayko.trackitt.data.local.TrackittDatabase
 import com.ayko.trackitt.data.local.entity.BudgetEntity
 import com.ayko.trackitt.service.sms.SmsBackfillWorker
@@ -606,7 +603,9 @@ private fun PickSourcesStep(onBack: () -> Unit, onContinue: (hasAnySources: Bool
     val sources = listOf(
         Source("MobileMoney", "MTN MoMo", "Mobile money SMS", Color(0xFFFFD96E), "M"),
         Source("T-CASH", "Telecel Cash", "Mobile money SMS", Color(0xFFE12C2C), "T", textColor = Color.White),
+        Source("GhanaPay", "GhanaPay", "Mobile money SMS", Color(0xFF1B5E20), "G", textColor = Color.White),
         Source("ECOBANK", "Ecobank", "Bank alerts", Color(0xFF003D7A), "E", textColor = Color.White),
+        Source("other", "Other banks & wallets", "Detected automatically", Color(0xFFE3E6DA), "+"),
     )
 
     var enabledMap by remember {
@@ -866,17 +865,7 @@ private fun BackfillingStep(onDone: () -> Unit) {
     var finished by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        val prefs = context.getSharedPreferences("trackitt", 0)
-        prefs.edit()
-            .putBoolean("backfill_completed", false)
-            .putInt("backfill_days", 30)
-            .apply()
-        val request = OneTimeWorkRequestBuilder<SmsBackfillWorker>()
-            .setInputData(workDataOf("lookback_days" to 30))
-            .build()
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            "sms_backfill", ExistingWorkPolicy.REPLACE, request,
-        )
+        SmsBackfillWorker.start(context, SmsBackfillWorker.DEFAULT_DAYS)
 
         while (!finished) {
             delay(1000)
@@ -903,7 +892,7 @@ private fun BackfillingStep(onDone: () -> Unit) {
             MicroLabel("Reading your SMS")
             Spacer(Modifier.height(10.dp))
             DisplayText("Catching up on", size = 44)
-            DisplayText("last 30 days…", size = 44)
+            DisplayText("last 6 months…", size = 44)
         }
 
         Column(
@@ -1006,7 +995,7 @@ private fun ReadyStep(onOpen: () -> Unit) {
             DisplayText("tracking.", size = 52)
             Spacer(Modifier.height(16.dp))
             Text(
-                "From now on, every new MoMo SMS lands in trackitt automatically.",
+                "From now on, every new bank and wallet SMS lands in trackitt automatically.",
                 fontSize = 15.sp, color = Color(0xFF1F4D1B), lineHeight = 21.sp, fontFamily = TrackittBodyFamily,
             )
 

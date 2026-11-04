@@ -14,4 +14,7 @@ data class Transaction(
     val date: Long = System.currentTimeMillis(),
     val isFromSms: Boolean = false,
     val rawSms: String? = null,
+    val balance: Double? = null,
+    val isOwnTransfer: Boolean = false,
+    val isExcluded: Boolean = false,
 )

@@ -3,9 +3,6 @@ package com.ayko.trackitt.ui.screen.home
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.ayko.trackitt.TrackittApplication
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.service.sms.SmsBackfillWorker
@@ -30,12 +27,18 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = (application as TrackittApplication).container.repository
     private val displayPrefs = application.getSharedPreferences("trackitt_display", 0)
     private fun includeFees() = displayPrefs.getBoolean("show_fees", false)
-    private fun excludeTransfers() = displayPrefs.getBoolean("exclude_transfers", false)
 
     init {
         viewModelScope.launch {
-            repository.retryPendingClassifications()
+            // Cheap, and fixes transfers between the user's own accounts stored before pairing existed.
+            repository.relinkOwnTransfers()
+            val prefs = application.getSharedPreferences("trackitt", 0)
+            if (!prefs.getBoolean(KEY_REVIEWED_AUTO_TRANSFERS, false)) {
+                repository.reviewAutoTransfers()
+                prefs.edit().putBoolean(KEY_REVIEWED_AUTO_TRANSFERS, true).apply()
+            }
         }
+        SmsBackfillWorker.resumeIfUnfinished(application)
     }
 
     private val _refreshTrigger = MutableStateFlow(0)
@@ -89,7 +92,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         totalsFlow.map { totals ->
             totals
                 .filter { it.category != TransactionCategory.INCOME.name }
-                .filterNot { excludeTransfers() && it.category == TransactionCategory.TRANSFER.name }
                 .sumOf { it.total }
         }
     }
@@ -115,8 +117,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             totalsFlow.map { totals ->
                 totals.mapNotNull { ct ->
                     val cat = try { TransactionCategory.valueOf(ct.category) } catch (_: Exception) { null }
-                    cat?.takeUnless { excludeTransfers() && it == TransactionCategory.TRANSFER }
-                        ?.let { ChartCategory(it, ct.total) }
+                    cat?.let { ChartCategory(it, ct.total) }
                 }
             }
         }
@@ -138,6 +139,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             Period.MONTH -> repository.getByCategory(categoryName, year, month)
         }
     }
+
+    /** Wallets and banks heard from in the last few months, with their latest reported balance. */
+    val balances: Flow<List<com.ayko.trackitt.service.accounts.AccountBalance>> =
+        repository.observeAccountBalances().map { accounts ->
+            val activeSince = System.currentTimeMillis() - ACTIVE_ACCOUNT_MILLIS
+            accounts.filter { it.asOf >= activeSince }
+        }
+
+    val recentGapsSince: Long get() = System.currentTimeMillis() - RECENT_GAP_MILLIS
+
+    /**
+     * Categorises transactions waiting for on-device AI. Android only runs Gemini Nano for the app on
+     * screen, so the Home screen calls this while it's showing; leaving cancels it, and it resumes later.
+     */
+    suspend fun classifyPending() = repository.retryPendingClassifications()
 
     val smsPermissionGranted = MutableStateFlow(false)
 
@@ -161,13 +177,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onSmsPermissionResult(granted: Boolean, context: Context) {
         smsPermissionGranted.value = granted
-        if (granted) {
-            val request = OneTimeWorkRequestBuilder<SmsBackfillWorker>().build()
-            WorkManager.getInstance(context).enqueueUniqueWork(
-                "sms_backfill",
-                ExistingWorkPolicy.KEEP,
-                request,
-            )
-        }
+        if (granted) SmsBackfillWorker.resumeIfUnfinished(context)
+    }
+
+    private companion object {
+        const val KEY_REVIEWED_AUTO_TRANSFERS = "reviewed_auto_transfers_v1"
+        const val ACTIVE_ACCOUNT_MILLIS = 120L * 24 * 60 * 60 * 1000
+        const val RECENT_GAP_MILLIS = 30L * 24 * 60 * 60 * 1000
     }
 }

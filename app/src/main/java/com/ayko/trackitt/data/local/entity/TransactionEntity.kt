@@ -24,4 +24,12 @@ data class TransactionEntity(
     val isFromSms: Boolean,
     val rawSms: String?,
     val needsClassification: Boolean = false,
+    /** Account balance the SMS reported after this transaction, when it gave one. */
+    val balance: Double? = null,
+    /** Money moved between two of the user's own accounts; not spending or income. */
+    val isOwnTransfer: Boolean = false,
+    /** The user said this isn't a transfer between their accounts; never pair it again. */
+    val ownTransferDismissed: Boolean = false,
+    /** The user left this out of their totals (say, a purchase someone else made on their card). */
+    val isExcluded: Boolean = false,
 )

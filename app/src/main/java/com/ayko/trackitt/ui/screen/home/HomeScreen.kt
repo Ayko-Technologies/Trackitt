@@ -41,11 +41,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.setValue
+import com.ayko.trackitt.ui.component.BalanceStrip
 import com.ayko.trackitt.ui.component.CategoryBottomSheet
 import com.ayko.trackitt.ui.component.DayPicker
 import com.ayko.trackitt.ui.component.DisplayNumber
@@ -73,11 +75,10 @@ fun HomeScreen(
     val allChartCategories by viewModel.chartCategories.collectAsStateWithLifecycle(initialValue = emptyList())
     val displayPrefs = remember { context.getSharedPreferences("trackitt_display", 0) }
     val showIncome = remember { displayPrefs.getBoolean("show_income", true) }
-    val excludeTransfers = remember { displayPrefs.getBoolean("exclude_transfers", false) }
     val chartCategories = allChartCategories
         .filter { showIncome || it.category != com.ayko.trackitt.domain.model.TransactionCategory.INCOME }
-        .filterNot { excludeTransfers && it.category == com.ayko.trackitt.domain.model.TransactionCategory.TRANSFER }
     val smsGranted by viewModel.smsPermissionGranted.collectAsStateWithLifecycle()
+    val balances by viewModel.balances.collectAsStateWithLifecycle(initialValue = emptyList())
 
     val monthName by viewModel.currentMonthName.collectAsStateWithLifecycle(initialValue = "")
     val currentYear by viewModel.currentYear.collectAsStateWithLifecycle(initialValue = 2026)
@@ -89,6 +90,13 @@ fun HomeScreen(
     var showDayPicker by remember { mutableStateOf(false) }
     var selectedCategoryForSheet by remember { mutableStateOf<com.ayko.trackitt.domain.model.TransactionCategory?>(null) }
     val categoryTransactions by viewModel.getCategoryTransactions(selectedCategoryForSheet?.name).collectAsStateWithLifecycle(initialValue = emptyList())
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            viewModel.classifyPending()
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.refresh()
@@ -228,7 +236,7 @@ fun HomeScreen(
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        text = "Allow SMS access to track MoMo transactions",
+                        text = "Allow SMS access to track your bank and wallet transactions",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.weight(1f),
@@ -250,6 +258,12 @@ fun HomeScreen(
                     }
                 }
             }
+
+            BalanceStrip(
+                balances = balances,
+                recentGapsSince = viewModel.recentGapsSince,
+                modifier = Modifier.padding(top = 12.dp),
+            )
 
             MonthChart(
                 categories = chartCategories,

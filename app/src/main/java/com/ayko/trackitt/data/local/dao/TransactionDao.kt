@@ -18,6 +18,9 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(transaction: TransactionEntity): Long
 
+    @Query("SELECT * FROM transactions WHERE transactionId = :transactionId LIMIT 1")
+    suspend fun getByTransactionId(transactionId: String): TransactionEntity?
+
     @Query("""
         SELECT * FROM transactions
         WHERE strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
@@ -35,7 +38,9 @@ interface TransactionDao {
 
     @Query("""
         SELECT category, SUM(amount) as total FROM transactions
-        WHERE strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
+        WHERE isExcluded = 0
+        AND isOwnTransfer = 0
+        AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
         AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
         GROUP BY category
         ORDER BY total DESC
@@ -43,8 +48,9 @@ interface TransactionDao {
     fun getCategoryTotals(year: String, month: String): Flow<List<CategoryTotal>>
 
     @Query("""
-        SELECT category, SUM(amount + fee) as total FROM transactions
-        WHERE strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
+        SELECT category, SUM(CASE WHEN isOwnTransfer = 1 THEN fee ELSE amount + fee END) as total FROM transactions
+        WHERE isExcluded = 0
+        AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
         AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
         GROUP BY category
         ORDER BY total DESC
@@ -53,15 +59,18 @@ interface TransactionDao {
 
     @Query("""
         SELECT category, SUM(amount) as total FROM transactions
-        WHERE date >= :startOfDay AND date < :endOfDay
+        WHERE isExcluded = 0
+        AND isOwnTransfer = 0
+        AND date >= :startOfDay AND date < :endOfDay
         GROUP BY category
         ORDER BY total DESC
     """)
     fun getCategoryTotalsForRange(startOfDay: Long, endOfDay: Long): Flow<List<CategoryTotal>>
 
     @Query("""
-        SELECT category, SUM(amount + fee) as total FROM transactions
-        WHERE date >= :startOfDay AND date < :endOfDay
+        SELECT category, SUM(CASE WHEN isOwnTransfer = 1 THEN fee ELSE amount + fee END) as total FROM transactions
+        WHERE isExcluded = 0
+        AND date >= :startOfDay AND date < :endOfDay
         GROUP BY category
         ORDER BY total DESC
     """)
@@ -69,29 +78,35 @@ interface TransactionDao {
 
     @Query("""
         SELECT COALESCE(SUM(amount), 0.0) FROM transactions
-        WHERE isIncome = 0
+        WHERE isExcluded = 0
+        AND isOwnTransfer = 0
+        AND isIncome = 0
         AND date >= :startOfDay AND date < :endOfDay
     """)
     fun getTotalForRange(startOfDay: Long, endOfDay: Long): Flow<Double>
 
     @Query("""
-        SELECT COALESCE(SUM(amount + fee), 0.0) FROM transactions
-        WHERE isIncome = 0
+        SELECT COALESCE(SUM(CASE WHEN isOwnTransfer = 1 THEN fee ELSE amount + fee END), 0.0) FROM transactions
+        WHERE isExcluded = 0
+        AND isIncome = 0
         AND date >= :startOfDay AND date < :endOfDay
     """)
     fun getTotalForRangeWithFees(startOfDay: Long, endOfDay: Long): Flow<Double>
 
     @Query("""
         SELECT COALESCE(SUM(amount), 0.0) FROM transactions
-        WHERE isIncome = 0
+        WHERE isExcluded = 0
+        AND isOwnTransfer = 0
+        AND isIncome = 0
         AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
         AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
     """)
     fun getMonthTotal(year: String, month: String): Flow<Double>
 
     @Query("""
-        SELECT COALESCE(SUM(amount + fee), 0.0) FROM transactions
-        WHERE isIncome = 0
+        SELECT COALESCE(SUM(CASE WHEN isOwnTransfer = 1 THEN fee ELSE amount + fee END), 0.0) FROM transactions
+        WHERE isExcluded = 0
+        AND isIncome = 0
         AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
         AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
     """)
@@ -99,15 +114,18 @@ interface TransactionDao {
 
     @Query("""
         SELECT COALESCE(SUM(amount), 0.0) FROM transactions
-        WHERE isIncome = 0
+        WHERE isExcluded = 0
+        AND isOwnTransfer = 0
+        AND isIncome = 0
         AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
         AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
     """)
     suspend fun getMonthTotalNow(year: String, month: String): Double
 
     @Query("""
-        SELECT COALESCE(SUM(amount + fee), 0.0) FROM transactions
-        WHERE isIncome = 0
+        SELECT COALESCE(SUM(CASE WHEN isOwnTransfer = 1 THEN fee ELSE amount + fee END), 0.0) FROM transactions
+        WHERE isExcluded = 0
+        AND isIncome = 0
         AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
         AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
     """)
@@ -141,7 +159,9 @@ interface TransactionDao {
 
     @Query("""
         SELECT * FROM transactions
-        WHERE isIncome = 0
+        WHERE isExcluded = 0
+        AND isOwnTransfer = 0
+        AND isIncome = 0
         AND date < :beforeDate
         ORDER BY date DESC
     """)
@@ -149,7 +169,9 @@ interface TransactionDao {
 
     @Query("""
         SELECT COALESCE(SUM(amount), 0.0) FROM transactions
-        WHERE isIncome = 0
+        WHERE isExcluded = 0
+        AND isOwnTransfer = 0
+        AND isIncome = 0
         AND category = :category
         AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
         AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
@@ -157,8 +179,9 @@ interface TransactionDao {
     suspend fun getCategoryMonthTotal(category: String, year: String, month: String): Double
 
     @Query("""
-        SELECT COALESCE(SUM(amount + fee), 0.0) FROM transactions
-        WHERE isIncome = 0
+        SELECT COALESCE(SUM(CASE WHEN isOwnTransfer = 1 THEN fee ELSE amount + fee END), 0.0) FROM transactions
+        WHERE isExcluded = 0
+        AND isIncome = 0
         AND category = :category
         AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
         AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
@@ -185,4 +208,34 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET needsClassification = :needs WHERE id = :id")
     suspend fun updateNeedsClassification(id: Long, needs: Boolean)
+
+    @Query("""
+        SELECT * FROM transactions
+        WHERE date >= :start AND date < :end
+        ORDER BY date
+    """)
+    suspend fun getBetween(start: Long, end: Long): List<TransactionEntity>
+
+    @Query("SELECT * FROM transactions ORDER BY date")
+    suspend fun getAllChronological(): List<TransactionEntity>
+
+    @Query("UPDATE transactions SET isOwnTransfer = :isOwnTransfer, category = :category WHERE id = :id")
+    suspend fun updateOwnTransfer(id: Long, isOwnTransfer: Boolean, category: String)
+
+    @Query("UPDATE transactions SET ownTransferDismissed = 1 WHERE id = :id")
+    suspend fun dismissOwnTransfer(id: Long)
+
+    @Query("UPDATE transactions SET balance = :balance WHERE id = :id")
+    suspend fun updateBalance(id: Long, balance: Double)
+
+    @Query("""
+        SELECT * FROM transactions
+        WHERE isFromSms = 1 AND balance IS NOT NULL AND date >= :since
+        ORDER BY source, date
+    """)
+    fun observeWithBalanceSince(since: Long): Flow<List<TransactionEntity>>
+
+    @Query("UPDATE transactions SET isExcluded = :excluded WHERE id = :id")
+    suspend fun updateExcluded(id: Long, excluded: Boolean)
+
 }

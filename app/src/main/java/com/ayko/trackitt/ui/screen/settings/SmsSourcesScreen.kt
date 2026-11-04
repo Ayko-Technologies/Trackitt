@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -41,6 +42,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ayko.trackitt.service.sms.SmsProvider
+import com.ayko.trackitt.service.sms.SmsProviders
 import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 
 private const val PREFS_NAME = "sms_sources"
@@ -71,44 +74,54 @@ fun SmsSourcesScreen(onBack: () -> Unit = {}) {
                 .navigationBarsPadding(),
         ) {
             item { SectionLabel("Mobile Money") }
-            item {
-                ToggleSourceRow(
-                    name = "MTN MoMo",
-                    key = "MobileMoney",
-                    bgColor = Color(0xFFFFCC00),
-                    textColor = Color(0xFF003366),
-                    prefs = prefs,
-                )
-            }
-            item {
-                ToggleSourceRow(
-                    name = "Telecel Cash",
-                    key = "T-CASH",
-                    bgColor = Color(0xFFE31E24),
-                    textColor = Color.White,
-                    prefs = prefs,
-                )
-            }
-            item {
-                SourceRow("AT Money", Color(0xFF0066B3), Color.White, active = false, comingSoon = true)
-            }
+            items(WALLETS) { provider -> ProviderToggle(provider, prefs) }
 
             item { SectionLabel("Banks") }
+            items(BANKS) { provider -> ProviderToggle(provider, prefs) }
+
+            item { SectionLabel("Everything else") }
             item {
                 ToggleSourceRow(
-                    name = "Ecobank",
-                    key = "ECOBANK",
-                    bgColor = Color(0xFF003B71),
-                    textColor = Color.White,
+                    name = "Other banks & wallets",
+                    key = "other",
+                    bgColor = MaterialTheme.colorScheme.secondaryContainer,
+                    textColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     prefs = prefs,
+                    activeLabel = "Detected automatically from transaction alerts",
                 )
             }
-            item { SourceRow("GCB Bank", Color(0xFF004D26), Color.White, active = false, comingSoon = true) }
-            item { SourceRow("Stanbic Bank", Color(0xFF0033A0), Color.White, active = false, comingSoon = true) }
-            item { SourceRow("Fidelity Bank", Color(0xFF006B3F), Color.White, active = false, comingSoon = true) }
-            item { SourceRow("Absa Bank", Color(0xFFAF0000), Color.White, active = false, comingSoon = true) }
         }
     }
+}
+
+private val WALLETS = listOf(
+    SmsProviders.MOMO, SmsProviders.TELECEL, SmsProviders.GHANAPAY,
+    SmsProviders.AT_MONEY, SmsProviders.GMONEY, SmsProviders.ZEEPAY,
+)
+
+private val BANKS = SmsProviders.known - WALLETS.toSet()
+
+private val BRAND_COLORS = mapOf(
+    SmsProviders.MOMO.key to (Color(0xFFFFCC00) to Color(0xFF003366)),
+    SmsProviders.TELECEL.key to (Color(0xFFE31E24) to Color.White),
+    SmsProviders.GHANAPAY.key to (Color(0xFF1B5E20) to Color.White),
+    SmsProviders.AT_MONEY.key to (Color(0xFF0066B3) to Color.White),
+    SmsProviders.GMONEY.key to (Color(0xFF004D26) to Color.White),
+    SmsProviders.ZEEPAY.key to (Color(0xFF5B2A86) to Color.White),
+    SmsProviders.ECOBANK.key to (Color(0xFF003B71) to Color.White),
+    SmsProviders.GCB.key to (Color(0xFF004D26) to Color.White),
+    SmsProviders.STANBIC.key to (Color(0xFF0033A0) to Color.White),
+    SmsProviders.FIDELITY.key to (Color(0xFF006B3F) to Color.White),
+    SmsProviders.ABSA.key to (Color(0xFFAF0000) to Color.White),
+    SmsProviders.ACCESS.key to (Color(0xFFF37021) to Color.White),
+    SmsProviders.GTBANK.key to (Color(0xFFDD4F05) to Color.White),
+)
+
+@Composable
+private fun ProviderToggle(provider: SmsProvider, prefs: android.content.SharedPreferences) {
+    val (bg, fg) = BRAND_COLORS[provider.key]
+        ?: (MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer)
+    ToggleSourceRow(name = provider.name, key = provider.key, bgColor = bg, textColor = fg, prefs = prefs)
 }
 
 @Composable
@@ -131,6 +144,7 @@ private fun ToggleSourceRow(
     bgColor: Color,
     textColor: Color,
     prefs: android.content.SharedPreferences,
+    activeLabel: String = "Active",
 ) {
     var enabled by remember { mutableStateOf(prefs.getBoolean("source_$key", true)) }
 
@@ -155,7 +169,7 @@ private fun ToggleSourceRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(name, fontSize = 15.sp, fontWeight = FontWeight.Medium, fontFamily = TrackittBodyFamily)
             Text(
-                if (enabled) "Active" else "Off",
+                if (enabled) activeLabel else "Off",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontFamily = TrackittBodyFamily,
@@ -171,38 +185,5 @@ private fun ToggleSourceRow(
                 checkedTrackColor = MaterialTheme.colorScheme.primary,
             ),
         )
-    }
-}
-
-@Composable
-private fun SourceRow(
-    name: String,
-    bgColor: Color,
-    textColor: Color,
-    active: Boolean,
-    comingSoon: Boolean = false,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(16.dp),
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(40.dp)
-                .background(bgColor.copy(alpha = 0.4f), CircleShape),
-        ) {
-            Text(name.first().toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), fontFamily = TrackittBodyFamily)
-        }
-        Spacer(Modifier.width(14.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(name, fontSize = 15.sp, fontWeight = FontWeight.Medium, fontFamily = TrackittBodyFamily, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Coming soon", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = TrackittBodyFamily)
-        }
     }
 }
