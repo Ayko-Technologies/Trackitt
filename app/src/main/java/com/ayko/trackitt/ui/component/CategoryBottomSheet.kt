@@ -1,5 +1,7 @@
 package com.ayko.trackitt.ui.component
 
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,15 +48,19 @@ fun CategoryBottomSheet(
     onDismiss: () -> Unit,
     includeFees: Boolean = false,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = isCompactHeight())
     val total = transactions.sumOf { it.amount + if (includeFees) it.fee else 0.0 }
     val count = transactions.size
 
     ModalBottomSheet(
+        sheetMaxWidth = sheetMaxWidth(),
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        // Opened full height in landscape, the list would otherwise run under the status bar and
+        // the camera cutout on the side.
+        contentWindowInsets = { WindowInsets.safeDrawing },
     ) {
         // Header
         Row(

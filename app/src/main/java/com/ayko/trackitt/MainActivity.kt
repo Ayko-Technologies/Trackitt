@@ -8,7 +8,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
@@ -36,8 +41,11 @@ class MainActivity : FragmentActivity() {
             // With app lock on, keep finances out of screenshots and the recent-apps preview too.
             window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         }
-        sessionUnlocked = !appLockManager.isLockEnabled()
-        showLock = appLockManager.isLockEnabled()
+        // Rotating recreates the activity; it shouldn't ask for the PIN again. Leaving the app
+        // clears this in onStop before the state is saved, so it still locks then.
+        sessionUnlocked = !appLockManager.isLockEnabled() ||
+            savedInstanceState?.getBoolean(KEY_SESSION_UNLOCKED) == true
+        showLock = !sessionUnlocked
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(
                 android.graphics.Color.TRANSPARENT,
@@ -52,7 +60,12 @@ class MainActivity : FragmentActivity() {
                         .fillMaxSize()
                         .statusBarsPadding(),
                 ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    // In landscape the camera cutout sits on a side edge; keep content out from under it.
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)),
+                    ) {
                         TrackittNavGraph()
                         if (showLock) {
                             AppLockScreen(
@@ -80,6 +93,11 @@ class MainActivity : FragmentActivity() {
             sessionUnlocked = true
             showLock = false
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(KEY_SESSION_UNLOCKED, sessionUnlocked)
     }
 
     override fun onStop() {
@@ -114,10 +132,14 @@ class MainActivity : FragmentActivity() {
         )
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Unlock Trackitt")
-            .setSubtitle("Use biometrics to open the app")
+            // Title only: the system panel is short in landscape and extra lines crowd it.
             .setNegativeButtonText("Use PIN instead")
             .setAllowedAuthenticators(AppLockManager.BIOMETRIC_AUTHENTICATORS)
             .build()
         prompt.authenticate(promptInfo)
+    }
+
+    private companion object {
+        const val KEY_SESSION_UNLOCKED = "session_unlocked"
     }
 }

@@ -1,5 +1,7 @@
 package com.ayko.trackitt.ui.component
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,13 +45,14 @@ fun DayPicker(
     onDaySelected: (Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = isCompactHeight())
     val yearMonth = YearMonth.of(year, month)
     val daysInMonth = yearMonth.lengthOfMonth()
     val today = LocalDate.now()
     val monthName = yearMonth.month.getDisplayName(TextStyle.FULL, Locale.US)
 
     ModalBottomSheet(
+        sheetMaxWidth = sheetMaxWidth(),
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
@@ -58,6 +61,7 @@ fun DayPicker(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 8.dp),
         ) {
             Text(

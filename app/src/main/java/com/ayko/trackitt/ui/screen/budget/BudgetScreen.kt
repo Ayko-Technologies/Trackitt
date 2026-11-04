@@ -1,5 +1,9 @@
 package com.ayko.trackitt.ui.screen.budget
 
+import androidx.compose.material3.FilledIconButton
+import com.ayko.trackitt.ui.component.isCompactHeight
+import com.ayko.trackitt.ui.component.CATEGORY_CELL_MIN_WIDTH
+import com.ayko.trackitt.ui.component.sheetMaxWidth
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,7 +42,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -138,10 +141,11 @@ fun BudgetScreen(
         value = budgetEstimateService.estimateForMonth(now)
     }
 
+    val compactHeight = isCompactHeight()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeTopAppBar(
+            com.ayko.trackitt.ui.component.AdaptiveTopAppBar(
                 title = {
                     Text("Budgets", fontFamily = TrackittBodyFamily, fontWeight = FontWeight.SemiBold)
                 },
@@ -156,6 +160,14 @@ fun BudgetScreen(
                         Spacer(Modifier.width(6.dp))
                         Text("Import")
                     }
+                    // Landscape: a floating button would cover the short list, so it lives up here.
+                    if (compactHeight) {
+                        Spacer(Modifier.width(8.dp))
+                        FilledIconButton(onClick = { showAddDialog = true }) {
+                            Icon(Icons.Filled.Add, contentDescription = "Add budget")
+                        }
+                        Spacer(Modifier.width(8.dp))
+                    }
                 },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.largeTopAppBarColors(
@@ -165,7 +177,7 @@ fun BudgetScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
+            if (!compactHeight) FloatingActionButton(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -887,8 +899,9 @@ private fun CategoryPickerSheet(
     onDismiss: () -> Unit,
 ) {
     androidx.compose.material3.ModalBottomSheet(
+        sheetMaxWidth = sheetMaxWidth(),
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(),
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = isCompactHeight()),
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Text(
@@ -899,7 +912,7 @@ private fun CategoryPickerSheet(
             modifier = Modifier.padding(start = 24.dp, bottom = 16.dp),
         )
         LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
+            columns = GridCells.Adaptive(CATEGORY_CELL_MIN_WIDTH),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier

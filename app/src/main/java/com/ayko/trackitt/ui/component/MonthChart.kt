@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -41,6 +43,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ayko.trackitt.domain.model.TransactionCategory
@@ -65,6 +68,8 @@ fun MonthChart(
     monthLabel: String = "APRIL",
     empty: Boolean = false,
     onCategoryTap: (TransactionCategory) -> Unit = {},
+    /** Room under the bars, so floating buttons over the chart don't cover them. */
+    barsBottomPadding: Dp = 100.dp,
     modifier: Modifier = Modifier,
 ) {
     val leadCategory = categories.firstOrNull()
@@ -177,12 +182,15 @@ fun MonthChart(
                             )
                         }
                     }
-                } else {
+                } else BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    // Bars widen to use the whole card on wide screens and scroll when there are too many.
+                    val barWidth = ((maxWidth - 46.dp - 10.dp * (categories.size - 1)) / categories.size)
+                        .coerceIn(BAR_WIDTH, MAX_BAR_WIDTH)
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
                             .horizontalScroll(rememberScrollState())
-                            .padding(start = 18.dp, end = 28.dp, top = 10.dp, bottom = 100.dp),
+                            .padding(start = 18.dp, end = 28.dp, top = 10.dp, bottom = barsBottomPadding),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.Bottom,
                     ) {
@@ -205,7 +213,7 @@ fun MonthChart(
 
                             Column(
                                 modifier = Modifier
-                                    .width(72.dp)
+                                    .width(barWidth)
                                     .fillMaxHeight(),
                                 verticalArrangement = Arrangement.Bottom,
                             ) {
@@ -213,6 +221,8 @@ fun MonthChart(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        // Small amounts still need room for the icon and the number.
+                                        .heightIn(min = MIN_BAR_HEIGHT)
                                         .fillMaxHeight(animatedFraction)
                                         .scalePressEffect()
                                         .clip(RoundedCornerShape(24.dp))
@@ -328,3 +338,7 @@ private fun formatBarAmount(value: Double): String {
         String.format(Locale.US, "%.1f", value)
     }
 }
+
+private val MIN_BAR_HEIGHT = 84.dp
+private val BAR_WIDTH = 72.dp
+private val MAX_BAR_WIDTH = 160.dp

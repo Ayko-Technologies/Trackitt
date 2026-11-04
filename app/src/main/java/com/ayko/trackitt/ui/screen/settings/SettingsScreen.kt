@@ -1,5 +1,7 @@
 package com.ayko.trackitt.ui.screen.settings
 
+import com.ayko.trackitt.ui.component.SpreadGrid
+import com.ayko.trackitt.ui.component.TrackittAlertDialog
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -18,21 +20,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -209,7 +207,7 @@ fun SettingsScreen(
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeTopAppBar(
+            com.ayko.trackitt.ui.component.AdaptiveTopAppBar(
                 title = {
                     Text(
                         "Settings",
@@ -572,7 +570,7 @@ fun SettingsScreen(
                             )
 
                             if (showPicker) {
-                                AlertDialog(
+                                TrackittAlertDialog(
                                     onDismissRequest = { showPicker = false },
                                     title = { Text("Lookback period", fontFamily = TrackittBodyFamily) },
                                     text = {
@@ -637,7 +635,7 @@ fun SettingsScreen(
                 }
 
                 if (showConfirm) {
-                    AlertDialog(
+                    TrackittAlertDialog(
                         onDismissRequest = { showConfirm = false },
                         title = { Text("Reset all data?", fontFamily = TrackittBodyFamily, fontWeight = FontWeight.Medium) },
                         text = { Text("This will permanently delete all your transactions, custom categories, and merchant mappings. This cannot be undone.") },
@@ -711,7 +709,7 @@ fun SettingsScreen(
     }
 
     pendingImport?.let { uri ->
-        AlertDialog(
+        TrackittAlertDialog(
             onDismissRequest = { pendingImport = null },
             title = { Text("Restore this backup file?", fontFamily = TrackittBodyFamily, fontWeight = FontWeight.Medium) },
             text = { Text("Everything on this phone will be replaced with the backup. Trackitt restarts when it's done.") },
@@ -948,10 +946,7 @@ private fun AddCategoryDialog(
         )
     }
 
-    val displayedIcons = if (showAllIcons) allIcons else allIcons.take(8)
-    val displayedNames = if (showAllIcons) iconNames else iconNames.take(8)
-
-    AlertDialog(
+    TrackittAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("New category", fontFamily = TrackittBodyFamily, fontWeight = FontWeight.Medium) },
         text = {
@@ -969,54 +964,31 @@ private fun AddCategoryDialog(
                 Text("Icon", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = TrackittBodyFamily)
                 Spacer(Modifier.height(8.dp))
 
-                // Icon grid — 4 columns when expanded, scrollable row when collapsed
-                if (showAllIcons) {
-                    // Full grid
-                    Column {
-                        for (row in displayedIcons.indices step 6) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                for (col in 0 until 6) {
-                                    val idx = row + col
-                                    if (idx < displayedIcons.size) {
-                                        val isSelected = idx == selectedIconIndex
-                                        Box(
-                                            contentAlignment = Alignment.Center,
-                                            modifier = Modifier
-                                                .size(40.dp)
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
-                                                .clickable { selectedIconIndex = idx },
-                                        ) {
-                                            Icon(displayedIcons[idx], contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                                        }
-                                    }
-                                }
-                            }
-                            Spacer(Modifier.height(6.dp))
-                        }
-                        TextButton(onClick = { showAllIcons = false }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                            Text("Show less", fontFamily = TrackittBodyFamily, fontSize = 12.sp)
-                        }
+                // As many icons per row as the width allows; collapsed, just the first row.
+                SpreadGrid(
+                    items = allIcons,
+                    minCellWidth = 44.dp,
+                    maxRows = if (showAllIcons) null else 1,
+                ) { index, icon ->
+                    val isSelected = index == selectedIconIndex
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
+                            .clickable { selectedIconIndex = index },
+                    ) {
+                        Icon(icon, contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     }
-                } else {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(displayedIcons.size) { index ->
-                            val isSelected = index == selectedIconIndex
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
-                                    .clickable { selectedIconIndex = index },
-                            ) {
-                                Icon(displayedIcons[index], contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                            }
-                        }
-                    }
-                    TextButton(onClick = { showAllIcons = true }) {
-                        Text("More icons →", fontFamily = TrackittBodyFamily, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    }
+                }
+                TextButton(onClick = { showAllIcons = !showAllIcons }) {
+                    Text(
+                        if (showAllIcons) "Show less" else "More icons →",
+                        fontFamily = TrackittBodyFamily,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
                 }
 
                 // Color section
@@ -1024,22 +996,19 @@ private fun AddCategoryDialog(
                 Text("Color", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = TrackittBodyFamily)
                 Spacer(Modifier.height(8.dp))
 
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(PRESET_COLORS.size) { index ->
-                        val (bg, _) = PRESET_COLORS[index]
-                        val isSelected = customBg == null && index == selectedColorIndex
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(bg, CircleShape)
-                                .then(if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier)
-                                .clickable { selectedColorIndex = index; customBg = null; customFg = null; showCustomColor = false },
-                        ) {
-                            if (isSelected) {
-                                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            }
+                SpreadGrid(items = PRESET_COLORS, minCellWidth = 44.dp, spacing = 8.dp) { index, (bg, _) ->
+                    val isSelected = customBg == null && index == selectedColorIndex
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(bg, CircleShape)
+                            .then(if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier)
+                            .clickable { selectedColorIndex = index; customBg = null; customFg = null; showCustomColor = false },
+                    ) {
+                        if (isSelected) {
+                            Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                         }
                     }
                 }
@@ -1132,7 +1101,7 @@ private fun PinSetupDialog(
     var confirmPin by remember { mutableStateOf("") }
     val pinMatches = pin.length == 4 && pin == confirmPin
 
-    AlertDialog(
+    TrackittAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title, fontFamily = TrackittBodyFamily, fontWeight = FontWeight.Medium) },
         text = {

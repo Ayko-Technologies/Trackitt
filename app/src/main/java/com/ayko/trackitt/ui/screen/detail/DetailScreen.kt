@@ -1,7 +1,13 @@
 package com.ayko.trackitt.ui.screen.detail
 
+import com.ayko.trackitt.ui.component.CATEGORY_CELL_MIN_WIDTH
+import com.ayko.trackitt.ui.component.sheetMaxWidth
+import com.ayko.trackitt.ui.component.TrackittAlertDialog
 import android.app.Application
 import androidx.compose.foundation.background
+import com.ayko.trackitt.ui.component.isCompactHeight
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,7 +35,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Button
@@ -110,11 +115,14 @@ fun DetailScreen(
     val dateFormatted = SimpleDateFormat("MMM d · h:mm a", Locale.US).format(Date(tx.date))
     val refText = if (tx.reference != null) " · Ref ${tx.reference}" else ""
 
+    val compactHeight = isCompactHeight()
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            .navigationBarsPadding(),
+            .navigationBarsPadding()
+            // In landscape the details don't fit: scroll rather than push the buttons off-screen.
+            .then(if (compactHeight) Modifier.verticalScroll(rememberScrollState()) else Modifier),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -261,7 +269,7 @@ fun DetailScreen(
             }
         }
 
-        Spacer(Modifier.weight(1f))
+        if (compactHeight) Spacer(Modifier.height(8.dp)) else Spacer(Modifier.weight(1f))
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 20.dp),
@@ -297,8 +305,9 @@ fun DetailScreen(
     // Category picker bottom sheet
     if (showCategoryPicker) {
         ModalBottomSheet(
+            sheetMaxWidth = sheetMaxWidth(),
             onDismissRequest = { showCategoryPicker = false },
-            sheetState = rememberModalBottomSheetState(),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = isCompactHeight()),
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
             Text(
@@ -309,7 +318,7 @@ fun DetailScreen(
                 modifier = Modifier.padding(start = 24.dp, bottom = 16.dp),
             )
             LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
+                columns = GridCells.Adaptive(CATEGORY_CELL_MIN_WIDTH),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.padding(horizontal = 16.dp).height(200.dp),
             ) {
@@ -340,7 +349,7 @@ fun DetailScreen(
     // Edit merchant dialog
     if (showEditMerchant) {
         var text by remember { mutableStateOf(tx.merchant) }
-        AlertDialog(
+        TrackittAlertDialog(
             onDismissRequest = { showEditMerchant = false },
             title = { Text("Edit merchant", fontFamily = TrackittBodyFamily) },
             text = {
@@ -358,7 +367,7 @@ fun DetailScreen(
     // Edit note dialog
     if (showEditNote) {
         var text by remember { mutableStateOf(tx.note ?: "") }
-        AlertDialog(
+        TrackittAlertDialog(
             onDismissRequest = { showEditNote = false },
             title = { Text("Edit note", fontFamily = TrackittBodyFamily) },
             text = {

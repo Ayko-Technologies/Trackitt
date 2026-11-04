@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,11 @@ import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DonutSmall
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +53,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.setValue
+import com.ayko.trackitt.ui.component.isCompactHeight
 import com.ayko.trackitt.ui.component.BalanceStrip
 import com.ayko.trackitt.ui.component.CategoryBottomSheet
 import com.ayko.trackitt.ui.component.DayPicker
@@ -134,7 +141,16 @@ fun HomeScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        // Landscape is too short to share between the header and the chart, so the page scrolls
+        // and the chart keeps its portrait height.
+        val compactHeight = isCompactHeight()
+        // Scrolled into view, the chart fills the screen: as tall as it can be without cropping.
+        val landscapeChartHeight = LocalConfiguration.current.screenHeightDp.dp.coerceAtLeast(360.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(if (compactHeight) Modifier.verticalScroll(rememberScrollState()) else Modifier),
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -143,6 +159,21 @@ fun HomeScreen(
                     .padding(start = 22.dp, end = 16.dp, top = 10.dp),
             ) {
                 Spacer(Modifier.weight(1f))
+                if (compactHeight) {
+                    // Landscape: the actions live up here; floating, they would cover the chart.
+                    IconButton(onClick = onSearchTap) {
+                        Icon(Icons.Filled.Search, contentDescription = "Search", modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(onClick = onBudgetTap) {
+                        Icon(Icons.Filled.DonutSmall, contentDescription = "Budgets", modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    FilledIconButton(onClick = onAddTap) {
+                        Icon(Icons.Filled.Add, contentDescription = "Add expense", modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.width(8.dp))
+                }
                 IconButton(onClick = onSettingsTap) {
                     Icon(
                         imageVector = Icons.Outlined.Settings,
@@ -152,36 +183,33 @@ fun HomeScreen(
                 }
             }
 
-            Column(
-                modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(6.dp).rotate(45f)) {
-                        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                            drawRect(OnSurface)
+            val totalBlock: @Composable () -> Unit = {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(6.dp).rotate(45f)) {
+                            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                                drawRect(OnSurface)
+                            }
                         }
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "SPENT · $periodLabel",
+                            fontFamily = TrackittBodyFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp,
+                            letterSpacing = 1.6.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = "SPENT · $periodLabel",
-                        fontFamily = TrackittBodyFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp,
-                        letterSpacing = 1.6.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
+                    DisplayNumber(
+                        value = total,
+                        sizeSp = 72f,
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
-                DisplayNumber(
-                    value = total,
-                    sizeSp = 72f,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-
-                Row(
-                    modifier = Modifier
-                        .padding(top = 14.dp)
-                        .horizontalScroll(rememberScrollState()),
-                ) {
+            }
+            val periodChips: @Composable (Modifier) -> Unit = { chipsModifier ->
+                Row(modifier = chipsModifier.horizontalScroll(rememberScrollState())) {
                     TrackittChip(
                         label = dayLabel,
                         selected = selectedPeriod == Period.DAY,
@@ -215,6 +243,28 @@ fun HomeScreen(
                             leadingIcon = Icons.Filled.AutoAwesome,
                         )
                     }
+                }
+            }
+            if (compactHeight) {
+                // Landscape: the period buttons sit to the right of the total instead of under it.
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp, top = 8.dp),
+                ) {
+                    totalBlock()
+                    Spacer(Modifier.width(24.dp))
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.BottomEnd) {
+                        periodChips(Modifier.padding(bottom = 14.dp))
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp),
+                ) {
+                    totalBlock()
+                    periodChips(Modifier.padding(top = 14.dp))
                 }
             }
 
@@ -271,18 +321,21 @@ fun HomeScreen(
                 monthLabel = monthName,
                 empty = empty,
                 onCategoryTap = { category -> selectedCategoryForSheet = category },
+                barsBottomPadding = if (compactHeight) 24.dp else 100.dp,
                 modifier = Modifier
                     .padding(top = if (smsGranted) 20.dp else 4.dp)
-                    .weight(1f),
+                    .then(if (compactHeight) Modifier.height(landscapeChartHeight) else Modifier.weight(1f)),
             )
         }
 
-        FloatingNavBar(
-            onAddTap = onAddTap,
-            onBudgetTap = onBudgetTap,
-            onSearchTap = onSearchTap,
-            modifier = Modifier.align(Alignment.BottomCenter),
-        )
+        if (!compactHeight) {
+            FloatingNavBar(
+                onAddTap = onAddTap,
+                onBudgetTap = onBudgetTap,
+                onSearchTap = onSearchTap,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
 
         if (showMonthPicker) {
             MonthPicker(

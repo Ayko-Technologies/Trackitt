@@ -1,5 +1,9 @@
 package com.ayko.trackitt.ui.component
 
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -51,19 +55,26 @@ fun MonthPicker(
     onMonthSelected: (year: Int, month: Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = isCompactHeight())
     var displayYear by remember { mutableIntStateOf(selectedYear) }
     val now = LocalDate.now()
 
     ModalBottomSheet(
+        sheetMaxWidth = sheetMaxWidth(),
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
     ) {
+        // Landscape: fill the screen like the day picker, with taller month buttons to use it.
+        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+        val compact = isCompactHeight()
+        val monthHeight = if (compact) ((screenHeight - 200.dp) / 4).coerceAtLeast(48.dp) else 48.dp
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .then(if (compact) Modifier.heightIn(min = screenHeight) else Modifier)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 8.dp),
         ) {
             // Year selector
@@ -137,7 +148,7 @@ fun MonthPicker(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
                                 .weight(1f)
-                                .height(48.dp)
+                                .height(monthHeight)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(bg)
                                 .then(
