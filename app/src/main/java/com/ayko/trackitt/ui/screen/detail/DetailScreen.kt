@@ -307,7 +307,8 @@ fun DetailScreen(
         ModalBottomSheet(
             sheetMaxWidth = sheetMaxWidth(),
             onDismissRequest = { showCategoryPicker = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = isCompactHeight()),
+            // Opens tall enough to show every category, scrolling only on a short screen.
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
             Text(
@@ -320,7 +321,7 @@ fun DetailScreen(
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(CATEGORY_CELL_MIN_WIDTH),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(horizontal = 16.dp).height(200.dp),
+                modifier = Modifier.padding(horizontal = 16.dp).weight(1f, fill = false),
             ) {
                 itemsIndexed(TransactionCategory.entries.toList()) { _, cat ->
                     val isSelected = cat == category

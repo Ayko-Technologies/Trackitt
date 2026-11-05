@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,6 +25,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -47,8 +50,9 @@ fun CategoryBottomSheet(
     onTransactionTap: (Long) -> Unit,
     onDismiss: () -> Unit,
     includeFees: Boolean = false,
+    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = isCompactHeight()),
+    listState: LazyListState = rememberLazyListState(),
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = isCompactHeight())
     val total = transactions.sumOf { it.amount + if (includeFees) it.fee else 0.0 }
     val count = transactions.size
 
@@ -106,6 +110,7 @@ fun CategoryBottomSheet(
 
         // Transaction list
         LazyColumn(
+            state = listState,
             modifier = Modifier.padding(bottom = 32.dp),
         ) {
             items(transactions, key = { it.id }) { tx ->
