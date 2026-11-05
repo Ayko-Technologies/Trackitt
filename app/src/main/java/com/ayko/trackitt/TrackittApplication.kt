@@ -2,6 +2,7 @@ package com.ayko.trackitt
 
 import android.app.Application
 import com.ayko.trackitt.service.budget.BudgetEstimateScheduler
+import com.ayko.trackitt.service.sms.SmsCatchUpWorker
 
 class TrackittApplication : Application() {
     lateinit var container: AppContainer
@@ -11,5 +12,6 @@ class TrackittApplication : Application() {
         super.onCreate()
         container = AppContainer(this)
         BudgetEstimateScheduler.schedule(this)
+        SmsCatchUpWorker.schedule(this)
     }
 }

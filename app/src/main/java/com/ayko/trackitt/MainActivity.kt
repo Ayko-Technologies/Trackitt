@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.ayko.trackitt.service.security.AppLockManager
+import com.ayko.trackitt.service.sms.SmsCatchUpWorker
 import com.ayko.trackitt.ui.navigation.TrackittNavGraph
 import com.ayko.trackitt.ui.screen.security.AppLockScreen
 import com.ayko.trackitt.ui.theme.TrackittTheme
@@ -87,6 +88,7 @@ class MainActivity : FragmentActivity() {
 
     override fun onStart() {
         super.onStart()
+        SmsCatchUpWorker.runNow(this)
         if (appLockManager.isLockEnabled() && !sessionUnlocked) {
             lockApp()
         } else if (!appLockManager.isLockEnabled()) {
