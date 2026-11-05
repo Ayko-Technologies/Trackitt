@@ -2,222 +2,98 @@ package com.ayko.trackitt.service.categorization
 
 import com.ayko.trackitt.domain.model.TransactionCategory
 
-val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = mapOf(
-    // Shopping
-    "melcom" to TransactionCategory.SHOPPING,
-    "game" to TransactionCategory.SHOPPING,
-    "palace" to TransactionCategory.SHOPPING,
-    "koala" to TransactionCategory.SHOPPING,
-
-    // Groceries
-    "shoprite" to TransactionCategory.GROCERIES,
-    "maxmart" to TransactionCategory.GROCERIES,
-    "marina mall" to TransactionCategory.GROCERIES,
-    "spring supermarket" to TransactionCategory.GROCERIES,
-    "hs home supermarket" to TransactionCategory.GROCERIES,
-    "supermarket" to TransactionCategory.GROCERIES,
-
-    // Food
-    "papaye" to TransactionCategory.FOOD,
-    "kfc" to TransactionCategory.FOOD,
-    "chicken inn" to TransactionCategory.FOOD,
-    "pizza inn" to TransactionCategory.FOOD,
-    "marwako" to TransactionCategory.FOOD,
-    "burger king" to TransactionCategory.FOOD,
-    "frankies" to TransactionCategory.FOOD,
-    "slice and topping" to TransactionCategory.FOOD,
-    "slice  and topping" to TransactionCategory.FOOD,
-
-    // Transport
-    "bolt" to TransactionCategory.TRANSPORT,
-    "uber" to TransactionCategory.TRANSPORT,
-    "yango" to TransactionCategory.TRANSPORT,
-    "trotro" to TransactionCategory.TRANSPORT,
-    "taxi" to TransactionCategory.TRANSPORT,
-    "top oil" to TransactionCategory.TRANSPORT,
-
-    // Bills
-    "ecg" to TransactionCategory.BILLS,
-    "gwcl" to TransactionCategory.BILLS,
-    "dstv" to TransactionCategory.BILLS,
-    "gotv" to TransactionCategory.BILLS,
-    "airtel" to TransactionCategory.BILLS,
-    "surfline" to TransactionCategory.BILLS,
-    "etranzact" to TransactionCategory.BILLS,
-
-    // Airtime / Top-up
-    "mtn airtime" to TransactionCategory.AIRTIME,
-
-
-    // Data bundles → Bills
-    "mtnbundle" to TransactionCategory.BILLS,
-    "mtn bundle" to TransactionCategory.BILLS,
-    "vodafone" to TransactionCategory.BILLS,
-
-    // Ecobank POS merchants
-    "spotify" to TransactionCategory.BILLS,
-    "netflix" to TransactionCategory.BILLS,
-    "youtube" to TransactionCategory.BILLS,
-    "google one" to TransactionCategory.BILLS,
-    "amazon" to TransactionCategory.SHOPPING,
-    "ebay" to TransactionCategory.SHOPPING,
-    "wallet2bank" to TransactionCategory.TRANSFER,
-    "bank2wallet" to TransactionCategory.TRANSFER,
-    "momo → bank" to TransactionCategory.TRANSFER,
-    "bank → momo" to TransactionCategory.TRANSFER,
-    "zenith momo pos" to TransactionCategory.TRANSFER,
-    "zen online" to TransactionCategory.EDUCATION,
-    "atm" to TransactionCategory.OTHER,
-
-    // Transfer / Remittance
-    "bigpay" to TransactionCategory.TRANSFER,
-    "interoperability push" to TransactionCategory.TRANSFER,
-    "interoperability pull" to TransactionCategory.TRANSFER,
-    "itc ltd" to TransactionCategory.TRANSFER,
-    "taptapsend" to TransactionCategory.TRANSFER,
-    "send wave" to TransactionCategory.TRANSFER,
-
-    // Health
-    "greenville hospital" to TransactionCategory.HEALTH,
-    "hospital" to TransactionCategory.HEALTH,
-    "pharmacy" to TransactionCategory.HEALTH,
-    "clinic" to TransactionCategory.HEALTH,
-
-    // Church
-    "icgc" to TransactionCategory.CHURCH,
-    "life centre" to TransactionCategory.CHURCH,
-    "cornerstone chapel" to TransactionCategory.CHURCH,
-    "dayspring" to TransactionCategory.CHURCH,
+/** Known businesses, matched against the merchant name. */
+val MERCHANT_DICTIONARY: Map<String, TransactionCategory> = keywords(
+    TransactionCategory.SHOPPING to listOf(
+        "melcom", "game", "palace", "koala", "amazon", "ebay", "jumia", "temu", "shein", "aliexpress", "etsy",
+        "tonaton", "jiji", "ikea", "zara", "primark", "decathlon", "max mart", "china mall", "makro",
+    ),
+    TransactionCategory.GROCERIES to listOf(
+        "shoprite", "maxmart", "marina mall", "spring supermarket", "hs home supermarket", "supermarket",
+        "carrefour", "spar", "walmart", "tesco", "aldi", "lidl", "costco", "kroger", "sainsbury", "asda",
+        "pick n pay", "woolworths", "checkers", "trader joe", "whole foods", "safeway", "target",
+    ),
+    TransactionCategory.FOOD to listOf(
+        "papaye", "kfc", "chicken inn", "pizza inn", "marwako", "burger king", "frankies", "slice and topping",
+        "bolt food", "glovo", "uber eats", "jumia food", "chowdeck", "doordash", "grubhub", "deliveroo",
+        "just eat", "mcdonald", "mcdonalds", "domino", "dominos", "pizza hut", "subway", "starbucks",
+        "chicken republic", "barcelos", "starbites", "auntie anne", "cold stone", "papa john", "wendys",
+        "taco bell", "chipotle", "nando", "tim hortons", "dunkin", "costa coffee",
+    ),
+    TransactionCategory.TRANSPORT to listOf(
+        "bolt", "uber", "yango", "lyft", "indrive", "grab", "careem", "trotro", "taxi", "top oil", "goil",
+        "star oil", "total", "totalenergies", "shell", "puma energy", "allied oil", "frimps oil", "zen petroleum",
+        "petrosol", "engen", "vivo energy", "stc", "vip jeoun", "africa world airlines",
+    ),
+    TransactionCategory.BILLS to listOf(
+        "ecg", "gwcl", "dstv", "gotv", "startimes", "airtel", "surfline", "etranzact", "mtnbundle", "mtn bundle",
+        "vodafone", "spotify", "netflix", "youtube", "google one", "showmax", "apple", "icloud", "disney",
+        "hulu", "hbo", "deezer", "audiomack", "boomplay", "tidal", "openai", "chatgpt", "canva", "adobe",
+        "microsoft", "dropbox", "starlink", "busy internet",
+    ),
+    TransactionCategory.AIRTIME to listOf("mtn airtime"),
+    TransactionCategory.TRANSFER to listOf(
+        "wallet2bank", "bank2wallet", "momo → bank", "bank → momo", "zenith momo pos", "bigpay",
+        "interoperability push", "interoperability pull", "itc ltd", "taptapsend", "send wave",
+    ),
+    TransactionCategory.EDUCATION to listOf("zen online"),
+    TransactionCategory.OTHER to listOf("atm"),
+    TransactionCategory.HEALTH to listOf(
+        "greenville hospital", "hospital", "pharmacy", "clinic", "chemist", "mpharma", "ernest chemists",
+        "boots", "cvs", "walgreens", "nyaho", "lister", "medlab", "synlab",
+    ),
+    TransactionCategory.CHURCH to listOf("icgc", "life centre", "cornerstone chapel", "dayspring"),
 )
 
-val PRIORITY_NOTE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
-    "ac payment" to TransactionCategory.HOME_PROJECT,
-    "ac workmanship" to TransactionCategory.HOME_PROJECT,
-    "ac materials" to TransactionCategory.HOME_PROJECT,
-    "pocket money" to TransactionCategory.POCKET_MONEY,
-    "birthday present" to TransactionCategory.GIFTS,
-    "gift" to TransactionCategory.GIFTS,
-    "transcript payment" to TransactionCategory.EDUCATION,
-    "transcript" to TransactionCategory.EDUCATION,
-    "lesson" to TransactionCategory.EDUCATION,
-    "snacks" to TransactionCategory.SNACKS,
-    "biscuits" to TransactionCategory.SNACKS,
-    "pie" to TransactionCategory.SNACKS,
-    "screen" to TransactionCategory.ELECTRONICS,
-    "laptop" to TransactionCategory.ELECTRONICS,
-    "charger" to TransactionCategory.ELECTRONICS,
-    "phone" to TransactionCategory.ELECTRONICS,
-    "ups" to TransactionCategory.ELECTRONICS,
-)
+/**
+ * What a payment was for, matched against its reference and the user's note. The hand-written list
+ * wins over the one generated from WordNet; see the files' headers.
+ */
+object PurposeKeywords {
+    val curated: Map<String, TransactionCategory> by lazy { readSections("purpose-keywords.tsv") }
 
-val PRIORITY_REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
-    "transcript" to TransactionCategory.EDUCATION,
-    "lesson" to TransactionCategory.EDUCATION,
-)
+    val generated: Map<String, TransactionCategory> by lazy { readPairs("purpose-keywords-wordnet.tsv") }
 
-val REFERENCE_DICTIONARY: Map<String, TransactionCategory> = mapOf(
-    // Transport
-    "motor" to TransactionCategory.TRANSPORT,
-    "fuel" to TransactionCategory.TRANSPORT,
-    "petrol" to TransactionCategory.TRANSPORT,
-    "diesel" to TransactionCategory.TRANSPORT,
-    "trotro" to TransactionCategory.TRANSPORT,
-    "taxi" to TransactionCategory.TRANSPORT,
-    "bolt" to TransactionCategory.TRANSPORT,
-    "uber" to TransactionCategory.TRANSPORT,
-    "car" to TransactionCategory.TRANSPORT,
-    "transport" to TransactionCategory.TRANSPORT,
+    private fun lines(file: String): List<String> {
+        // An absolute path: release builds may move this class to another package.
+        val stream = checkNotNull(PurposeKeywords::class.java.getResourceAsStream("$RESOURCE_DIR/$file")) { "$file is missing" }
+        return stream.bufferedReader().use { reader ->
+            reader.readLines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }
+        }
+    }
 
-    // House
-    "soap" to TransactionCategory.HOUSE,
-    "soqp" to TransactionCategory.HOUSE,
-    "rent" to TransactionCategory.HOUSE,
-    "water" to TransactionCategory.HOUSE,
-    "light" to TransactionCategory.HOUSE,
-    "electric" to TransactionCategory.HOUSE,
-    "cleaning" to TransactionCategory.HOUSE,
-    "detergent" to TransactionCategory.HOUSE,
-    "dustbin" to TransactionCategory.HOUSE,
-    "electricity" to TransactionCategory.HOUSE,
+    /** "[CATEGORY]" lines, each followed by comma-separated keywords. */
+    private fun readSections(file: String): Map<String, TransactionCategory> {
+        val groups = mutableListOf<Pair<TransactionCategory, MutableList<String>>>()
+        for (line in lines(file)) {
+            if (line.startsWith("[")) {
+                groups += TransactionCategory.valueOf(line.removeSurrounding("[", "]")) to mutableListOf()
+            } else {
+                check(groups.isNotEmpty()) { "$file: keywords before the first [CATEGORY]" }
+                groups.last().second += line.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+            }
+        }
+        return keywords(*groups.toTypedArray())
+    }
 
-    // Food
-    "food" to TransactionCategory.FOOD,
-    "lunch" to TransactionCategory.FOOD,
-    "dinner" to TransactionCategory.FOOD,
-    "breakfast" to TransactionCategory.FOOD,
-    "chop" to TransactionCategory.FOOD,
-    "waakye" to TransactionCategory.FOOD,
-    "pizza" to TransactionCategory.FOOD,
-    "burger" to TransactionCategory.FOOD,
-    "chicken" to TransactionCategory.FOOD,
-    "stew" to TransactionCategory.FOOD,
-    "bread" to TransactionCategory.FOOD,
-    "slice" to TransactionCategory.FOOD,
-    "indomie" to TransactionCategory.FOOD,
-    "malt" to TransactionCategory.FOOD,
-    "coke" to TransactionCategory.FOOD,
-    "delivery" to TransactionCategory.FOOD,
-    "meat" to TransactionCategory.FOOD,
-    "rice" to TransactionCategory.FOOD,
-    "egg" to TransactionCategory.FOOD,
-    "drink" to TransactionCategory.FOOD,
+    private const val RESOURCE_DIR = "/com/ayko/trackitt/service/categorization"
 
-    // Beauty
-    "hair" to TransactionCategory.BEAUTY,
-    "salon" to TransactionCategory.BEAUTY,
-    "cream" to TransactionCategory.BEAUTY,
-    "makeup" to TransactionCategory.BEAUTY,
-    "nails" to TransactionCategory.BEAUTY,
-    "barber" to TransactionCategory.BEAUTY,
-    "baber" to TransactionCategory.BEAUTY,
-    "barbering" to TransactionCategory.BEAUTY,
+    /** "keyword<TAB>CATEGORY" lines. */
+    private fun readPairs(file: String): Map<String, TransactionCategory> =
+        lines(file).associate { line ->
+            val (keyword, category) = line.split('\t')
+            keyword to TransactionCategory.valueOf(category)
+        }
+}
 
-    // Bills
-    "dstv" to TransactionCategory.BILLS,
-    "internet" to TransactionCategory.BILLS,
-    "surfline" to TransactionCategory.BILLS,
-
-    // Bills (internet/data)
-    "data" to TransactionCategory.BILLS,
-
-    // Airtime
-    "airtime" to TransactionCategory.AIRTIME,
-
-    // Groceries
-    "market" to TransactionCategory.GROCERIES,
-    "supermarket" to TransactionCategory.GROCERIES,
-
-    // Shopping
-    "shirt" to TransactionCategory.SHOPPING,
-    "clothe" to TransactionCategory.SHOPPING,
-    "clothes" to TransactionCategory.SHOPPING,
-    "card" to TransactionCategory.SHOPPING,
-
-    // Electronics
-    "screen" to TransactionCategory.ELECTRONICS,
-    "laptop" to TransactionCategory.ELECTRONICS,
-    "charger" to TransactionCategory.ELECTRONICS,
-    "phone" to TransactionCategory.ELECTRONICS,
-    "tablet" to TransactionCategory.ELECTRONICS,
-    "electricals" to TransactionCategory.ELECTRONICS,
-    "tv" to TransactionCategory.ELECTRONICS,
-    "ups" to TransactionCategory.ELECTRONICS,
-    "earbuds" to TransactionCategory.ELECTRONICS,
-    "airpods" to TransactionCategory.ELECTRONICS,
-    "electronics" to TransactionCategory.ELECTRONICS,
-
-    // Church
-    "offering" to TransactionCategory.CHURCH,
-    "thanksgiving" to TransactionCategory.CHURCH,
-    "house" to TransactionCategory.HOUSE,
-    "paint" to TransactionCategory.HOME_PROJECT,
-    "tithe" to TransactionCategory.CHURCH,
-    "seed offering" to TransactionCategory.CHURCH,
-    "church" to TransactionCategory.CHURCH,
-
-    // Health
-    "hospital" to TransactionCategory.HEALTH,
-    "pharmacy" to TransactionCategory.HEALTH,
-    "clinic" to TransactionCategory.HEALTH,
-    "lab" to TransactionCategory.HEALTH,
-)
+/** Builds a keyword map, refusing a keyword listed under two categories. */
+private fun keywords(vararg groups: Pair<TransactionCategory, List<String>>): Map<String, TransactionCategory> {
+    val map = LinkedHashMap<String, TransactionCategory>()
+    for ((category, words) in groups) {
+        for (word in words) {
+            val previous = map.put(word, category)
+            require(previous == null) { "\"$word\" is listed under both $previous and $category" }
+        }
+    }
+    return map
+}

@@ -17,6 +17,7 @@ Trackitt has no internet permission at all, so it cannot send anything anywhere.
 - Reads transaction SMS from MTN MoMo, Telecel (Vodafone) Cash, GhanaPay, AT Money, Ecobank, Stanbic, Republic Bank and other Ghanaian banks and wallets. Amounts are found whether the currency comes first or last ("GHS 50.00", "50.00 GHS", "GH¢50"), so new providers are picked up without an app update.
 - Recognises money moved between your own wallets and banks, and leaves it out of spending and income. You can mark any other transaction as a transfer, or undo one.
 - Lets you leave any single transaction out of your totals, such as a purchase someone else made with your card.
+- Sorts spending into categories on the phone from what each payment says it was for, using about 8,000 everyday words and phrases (from food and transport to school fees and church offerings). On-device AI only steps in when no keyword matches.
 - Uses merchant receipts (for example from Zeepay, Slydepay or a fuel station) to name the real merchant behind a payment service.
 - Shows each wallet's latest balance, and flags when balances stop adding up because an SMS never arrived.
 - Imports a chosen lookback period of supported SMS messages during onboarding.
@@ -74,4 +75,4 @@ The release workflow builds and attaches a debug-signed APK for a `v*` tag. See 
 
 ## License
 
-Trackitt source code is licensed under the [Apache License 2.0](LICENSE). Bundled third-party font notices are in [NOTICE](NOTICE).
+Trackitt source code is licensed under the [Apache License 2.0](LICENSE). Bundled third-party font notices, and the notice for the category word list derived from [Open English WordNet](https://github.com/globalwordnet/english-wordnet) (CC BY 4.0), are in [NOTICE](NOTICE).
