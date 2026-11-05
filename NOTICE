@@ -12,3 +12,13 @@ This repository includes the following third-party font files:
   Licensed under the Apache License, Version 2.0.
   License text: LICENSE
   Source: https://github.com/googlefonts/roboto-2
+
+This repository includes data derived from a third-party word list:
+
+- app/src/main/resources/com/ayko/trackitt/service/categorization/purpose-keywords-wordnet.tsv
+  is derived from Open English WordNet 2025 by the Open English WordNet community.
+  Licensed under the Creative Commons Attribution 4.0 International License.
+  License: https://creativecommons.org/licenses/by/4.0/
+  Source: https://github.com/globalwordnet/english-wordnet
+  Changes: words grouped under Trackitt spending categories and filtered; see
+  tools/category-keywords/wordnet_keywords.py.

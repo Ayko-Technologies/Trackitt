@@ -1,0 +1,158 @@
+# What a payment was for, by category. Trackitt matches these against a payment's reference and the
+# user's note (and, as a last resort, the merchant's name). Matching is by whole words: plurals
+# ("pies") and run-together or hyphenated phrases ("pocketmoney", "car-wash") match too, and the
+# longest keyword found wins, so "ice cream" is a snack even though "cream" is beauty. A keyword from
+# this file always beats one from the generated file.
+#
+# A [CATEGORY] line starts a section; keywords follow, separated by commas. Each keyword may appear
+# once in this file. These win over purpose-keywords-wordnet.tsv, which is generated.
+
+[FOOD]
+food, foods, chop, chop bar, chopbar, lunch, dinner, breakfast, supper, brunch, meal, meals, restaurant,
+canteen, cafeteria, cafe, eatery, diner, takeaway, take away, takeout, food delivery, delivery, catering,
+caterer, buffet, jollof, fried rice, rice, waakye, kenkey, banku, fufu, kokonte, tuo zaafi, omo tuo,
+ampesi, eto, kelewele, red red, gobe, gob3, plantain, yam, cocoyam, kontomire, abomu, okro, okra,
+light soup, groundnut soup, palm nut soup, palmnut soup, abenkwan, nkatenkwan, soup, stew, gravy, shito,
+pizza, burger, hamburger, cheeseburger, hotdog, hot dog, shawarma, sandwich, wrap, salad, fries,
+french fries, chicken, grilled chicken, fried chicken, wings, fish, tilapia, meat, pork, goat, chevon,
+beef, mutton, lamb, sausage, gizzard, kebab, khebab, kabab, suya, chinchinga, egg, omelette, bread, toast,
+spaghetti, pasta, noodle, indomie, ramen, sushi, curry, fried yam, yam chips, attieke, gari and beans,
+malt, coke, coca cola, fanta, sprite, pepsi, soft drink, soda, drink, beverage, juice, smoothie, sobolo,
+bissap, asaana, lamugin, yogurt, yoghurt, fruit, pineapple, watermelon, pawpaw, papaya, mango, banana,
+orange, apple, avocado, coconut, coffee, tea, latte, cappuccino, hot chocolate, milo, beer, wine,
+alcohol, liquor, spirits, whisky, whiskey, vodka, gin, akpeteshie, palm wine, brunch spot, bakery, lunch box,
+glovo, bolt food, uber eats, jumia food, chowdeck, doordash, grubhub, deliveroo, just eat
+
+[SNACKS]
+snack, biscuit, cookie, pie, meat pie, chicken pie, fish pie, ice cream, icecream, chocolate, candy,
+sweets, sweet, toffee, lollipop, popcorn, plantain chips, chips, crisps, groundnut, peanut, cashew, nuts,
+cake, cupcake, doughnut, donut, bofrot, puff puff, pastry, pastries, chin chin, spring roll, samosa,
+sausage roll, pancake, waffle, muffin, croissant, brownie, cheese, crackers, gum, chewing gum, fan ice,
+fanice, fan milk, fanmilk, yoghurt drink
+
+[GROCERIES]
+groceries, grocery, provisions, foodstuff, foodstuffs, market, market items, supermarket, minimart,
+mini mart, shop items, milk, powdered milk, evaporated milk, sugar, flour, cooking oil, vegetable oil,
+palm oil, gari, beans, black eyed beans, tomatoes, tomato paste, onion, pepper, garlic, ginger, vegetable,
+vegetables, veggies, cabbage, carrot, lettuce, cucumber, cereal, oats, cornflakes, cornmeal, corn dough,
+maize, millet, sardine, mackerel, tuna, corned beef, salt, maggi, seasoning, spices, butter, margarine,
+mayonnaise, ketchup, jam, honey, nutella, peanut butter, toiletries, bag of rice, rice bag, eggs crate,
+crate of eggs, frozen food, cold store, cold stores, shoprite, carrefour, spar, walmart, tesco, aldi,
+lidl, costco, kroger, sainsbury, asda
+
+[TRANSPORT]
+transport, transportation, transport fare, fare, fares, motor, okada, trotro, tro tro, taxi, cab, uber,
+bolt, yango, lyft, indrive, grab, careem, ride, rides, bus, bus fare, vip bus, stc, train, metro, ferry,
+flight, airfare, air ticket, plane ticket, airline, fuel, petrol, diesel, gasoline, kerosene, filling
+station, fuel station, car, car wash, carwash, mechanic, garage, tyre, tire, tyres, vulcanizer,
+vulcaniser, spare parts, car parts, engine oil, oil change, car service, servicing, car battery, towing,
+dvla, roadworthy, driving licence, driving license, number plate, parking, toll, tolls, road toll,
+car insurance, car loan, car repayment, car rental, car hire, motorbike, motorcycle, bicycle, bike
+
+[HOUSE]
+house, home, rent, house rent, rent advance, landlord, accommodation, hostel, water, water bill,
+pure water, sachet water, bottled water, light, light bill, electric, electricity, electricity bill,
+prepaid, prepaid units, units, credit units, gas, cooking gas, lpg, gas refill, charcoal, firewood,
+soap, bar soap, liquid soap, soqp, detergent, washing powder, bleach, disinfectant, mop, broom, tissue,
+tissues, toilet roll, toilet paper, cleaning, cleaner, cleaning lady, laundry, dry cleaning, washing,
+ironing, dustbin, refuse, waste, trash, garbage, rubbish, plumber, plumbing, electrician, fumigation,
+pest control, curtain, curtains, bedsheet, bedsheets, mattress, pillow, furniture, sofa, chair, table,
+insecticide, mosquito, mosquito net, utensils, cutlery, plates, cups, pots, bucket, basin, house help,
+househelp, maid, nanny, watchman, security man, gardener, compound, generator, gas cylinder,
+light bulb, bulb, batteries, home supplies, household, household items, towel, towels, sponge
+
+[HOME_PROJECT]
+ac, air condition, air conditioner, aircon, ac installation, ac repair, ac service, materials,
+building materials, workmanship, labour, labor, paint, painting, painter, cement, blocks, block,
+bricks, tiles, tiling, roofing, roofing sheets, wiring, electrical work, carpenter, carpentry, mason,
+masonry, welder, welding, construction, renovation, refurbishment, sand, gravel, chippings, iron rods,
+rods, borehole, polytank, poly tank, water tank, installation, plumbing materials, pop ceiling,
+ceiling, flooring, door, doors, window, windows, burglar proof, fence, fencing, gate, land, plot,
+building, site, contractor, hardware, hardware store, nails and screws, screws, timber, wood, plywood
+
+[BILLS]
+bill, bills, utility, utilities, ecg, gwcl, postpaid, dstv, gotv, startimes, netflix, spotify, showmax,
+apple music, youtube premium, youtube music, disney plus, disney, prime video, amazon prime, hulu, hbo,
+max subscription, deezer, audiomack, boomplay, tidal, chatgpt, openai, canva, adobe, microsoft,
+office 365, microsoft 365, icloud, google one, google storage, dropbox, subscription, subscriptions,
+membership, internet, wifi, wi fi, broadband, fibre, fiber, data, data bundle, bundle, bundles,
+internet bundle, router subscription, surfline, starlink, insurance, premium, life insurance,
+tv licence, tv license, licence fee, levy, tax, taxes, property rate, rates, service charge,
+bank charges, account fee, service fee, service fees, card service, card fee, maintenance fee,
+monthly fee, sms alert, capcut, cap cut, loan repayment, loan, interest, momo fee, e levy, elevy, sms fee
+
+[AIRTIME]
+airtime, credit, phone credit, top up, topup, recharge, recharge card, scratch card, mtn credit,
+telecel credit, at credit, airteltigo, call credit, talk time
+
+[BEAUTY]
+hair, haircut, hair cut, hairdo, hairdresser, barber, baber, barbering, barbershop, barber shop, salon,
+beauty salon, beauty parlour, braids, braiding, cornrows, wig, wigs, weave, weaves, attachment,
+attachments, hair extension, relaxer, nails, nail, pedicure, manicure, makeup, make up, lashes,
+eyelashes, brows, cream, creams, body cream, lotion, body lotion, shea butter, pomade, deodorant,
+roll on, perfume, body spray, cologne, fragrance, shaving, shave, razor, spa, massage, skincare,
+skin care, facial, cosmetics, cosmetic, beauty, beauty products, lipstick, lip gloss, foundation,
+powder, toothpaste, toothbrush, mouthwash, sanitary pad, sanitary pads, pads, sanitary towel, diapers,
+diaper
+
+[CHURCH]
+church, offering, offerings, second offering, seed offering, special offering, thanksgiving,
+thanksgiving offering, tithe, tithes, seed, first fruit, firstfruit, harvest, church harvest,
+intercession, crusade, ministry, mass, alms, prayer, prayer meeting, choir, pledge, church dues, dues,
+building fund, project offering, sunday school, mosque, zakat, sadaqah, sadaka, temple, shrine,
+pastor, prophet, evangelist, convention, revival
+
+[HEALTH]
+health, hospital, clinic, polyclinic, pharmacy, chemist, chemical shop, drug, drug store, drugstore,
+medicine, medicines, medication, meds, injection, injections, jab, vaccine, vaccination, lab,
+laboratory, lab test, blood test, scan, ultrasound, xray, x ray, mri, ct scan, doctor,
+dentist, dental, optician, eye clinic, eye test, eye drops, glasses prescription, spectacles,
+consultation, consultation fee, hospital card, folder, nhis, health insurance, malaria, typhoid,
+physio, physiotherapy, therapy, therapist, counselling, vitamin, vitamins, supplement, supplements,
+diagnosis, prescription, surgery, operation, admission fee, ward, maternity, antenatal,
+nurse, midwife, paracetamol, painkiller, antibiotic, antibiotics, antiseptic, plaster, bandage,
+first aid, inhaler, insulin, contraceptive, condom, condoms, pregnancy test, herbal, herbal medicine,
+mpharma, ernest chemists
+
+[EDUCATION]
+school, school fees, fees, tuition, tuition fees, transcript, lesson, lessons, classes, extra classes,
+class, course, course fee, courses, books, book, textbook, exercise book, exercise books, notebook,
+exam, exams, examination, waec, bece, wassce, gce, ielts, toefl, gre, gmat, university, college,
+polytechnic, campus, hostel fees, registration fee, admission, admission forms, forms, stationery,
+pens, pen, pencil, school bag, uniform, school uniform, driving school, training, workshop, seminar,
+conference, certificate, tutor, tutorial, tutoring, pta, pta dues, feeding fee, canteen fee, excursion,
+udemy, coursera, skillshare, edx, duolingo, masterclass, printing, photocopy, photocopying, binding,
+project work, thesis
+
+[GIFTS]
+gift, gifts, gift card, present, presents, birthday, birthday present, birthday gift, happy birthday,
+hbd, wedding, wedding gift, engagement, funeral, funeral donation, donation, donations, contribution,
+contributions, tip, tips, naming ceremony, outdooring, congratulations, congrats, thank you,
+appreciation, valentine, valentines, christmas, xmas, easter, eid, anniversary, flowers, bouquet,
+hamper, souvenir, souvenirs, graduation, graduation gift, baby shower, housewarming, charity,
+fundraiser, fundraising, sympathy, condolence, condolences
+
+[POCKET_MONEY]
+pocket money, allowance, upkeep, chop money, stipend, spending money, school allowance, weekly allowance,
+monthly allowance, t and t, t&t, feeding money, for upkeep
+
+[ELECTRONICS]
+electronics, electronic, electricals, electrical, gadget, gadgets, phone, mobile phone, smartphone,
+iphone, samsung, tecno, infinix, itel, xiaomi, redmi, oppo, huawei, pixel, nokia, screen, screen repair,
+phone repair, laptop, macbook, computer, pc, desktop, charger, adapter, cable, usb, power bank,
+powerbank, power supply, ups, inverter, solar panel, earbuds, earphones, headphones, headset, airpods,
+speaker, bluetooth speaker, tablet, ipad, tv, television, smart tv, decoder, monitor, keyboard, mouse,
+ram, ssd, hard drive, hard disk, flash drive, pendrive, memory card, sd card, gpu, graphics card, cpu,
+processor, motherboard, plug, extension board, extension cord, socket, router, modem, mifi, printer,
+toner, ink cartridge, camera, webcam, smartwatch, playstation, ps5, xbox, nintendo, console,
+fridge, refrigerator, freezer, microwave, blender, iron, electric kettle, kettle, fan,
+standing fan, washing machine, air fryer, rice cooker, gas cooker, cooker, oven, stove
+
+[SHOPPING]
+shopping, clothes, clothe, cloth, clothing, outfit, shirt, t shirt, tshirt, polo, trousers, pants, jeans,
+shorts, boxers, underwear, bra, panties, dress, gown, skirt, blouse, suit, tie, shoes, shoe, sneakers,
+slippers, sandals, heels, boots, bag, handbag, backpack, belt, socks, hoody, hoodie, sweater, jacket,
+coat, glasses, sunglasses, jewelry, jewellery, necklace, earrings, bracelet, ring, watch, wristwatch,
+kente, fabric, fabrics, ankara, african print, wax print, tailor, seamstress, sewing, dressmaker,
+mall, boutique, online order, delivery charge, amazon, jumia, temu, shein, aliexpress, ebay,
+etsy, tonaton, jiji, zara, nike, adidas, puma, toys, toy, stationery shop, perfume shop

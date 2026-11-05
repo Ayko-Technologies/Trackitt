@@ -37,6 +37,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 repository.reviewAutoTransfers()
                 prefs.edit().putBoolean(KEY_REVIEWED_AUTO_TRANSFERS, true).apply()
             }
+            if (prefs.getInt(KEY_DICTIONARY_VERSION, 0) < DICTIONARY_VERSION) {
+                repository.recategorizeFromDictionary()
+                prefs.edit().putInt(KEY_DICTIONARY_VERSION, DICTIONARY_VERSION).apply()
+            }
         }
         SmsBackfillWorker.resumeIfUnfinished(application)
     }
@@ -182,6 +186,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private companion object {
         const val KEY_REVIEWED_AUTO_TRANSFERS = "reviewed_auto_transfers_v1"
+        const val KEY_DICTIONARY_VERSION = "dictionary_version"
+
+        /** Raise when the keyword dictionary changes, so past imports are categorised again. */
+        const val DICTIONARY_VERSION = 2
         const val ACTIVE_ACCOUNT_MILLIS = 120L * 24 * 60 * 60 * 1000
         const val RECENT_GAP_MILLIS = 30L * 24 * 60 * 60 * 1000
     }

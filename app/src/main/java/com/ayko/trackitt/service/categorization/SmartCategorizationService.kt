@@ -36,6 +36,9 @@ class SmartCategorizationService(
         return ClassificationResult.Unavailable
     }
 
+    /** The category the note or reference names, ignoring the merchant. Null when neither names one. */
+    fun purposeOf(reference: String?, note: String?): TransactionCategory? = dictionary.purposeOf(reference, note)
+
     companion object {
         private const val TAG = "SmartCategorization"
     }

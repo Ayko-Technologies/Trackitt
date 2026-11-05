@@ -206,6 +206,23 @@ class TransactionRepository(
         }
     }
 
+    /**
+     * Runs the keyword dictionary again over imported payments, so a larger dictionary also fixes
+     * older guesses. Only a payment whose reference or note names what it was for is changed; payments
+     * to a merchant the user has put in a category, and transactions added by hand, are left as they are.
+     */
+    suspend fun recategorizeFromDictionary() {
+        val payments = transactionDao.getAllChronological().filter {
+            it.isFromSms && !it.isIncome && !it.isOwnTransfer && it.category != TransactionCategory.TRANSFER.name
+        }
+        for (payment in payments) {
+            if (merchantMappingDao.getMapping(payment.merchant.lowercase().trim()) != null) continue
+            val category = smartCategorization.purposeOf(payment.reference, payment.note) ?: continue
+            if (category.name != payment.category) transactionDao.updateCategory(payment.id, category.name)
+            if (payment.needsClassification) transactionDao.updateNeedsClassification(payment.id, false)
+        }
+    }
+
     /** The user says this isn't money moved between their own accounts: restore both sides. */
     suspend fun unlinkOwnTransfer(id: Long) {
         val transaction = transactionDao.getByIdNow(id) ?: return
