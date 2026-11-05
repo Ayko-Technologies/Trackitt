@@ -54,11 +54,11 @@ class SmsBackfillWorker(
 
         showProgress("Reading your SMS", 0, cursor.count)
         var count = prefs.getInt(KEY_IMPORTED, 0)
+        var lastDate = resumeFrom
         cursor.use {
             val bodyIdx = it.getColumnIndexOrThrow("body")
             val addressIdx = it.getColumnIndexOrThrow("address")
             val dateIdx = it.getColumnIndexOrThrow("date")
-            var lastDate = resumeFrom
             while (it.moveToNext()) {
                 if (it.position % PROGRESS_EVERY == 0) {
                     showProgress("Reading your SMS", it.position, it.count)
@@ -73,6 +73,7 @@ class SmsBackfillWorker(
             }
         }
         repository.relinkOwnTransfers()
+        SmsCatchUpWorker.markScanned(applicationContext, lastDate)
 
         prefs.edit()
             .putBoolean("backfill_completed", true)
