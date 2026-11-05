@@ -12,10 +12,13 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.Month
@@ -143,6 +146,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             Period.MONTH -> repository.getByCategory(categoryName, year, month)
         }
     }
+
+    private val categorySheet = MutableStateFlow<String?>(null)
+
+    /**
+     * The open category list and its transactions. It outlives the Home screen while a transaction
+     * opened from the list is showing, so going back draws the list on the first frame.
+     */
+    val categorySheetTransactions: StateFlow<Pair<String, List<com.ayko.trackitt.domain.model.Transaction>>?> =
+        categorySheet
+            .flatMapLatest { name ->
+                if (name == null) flowOf(null) else getCategoryTransactions(name).map { name to it }
+            }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    fun showCategorySheet(categoryName: String?) { categorySheet.value = categoryName }
 
     /** Wallets and banks heard from in the last few months, with their latest reported balance. */
     val balances: Flow<List<com.ayko.trackitt.service.accounts.AccountBalance>> =

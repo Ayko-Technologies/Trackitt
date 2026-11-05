@@ -1,5 +1,7 @@
 package com.ayko.trackitt.ui.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -48,8 +50,17 @@ fun TrackittNavGraph(
         }
         composable(
             NavRoute.Home.route,
-            exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
-            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            // Home opens transactions from a category list, which closes as the transaction opens and
+            // reopens over Home straight away on the way back. Sliding Home either way would move the
+            // screen behind the list, so the two swap without animating.
+            exitTransition = {
+                if (targetState.destination.route == NavRoute.Detail.route) ExitTransition.None
+                else slideOutHorizontally(targetOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150))
+            },
+            popEnterTransition = {
+                if (initialState.destination.route == NavRoute.Detail.route) EnterTransition.None
+                else slideInHorizontally(initialOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200))
+            },
         ) {
             HomeScreen(
                 onAddTap = { navController.navigate(NavRoute.Add.route) },
@@ -153,10 +164,16 @@ fun TrackittNavGraph(
         composable(
             NavRoute.Detail.route,
             arguments = listOf(navArgument("transactionId") { type = NavType.LongType }),
-            enterTransition = { slideInHorizontally(initialOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
+            enterTransition = {
+                if (initialState.destination.route == NavRoute.Home.route) EnterTransition.None
+                else slideInHorizontally(initialOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200))
+            },
             exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
             popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 5 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeIn(tween(200)) },
-            popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150)) },
+            popExitTransition = {
+                if (targetState.destination.route == NavRoute.Home.route) ExitTransition.None
+                else slideOutHorizontally(targetOffsetX = { it / 3 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(150))
+            },
         ) { backStackEntry ->
             val txId = backStackEntry.arguments?.getLong("transactionId") ?: return@composable
             DetailScreen(

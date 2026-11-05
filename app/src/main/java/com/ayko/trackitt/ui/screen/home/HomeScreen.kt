@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -29,11 +30,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DonutSmall
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,8 +56,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.setValue
+import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.ui.component.isCompactHeight
 import com.ayko.trackitt.ui.component.BalanceStrip
 import com.ayko.trackitt.ui.component.CategoryBottomSheet
@@ -66,6 +73,7 @@ import com.ayko.trackitt.ui.theme.OnSurface
 import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
@@ -95,8 +103,24 @@ fun HomeScreen(
     val empty = chartCategories.isEmpty()
     var showMonthPicker by remember { mutableStateOf(false) }
     var showDayPicker by remember { mutableStateOf(false) }
-    var selectedCategoryForSheet by remember { mutableStateOf<com.ayko.trackitt.domain.model.TransactionCategory?>(null) }
-    val categoryTransactions by viewModel.getCategoryTransactions(selectedCategoryForSheet?.name).collectAsStateWithLifecycle(initialValue = emptyList())
+    // A transaction opened from a category's list only hides the list, so going back to Home
+    // reopens it where it was.
+    var selectedCategoryForSheet by rememberSaveable { mutableStateOf<TransactionCategory?>(null) }
+    // Not saved, so it is already false on the first frame back.
+    var categorySheetHidden by remember { mutableStateOf(false) }
+    // How far the list was pulled up then, so it comes back already open instead of sliding up.
+    var categorySheetReopenAt by rememberSaveable { mutableStateOf<SheetValue?>(null) }
+    val categoryListState = rememberSaveable(selectedCategoryForSheet, saver = LazyListState.Saver) { LazyListState() }
+    LaunchedEffect(selectedCategoryForSheet) { viewModel.showCategorySheet(selectedCategoryForSheet?.name) }
+    val categorySheetTransactions by viewModel.categorySheetTransactions.collectAsStateWithLifecycle()
+    // Null until loaded: an empty first frame would scroll the reopened list back to the top.
+    val categoryTransactions = categorySheetTransactions
+        ?.takeIf { (name, _) -> name == selectedCategoryForSheet?.name }
+        ?.second
+    LaunchedEffect(categoryTransactions) {
+        // Every transaction in it was moved to another category.
+        if (categoryTransactions?.isEmpty() == true) selectedCategoryForSheet = null
+    }
 
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
@@ -320,7 +344,10 @@ fun HomeScreen(
                 totalFormatted = totalFormatted,
                 monthLabel = monthName,
                 empty = empty,
-                onCategoryTap = { category -> selectedCategoryForSheet = category },
+                onCategoryTap = { category ->
+                    categorySheetReopenAt = null
+                    selectedCategoryForSheet = category
+                },
                 barsBottomPadding = if (compactHeight) 24.dp else 100.dp,
                 modifier = Modifier
                     .padding(top = if (smsGranted) 20.dp else 4.dp)
@@ -362,15 +389,34 @@ fun HomeScreen(
             )
         }
 
-        if (selectedCategoryForSheet != null) {
+        val sheetCategory = selectedCategoryForSheet
+        val sheetTransactions = categoryTransactions
+        if (sheetCategory != null && !categorySheetHidden && !sheetTransactions.isNullOrEmpty()) {
+            val density = LocalDensity.current
+            val compactHeight = isCompactHeight()
+            val categorySheetState = remember(sheetCategory) {
+                val reopenAt = categorySheetReopenAt
+                SheetState(
+                    // Otherwise a fully opened list would come back half open.
+                    skipPartiallyExpanded = compactHeight || reopenAt == SheetValue.Expanded,
+                    density = density,
+                    initialValue = reopenAt ?: SheetValue.Hidden,
+                )
+            }
             CategoryBottomSheet(
-                category = selectedCategoryForSheet!!,
-                transactions = categoryTransactions,
+                category = sheetCategory,
+                transactions = sheetTransactions,
+                sheetState = categorySheetState,
+                listState = categoryListState,
                 onTransactionTap = { id ->
-                    selectedCategoryForSheet = null
+                    categorySheetReopenAt = categorySheetState.currentValue
+                    categorySheetHidden = true
                     onTransactionTap(id)
                 },
-                onDismiss = { selectedCategoryForSheet = null },
+                onDismiss = {
+                    categorySheetReopenAt = null
+                    selectedCategoryForSheet = null
+                },
                 includeFees = remember { context.getSharedPreferences("trackitt_display", 0).getBoolean("show_fees", false) },
             )
         }
