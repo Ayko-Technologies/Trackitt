@@ -82,6 +82,7 @@ class AppContainer(private val context: Context) {
         smartCategorization = smartCategorization,
         budgetAlerts = budgetAlertService,
         smsReceiptDao = database.smsReceiptDao(),
+        payeeNameDao = database.payeeNameDao(),
     )
 
     val insightsService = SmartInsightsService(

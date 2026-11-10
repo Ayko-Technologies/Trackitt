@@ -188,7 +188,7 @@ interface TransactionDao {
     """)
     suspend fun getMonthTotalWithFeesNow(year: String, month: String): Double
 
-    @Query("SELECT * FROM transactions WHERE merchant LIKE '%' || :query || '%' ORDER BY date DESC")
+    @Query("SELECT * FROM transactions WHERE merchant LIKE '%' || :query || '%' OR payeeNumber LIKE '%' || :query || '%' ORDER BY date DESC")
     fun searchByMerchant(query: String): Flow<List<TransactionEntity>>
 
     @Query("""
@@ -240,6 +240,12 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET merchant = :merchant WHERE id = :id")
     suspend fun updateMerchant(id: Long, merchant: String)
+
+    @Query("UPDATE transactions SET merchant = :merchant WHERE payeeNumber = :number")
+    suspend fun renamePayee(number: String, merchant: String)
+
+    @Query("SELECT DISTINCT merchant FROM transactions WHERE payeeNumber = :number")
+    suspend fun merchantsForPayee(number: String): List<String>
 
     @Query("UPDATE transactions SET note = :note WHERE id = :id")
     suspend fun updateNote(id: Long, note: String?)

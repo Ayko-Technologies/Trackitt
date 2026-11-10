@@ -32,4 +32,6 @@ data class TransactionEntity(
     val ownTransferDismissed: Boolean = false,
     /** The user left this out of their totals (say, a purchase someone else made on their card). */
     val isExcluded: Boolean = false,
+    /** The phone number the SMS gave instead of a name; see PayeeNumber. */
+    val payeeNumber: String? = null,
 )

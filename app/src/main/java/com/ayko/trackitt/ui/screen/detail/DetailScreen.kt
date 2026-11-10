@@ -103,6 +103,8 @@ fun DetailScreen(
 
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showEditMerchant by remember { mutableStateOf(false) }
+    var showEditPayeeName by remember { mutableStateOf(false) }
+    val payeeName by viewModel.payeeName.collectAsStateWithLifecycle(initialValue = null)
     var showEditNote by remember { mutableStateOf(false) }
 
     LaunchedEffect(deleted) {
@@ -203,6 +205,11 @@ fun DetailScreen(
 
         // Editable fields
         EditableRow(label = "Merchant", value = tx.merchant) { showEditMerchant = true }
+        tx.payeeNumber?.let { number ->
+            EditableRow(label = "Name for $number", value = payeeName ?: "Add a name", muted = payeeName == null) {
+                showEditPayeeName = true
+            }
+        }
         EditableRow(label = "Note", value = tx.note ?: "Add a note", muted = tx.note == null) { showEditNote = true }
 
         if (tx.isFromSms) {
@@ -361,6 +368,33 @@ fun DetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showEditMerchant = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    // Name for the phone number the SMS gave instead of a name
+    val payeeNumber = tx.payeeNumber
+    if (showEditPayeeName && payeeNumber != null) {
+        var text by remember { mutableStateOf(payeeName.orEmpty()) }
+        TrackittAlertDialog(
+            onDismissRequest = { showEditPayeeName = false },
+            title = { Text("Name for $payeeNumber", fontFamily = TrackittBodyFamily) },
+            text = {
+                Column {
+                    Text(
+                        "Shown instead of the number on every payment to or from it, including new ones.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 12.dp),
+                    )
+                    OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                }
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.namePayee(payeeNumber, text); showEditPayeeName = false }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditPayeeName = false }) { Text("Cancel") }
             },
         )
     }

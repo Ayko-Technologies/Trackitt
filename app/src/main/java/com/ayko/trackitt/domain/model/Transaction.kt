@@ -17,4 +17,5 @@ data class Transaction(
     val balance: Double? = null,
     val isOwnTransfer: Boolean = false,
     val isExcluded: Boolean = false,
+    val payeeNumber: String? = null,
 )

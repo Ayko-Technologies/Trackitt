@@ -6,9 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.ayko.trackitt.TrackittApplication
 import com.ayko.trackitt.domain.model.Transaction
 import com.ayko.trackitt.domain.model.TransactionCategory
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 class DetailViewModel(
@@ -26,6 +29,16 @@ class DetailViewModel(
         viewModelScope.launch {
             repository.updateCategory(transactionId, category, merchant)
         }
+    }
+
+    /** The name the user gave this transaction's phone number, if it has one. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val payeeName: Flow<String?> = transaction.flatMapLatest { tx ->
+        tx?.payeeNumber?.let(repository::observePayeeName) ?: flowOf(null)
+    }
+
+    fun namePayee(number: String, name: String) {
+        viewModelScope.launch { repository.namePayee(number, name) }
     }
 
     fun updateMerchant(merchant: String) {

@@ -10,6 +10,7 @@ import com.ayko.trackitt.data.local.ALL_MIGRATIONS
 import com.ayko.trackitt.data.local.MIGRATION_4_5
 import com.ayko.trackitt.data.local.MIGRATION_5_6
 import com.ayko.trackitt.data.local.MIGRATION_6_7
+import com.ayko.trackitt.data.local.MIGRATION_7_8
 import com.ayko.trackitt.data.local.TrackittDatabase
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -109,6 +110,34 @@ class MigrationTest {
             assertTrue(it.moveToFirst())
             assertEquals(0, it.getInt(0))
         }
+    }
+
+    @Test
+    fun migrate_7_to_8_records_the_payee_number_of_number_only_merchants() {
+        helper.createDatabase(dbName, 7).apply {
+            listOf("0240000001 (MTN MOBILE MONEY)" to "gp_1", "2335****150 , MTN MOBILE MONEY" to "gp_2", "SHOPRITE" to "mo_1")
+                .forEach { (merchant, id) ->
+                    execSQL(
+                        "INSERT INTO transactions (amount, fee, isIncome, category, merchant, reference, transactionId, " +
+                            "source, note, date, isFromSms, rawSms, needsClassification, balance, isOwnTransfer, " +
+                            "ownTransferDismissed, isExcluded) VALUES (20.0, 0, 0, 'OTHER', '$merchant', NULL, " +
+                            "'$id', 'GhanaPay', NULL, 1786000000000, 1, 'You have transferred', 0, NULL, 0, 0, 0)"
+                    )
+                }
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 8, true, MIGRATION_7_8)
+
+        db.query("SELECT payeeNumber FROM transactions ORDER BY id").use {
+            assertTrue(it.moveToNext())
+            assertEquals("0240000001", it.getString(0))
+            assertTrue(it.moveToNext())
+            assertTrue(it.isNull(0))
+            assertTrue(it.moveToNext())
+            assertTrue(it.isNull(0))
+        }
+        db.execSQL("INSERT INTO payee_names (number, name) VALUES ('0240000001', 'Road Tech')")
     }
 
     @Test
