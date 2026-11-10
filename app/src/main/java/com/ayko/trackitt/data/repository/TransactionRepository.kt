@@ -13,6 +13,7 @@ import com.ayko.trackitt.domain.model.Transaction
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.service.budget.BudgetAlertService
 import com.ayko.trackitt.service.categorization.ClassificationResult
+import com.ayko.trackitt.service.categorization.PayeeKind
 import com.ayko.trackitt.service.categorization.SmartCategorizationService
 import com.ayko.trackitt.service.accounts.AccountBalance
 import com.ayko.trackitt.service.accounts.BalanceReconciler
@@ -361,9 +362,9 @@ class TransactionRepository(
         val before = transactionDao.getByIdNow(id) ?: return
         transactionDao.updateCategory(id, category.name)
         transactionDao.updateNeedsClassification(id, false)
-        // A phone number is usually a person, paid for different things each time, so only a
-        // business's category is remembered for its next payments.
-        if (before.payeeNumber == null) {
+        // A person is paid for different things, so only a business's category is remembered as
+        // soon as it's chosen; see RememberedCategories.
+        if (PayeeKind.isBusiness(merchant)) {
             merchantMappingDao.upsert(
                 MerchantMappingEntity(
                     merchant = merchant.lowercase().trim(),

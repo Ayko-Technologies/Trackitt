@@ -241,6 +241,15 @@ interface TransactionDao {
     @Query("UPDATE transactions SET merchant = :merchant WHERE id = :id")
     suspend fun updateMerchant(id: Long, merchant: String)
 
+    /** The categories of the latest payments to [merchant] (lowercase), newest first. */
+    @Query("""
+        SELECT category FROM transactions
+        WHERE LOWER(TRIM(merchant)) = :merchant AND isIncome = 0 AND isOwnTransfer = 0
+        ORDER BY date DESC
+        LIMIT :count
+    """)
+    suspend fun recentCategoriesOf(merchant: String, count: Int): List<String>
+
     @Query("UPDATE transactions SET merchant = :merchant WHERE payeeNumber = :number")
     suspend fun renamePayee(number: String, merchant: String)
 
