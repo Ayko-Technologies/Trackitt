@@ -37,6 +37,12 @@ class DetailViewModel(
         tx?.payeeNumber?.let(repository::observePayeeName) ?: flowOf(null)
     }
 
+    /** Names the user might give this transaction's phone number, from payments with the same purpose. */
+    suspend fun payeeNameSuggestions(tx: Transaction): List<String> {
+        val number = tx.payeeNumber ?: return emptyList()
+        return repository.payeeNameSuggestions(number, tx.reference, tx.note)
+    }
+
     fun namePayee(number: String, name: String) {
         viewModelScope.launch { repository.namePayee(number, name) }
     }

@@ -253,6 +253,16 @@ interface TransactionDao {
     @Query("UPDATE transactions SET merchant = :merchant WHERE payeeNumber = :number")
     suspend fun renamePayee(number: String, merchant: String)
 
+    /** Payees of payments (other than to [number]) whose reference or note is one of [purposes]. */
+    @Query("""
+        SELECT merchant FROM transactions
+        WHERE isOwnTransfer = 0 AND (payeeNumber IS NULL OR payeeNumber != :number)
+          AND (LOWER(TRIM(reference)) IN (:purposes) OR LOWER(TRIM(note)) IN (:purposes))
+        ORDER BY date DESC
+        LIMIT 50
+    """)
+    suspend fun payeesWithPurpose(purposes: List<String>, number: String): List<String>
+
     @Query("UPDATE transactions SET note = :note WHERE id = :id")
     suspend fun updateNote(id: Long, note: String?)
 

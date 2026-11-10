@@ -38,6 +38,21 @@ class RememberedCategoriesTest {
     }
 
     @Test
+    fun a_payment_service_is_never_remembered() = runBlocking {
+        assertNull(remembered(GROCERIES, List(5) { FOOD }).of("paystack ghana limited"))
+        assertNull(remembered(GROCERIES, emptyList()).of("expresspay ova"))
+    }
+
+    @Test
+    fun tells_payment_services_from_shops() {
+        listOf("Paystack Ghana Limited", "expressPay ova", "Express Pay ova", "EXPRESSPAY RRN: 1234", "HubtelPOS.sp",
+            "Slydepay ova", "OVA for Payswitch instore service", "Flutterwave")
+            .forEach { assertTrue(it, PayeeKind.isPaymentService(it)) }
+        listOf("SHOPRITE ACCRA", "MTN Bundle", "Zen Online", "KOFI MENSAH", "Road Tech")
+            .forEach { assertFalse(it, PayeeKind.isPaymentService(it)) }
+    }
+
+    @Test
     fun tells_businesses_from_people() {
         listOf("SHOPRITE ACCRA", "Bills.INV", "NOBLE HOUSE (TEMA)", "Zen Online", "Road Tech", "MTN Bundle", "ABC Ventures")
             .forEach { assertTrue(it, PayeeKind.isBusiness(it)) }

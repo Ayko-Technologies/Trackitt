@@ -46,6 +46,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -79,7 +82,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DetailScreen(
     transactionId: Long,
@@ -376,6 +379,8 @@ fun DetailScreen(
     val payeeNumber = tx.payeeNumber
     if (showEditPayeeName && payeeNumber != null) {
         var text by remember { mutableStateOf(payeeName.orEmpty()) }
+        var suggestions by remember { mutableStateOf(emptyList<String>()) }
+        LaunchedEffect(tx.id) { suggestions = viewModel.payeeNameSuggestions(tx) }
         TrackittAlertDialog(
             onDismissRequest = { showEditPayeeName = false },
             title = { Text("Name for $payeeNumber", fontFamily = TrackittBodyFamily) },
@@ -388,6 +393,20 @@ fun DetailScreen(
                         modifier = Modifier.padding(bottom = 12.dp),
                     )
                     OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    val shown = suggestions.filterNot { it.equals(text.trim(), ignoreCase = true) }
+                    if (shown.isNotEmpty()) {
+                        Text(
+                            "From your other payments for \"${(tx.reference ?: tx.note).orEmpty().trim()}\"",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                        )
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            shown.forEach { name ->
+                                SuggestionChip(onClick = { text = name }, label = { Text(name) })
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {

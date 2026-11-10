@@ -15,6 +15,8 @@ class RememberedCategories(
     private val recentCategoriesOf: suspend (merchant: String, count: Int) -> List<TransactionCategory>,
 ) {
     suspend fun of(merchant: String): TransactionCategory? {
+        // Many different shops are paid through the same payment service, so its name says nothing.
+        if (PayeeKind.isPaymentService(merchant)) return null
         if (PayeeKind.isBusiness(merchant)) return chosenFor(merchant)
         val recent = recentCategoriesOf(merchant, RUN)
         if (recent.size < RUN) return null
@@ -35,6 +37,21 @@ object PayeeKind {
         if (knownBusinesses.match(merchant) != null) return true
         return merchant.lowercase().split(NON_LETTER).any { it in BUSINESS_WORDS }
     }
+
+    /**
+     * A payment service (Paystack, ExpressPay, Hubtel…) that collects money for many different shops
+     * and billers, so what one payment through it was for says nothing about the next.
+     */
+    fun isPaymentService(merchant: String): Boolean {
+        val letters = merchant.lowercase().filter { it.isLetter() }
+        return PAYMENT_SERVICES.any { it in letters }
+    }
+
+    private val PAYMENT_SERVICES = listOf(
+        "paystack", "expresspay", "expay", "hubtel", "flutterwave", "slydepay", "payswitch", "bigpay", "blupay",
+        "paywell", "pawapay", "zeepay", "theteller", "korbaweb", "directpay", "interpay", "ipaygh", "epayment",
+        "paywith", "invoicepay",
+    )
 
     private val knownBusinesses by lazy { KeywordMatcher(MERCHANT_DICTIONARY) }
     private val NON_LETTER = Regex("[^a-z]+")

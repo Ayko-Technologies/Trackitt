@@ -35,6 +35,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             // Cheap, and fixes transfers between the user's own accounts stored before pairing existed.
             repository.relinkOwnTransfers()
+            repository.forgetPaymentServiceCategories()
             val prefs = application.getSharedPreferences("trackitt", 0)
             if (!prefs.getBoolean(KEY_REVIEWED_AUTO_TRANSFERS, false)) {
                 repository.reviewAutoTransfers()

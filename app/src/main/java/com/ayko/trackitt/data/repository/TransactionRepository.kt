@@ -362,9 +362,9 @@ class TransactionRepository(
         val before = transactionDao.getByIdNow(id) ?: return
         transactionDao.updateCategory(id, category.name)
         transactionDao.updateNeedsClassification(id, false)
-        // A person is paid for different things, so only a business's category is remembered as
-        // soon as it's chosen; see RememberedCategories.
-        if (PayeeKind.isBusiness(merchant)) {
+        // A person is paid for different things, and a payment service collects for many shops, so
+        // only a business's category is remembered as soon as it's chosen; see RememberedCategories.
+        if (PayeeKind.isBusiness(merchant) && !PayeeKind.isPaymentService(merchant)) {
             merchantMappingDao.upsert(
                 MerchantMappingEntity(
                     merchant = merchant.lowercase().trim(),
@@ -375,8 +375,29 @@ class TransactionRepository(
         budgetAlerts.onUpdated(before, before.copy(category = category.name, needsClassification = false))
     }
 
+    /** Forgets categories remembered for payment services before they stopped being remembered. */
+    suspend fun forgetPaymentServiceCategories() {
+        merchantMappingDao.getAll()
+            .filter { PayeeKind.isPaymentService(it.merchant) }
+            .forEach { merchantMappingDao.delete(it.merchant) }
+    }
+
     suspend fun updateMerchant(id: Long, merchant: String) {
         transactionDao.updateMerchant(id, merchant)
+    }
+
+    /**
+     * Names the user might give [number]: payees of their other payments with the same reference or
+     * note, most recent first. A payment "to 024… Ref: driving school" suggests the driving school
+     * they paid by name before.
+     */
+    suspend fun payeeNameSuggestions(number: String, reference: String?, note: String?): List<String> {
+        val keys = listOfNotNull(reference, note).map { it.trim().lowercase() }.filter { it.isNotEmpty() }.distinct()
+        if (keys.isEmpty()) return emptyList()
+        return transactionDao.payeesWithPurpose(keys, number)
+            .filter { PayeeNumber.of(it) == null && !PayeeKind.isPaymentService(it) }
+            .distinctBy { it.trim().lowercase() }
+            .take(PAYEE_NAME_SUGGESTIONS)
     }
 
     fun observePayeeName(number: String): Flow<String?> = payeeNameDao.observeName(number)
@@ -542,5 +563,6 @@ class TransactionRepository(
     private companion object {
         const val ONE_DAY_MILLIS = 24L * 60 * 60 * 1000
         const val RECEIPT_RETENTION_MILLIS = 2L * 24 * 60 * 60 * 1000
+        const val PAYEE_NAME_SUGGESTIONS = 3
     }
 }
