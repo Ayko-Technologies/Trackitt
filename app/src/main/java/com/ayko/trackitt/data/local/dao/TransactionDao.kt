@@ -244,9 +244,6 @@ interface TransactionDao {
     @Query("UPDATE transactions SET merchant = :merchant WHERE payeeNumber = :number")
     suspend fun renamePayee(number: String, merchant: String)
 
-    @Query("SELECT DISTINCT merchant FROM transactions WHERE payeeNumber = :number")
-    suspend fun merchantsForPayee(number: String): List<String>
-
     @Query("UPDATE transactions SET note = :note WHERE id = :id")
     suspend fun updateNote(id: Long, note: String?)
 

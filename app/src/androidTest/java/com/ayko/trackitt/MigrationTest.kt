@@ -113,7 +113,7 @@ class MigrationTest {
     }
 
     @Test
-    fun migrate_7_to_8_records_the_payee_number_of_number_only_merchants() {
+    fun migrate_7_to_8_records_payee_numbers_and_forgets_their_categories() {
         helper.createDatabase(dbName, 7).apply {
             listOf("0240000001 (MTN MOBILE MONEY)" to "gp_1", "2335****150 , MTN MOBILE MONEY" to "gp_2", "SHOPRITE" to "mo_1")
                 .forEach { (merchant, id) ->
@@ -124,6 +124,8 @@ class MigrationTest {
                             "'$id', 'GhanaPay', NULL, 1786000000000, 1, 'You have transferred', 0, NULL, 0, 0, 0)"
                     )
                 }
+            execSQL("INSERT INTO merchant_mappings (merchant, category) VALUES ('0240000001 (mtn mobile money)', 'TRANSPORT')")
+            execSQL("INSERT INTO merchant_mappings (merchant, category) VALUES ('shoprite', 'GROCERIES')")
             close()
         }
 
@@ -136,6 +138,11 @@ class MigrationTest {
             assertTrue(it.isNull(0))
             assertTrue(it.moveToNext())
             assertTrue(it.isNull(0))
+        }
+        db.query("SELECT merchant FROM merchant_mappings").use {
+            assertTrue(it.moveToFirst())
+            assertEquals("shoprite", it.getString(0))
+            assertEquals(1, it.count)
         }
         db.execSQL("INSERT INTO payee_names (number, name) VALUES ('0240000001', 'Road Tech')")
     }

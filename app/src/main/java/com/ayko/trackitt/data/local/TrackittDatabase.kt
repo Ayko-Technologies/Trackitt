@@ -58,7 +58,10 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
-/** Names for payees that SMS show only as a phone number. */
+/**
+ * Names for payees that SMS show only as a phone number. Categories are no longer remembered for a
+ * phone number (usually a person, paid for different things), so those remembered before go.
+ */
 val MIGRATION_7_8 = object : Migration(7, 8) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE transactions ADD COLUMN payeeNumber TEXT")
@@ -72,6 +75,13 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
         numbers.forEach { (id, number) ->
             db.execSQL("UPDATE transactions SET payeeNumber = ? WHERE id = ?", arrayOf<Any>(number, id))
         }
+        val numberMappings = mutableListOf<String>()
+        db.query("SELECT merchant FROM merchant_mappings").use { cursor ->
+            while (cursor.moveToNext()) {
+                cursor.getString(0).takeIf { PayeeNumber.of(it) != null }?.let { numberMappings += it }
+            }
+        }
+        numberMappings.forEach { db.execSQL("DELETE FROM merchant_mappings WHERE merchant = ?", arrayOf<Any>(it)) }
     }
 }
 

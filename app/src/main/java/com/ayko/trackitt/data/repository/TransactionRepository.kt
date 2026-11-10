@@ -361,12 +361,16 @@ class TransactionRepository(
         val before = transactionDao.getByIdNow(id) ?: return
         transactionDao.updateCategory(id, category.name)
         transactionDao.updateNeedsClassification(id, false)
-        merchantMappingDao.upsert(
-            MerchantMappingEntity(
-                merchant = merchant.lowercase().trim(),
-                category = category.name,
+        // A phone number is usually a person, paid for different things each time, so only a
+        // business's category is remembered for its next payments.
+        if (before.payeeNumber == null) {
+            merchantMappingDao.upsert(
+                MerchantMappingEntity(
+                    merchant = merchant.lowercase().trim(),
+                    category = category.name,
+                )
             )
-        )
+        }
         budgetAlerts.onUpdated(before, before.copy(category = category.name, needsClassification = false))
     }
 
@@ -386,13 +390,6 @@ class TransactionRepository(
             payeeNameDao.delete(number)
             transactionDao.renamePayee(number, number)
             return
-        }
-        // A category chosen for the number's payments carries over to the name.
-        val key = trimmed.lowercase()
-        if (merchantMappingDao.getMapping(key) == null) {
-            transactionDao.merchantsForPayee(number)
-                .firstNotNullOfOrNull { merchantMappingDao.getMapping(it.lowercase().trim()) }
-                ?.let { merchantMappingDao.upsert(it.copy(merchant = key)) }
         }
         payeeNameDao.upsert(PayeeNameEntity(number, trimmed))
         transactionDao.renamePayee(number, trimmed)
