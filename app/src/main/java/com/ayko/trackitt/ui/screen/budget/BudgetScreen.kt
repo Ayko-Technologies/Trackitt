@@ -112,11 +112,9 @@ fun BudgetScreen(
     val previousMonthValue = previousMonth.monthValue.toString().padStart(2, '0')
     val displayPrefs = remember { context.getSharedPreferences("trackitt_display", 0) }
     val showFees = remember { displayPrefs.getBoolean("show_fees", false) }
-    val categoryTotals by (if (showFees) db.transactionDao().getCategoryTotalsWithFees(year, month)
-        else db.transactionDao().getCategoryTotals(year, month))
+    val categoryTotals by db.transactionDao().getCategoryTotals(year, month, showFees)
         .collectAsStateWithLifecycle(initialValue = emptyList())
-    val previousCategoryTotals by (if (showFees) db.transactionDao().getCategoryTotalsWithFees(previousYear, previousMonthValue)
-        else db.transactionDao().getCategoryTotals(previousYear, previousMonthValue))
+    val previousCategoryTotals by db.transactionDao().getCategoryTotals(previousYear, previousMonthValue, showFees)
         .collectAsStateWithLifecycle(initialValue = emptyList())
 
     var showAddDialog by remember { mutableStateOf(false) }
@@ -518,7 +516,7 @@ private fun AddBudgetDialog(
     var selectedCategory by remember { mutableStateOf<TransactionCategory?>(null) }
     var amount by remember { mutableStateOf("") }
     val existingCategoryNames = existingBudgets.map { it.category }.toSet()
-    val availableCategories = TransactionCategory.entries.filter { it.name !in existingCategoryNames && it != TransactionCategory.INCOME }
+    val availableCategories = TransactionCategory.assignable.filter { it.name !in existingCategoryNames && it != TransactionCategory.INCOME }
 
     BudgetDialogScaffold(
         title = "Set budget",
@@ -919,7 +917,7 @@ private fun CategoryPickerSheet(
                 .padding(horizontal = 16.dp)
                 .heightIn(max = 320.dp),
         ) {
-            items(TransactionCategory.entries.filter { it != TransactionCategory.INCOME }) { category ->
+            items(TransactionCategory.assignable.filter { it != TransactionCategory.INCOME }) { category ->
                 val isSelected = category == selectedCategory
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,

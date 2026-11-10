@@ -49,11 +49,11 @@ fun CategoryBottomSheet(
     transactions: List<Transaction>,
     onTransactionTap: (Long) -> Unit,
     onDismiss: () -> Unit,
-    includeFees: Boolean = false,
+    /** The category's total as the chart shows it. */
+    total: Double = transactions.sumOf { it.amount },
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = isCompactHeight()),
     listState: LazyListState = rememberLazyListState(),
 ) {
-    val total = transactions.sumOf { it.amount + if (includeFees) it.fee else 0.0 }
     val count = transactions.size
 
     ModalBottomSheet(
@@ -152,7 +152,8 @@ fun CategoryBottomSheet(
                             fontFamily = TrackittBodyFamily,
                         )
                     }
-                    val displayAmount = tx.amount + if (includeFees) tx.fee else 0.0
+                    // The Fees list shows what each payment cost in fees.
+                    val displayAmount = if (category == TransactionCategory.FEES) tx.fee else tx.amount
                     Text(
                         "${if (tx.isIncome) "+" else "−"}₵${String.format(Locale.US, "%.2f", displayAmount)}",
                         fontSize = 15.sp,

@@ -86,20 +86,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val year = args[1] as Int
         val month = args[2] as Int
         val day = args[3] as Int
-        val totalsFlow = when (period) {
+        when (period) {
             Period.DAY -> {
                 val date = LocalDate.of(year, month, day)
                 val zone = ZoneId.systemDefault()
                 val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
                 val end = date.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
-                repository.getCategoryTotalsForRange(start, end, includeFees())
+                repository.getDayTotal(start, end, includeFees())
             }
-            Period.MONTH -> repository.getCategoryTotals(year, month, includeFees())
-        }
-        totalsFlow.map { totals ->
-            totals
-                .filter { it.category != TransactionCategory.INCOME.name }
-                .sumOf { it.total }
+            Period.MONTH -> repository.getMonthTotal(year, month, includeFees())
         }
     }
 
@@ -117,9 +112,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     val zone = ZoneId.systemDefault()
                     val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
                     val end = date.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
-                    repository.getCategoryTotalsForRange(start, end, includeFees())
+                    repository.getChartTotalsForRange(start, end, includeFees())
                 }
-                Period.MONTH -> repository.getCategoryTotals(year, month, includeFees())
+                Period.MONTH -> repository.getChartTotals(year, month, includeFees())
             }
             totalsFlow.map { totals ->
                 totals.mapNotNull { ct ->
@@ -141,9 +136,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 val zone = ZoneId.systemDefault()
                 val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
                 val end = date.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
-                repository.getByCategoryForRange(categoryName, start, end)
+                if (categoryName == TransactionCategory.FEES.name) repository.getWithFeesForRange(start, end)
+                else repository.getByCategoryForRange(categoryName, start, end)
             }
-            Period.MONTH -> repository.getByCategory(categoryName, year, month)
+            Period.MONTH ->
+                if (categoryName == TransactionCategory.FEES.name) repository.getWithFees(year, month)
+                else repository.getByCategory(categoryName, year, month)
         }
     }
 

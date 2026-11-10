@@ -36,8 +36,9 @@ object OwnTransferMatcher {
             gap <= SIMULTANEOUS_MILLIS -> true
             gap <= NEARBY_MILLIS -> referencesEachOther(outgoing, incoming)
             // A late SMS needs specific evidence: a generic word like "push" isn't enough to tie a
-            // cash withdrawal to money that happened to arrive half an hour later.
-            else -> namesEachOther(outgoing, incoming)
+            // cash withdrawal to money that happened to arrive half an hour later, and nor is paying
+            // someone's MTN number while unrelated money reaches the user's own MTN wallet.
+            else -> namesEachOther(outgoing, incoming, walletLabels = false)
         }
     }
 
@@ -74,14 +75,23 @@ object OwnTransferMatcher {
         return TRANSFER_MARKERS.any { it in describe(outgoing) || it in describe(incoming) }
     }
 
-    /** One side names the other's network or bank, or both name the same person (the user). */
-    private fun namesEachOther(outgoing: TransactionEntity, incoming: TransactionEntity): Boolean {
-        if (networkWords(incoming.source).any { it in describe(outgoing) }) return true
-        if (networkWords(outgoing.source).any { it in describe(incoming) }) return true
+    /**
+     * One side names the other's network or bank, or both name the same person (the user). Without
+     * [walletLabels], "0240000001 (MTN MOBILE MONEY)" doesn't count: it names the network of whoever
+     * owns that number, who is often someone else.
+     */
+    private fun namesEachOther(outgoing: TransactionEntity, incoming: TransactionEntity, walletLabels: Boolean = true): Boolean {
+        if (networkWords(incoming.source).any { it in describe(outgoing, walletLabels) }) return true
+        if (networkWords(outgoing.source).any { it in describe(incoming, walletLabels) }) return true
         return sameName(outgoing.merchant, incoming.merchant)
     }
 
-    private fun describe(t: TransactionEntity) = "${t.merchant} ${t.reference.orEmpty()}".lowercase(Locale.US)
+    private fun describe(t: TransactionEntity, walletLabels: Boolean = true): String {
+        val merchant = if (walletLabels || !PHONE_NUMBER.containsMatchIn(t.merchant)) t.merchant else ""
+        return "$merchant ${t.reference.orEmpty()}".lowercase(Locale.US)
+    }
+
+    private val PHONE_NUMBER = Regex("""^\+?[\d*][\d*\s]{6,}""")
 
     private fun networkWords(source: String): List<String> = when (source) {
         "MTN MoMo" -> listOf("mtn", "momo", "mobile money")

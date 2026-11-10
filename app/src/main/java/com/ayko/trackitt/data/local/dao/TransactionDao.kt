@@ -36,45 +36,102 @@ interface TransactionDao {
     """)
     fun getByDateRange(startOfDay: Long, endOfDay: Long): Flow<List<TransactionEntity>>
 
+    /**
+     * Spending and income by category, leaving out money moved between the user's own accounts. With
+     * [includeFees], every fee paid is added up under FEES rather than in its payment's category.
+     */
     @Query("""
-        SELECT category, SUM(amount) as total FROM transactions
-        WHERE isExcluded = 0
-        AND isOwnTransfer = 0
+        SELECT category, SUM(total) AS total FROM (
+            SELECT category, amount AS total FROM transactions
+            WHERE isExcluded = 0
+            AND isOwnTransfer = 0
+            AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
+            AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
+            UNION ALL
+            SELECT 'FEES', fee FROM transactions
+            WHERE :includeFees
+            AND fee > 0
+            AND isExcluded = 0
+            AND isIncome = 0
+            AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
+            AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
+        )
+        GROUP BY category
+        ORDER BY total DESC
+    """)
+    fun getCategoryTotals(year: String, month: String, includeFees: Boolean): Flow<List<CategoryTotal>>
+
+    @Query("""
+        SELECT category, SUM(total) AS total FROM (
+            SELECT category, amount AS total FROM transactions
+            WHERE isExcluded = 0
+            AND isOwnTransfer = 0
+            AND date >= :startOfDay AND date < :endOfDay
+            UNION ALL
+            SELECT 'FEES', fee FROM transactions
+            WHERE :includeFees
+            AND fee > 0
+            AND isExcluded = 0
+            AND isIncome = 0
+            AND date >= :startOfDay AND date < :endOfDay
+        )
+        GROUP BY category
+        ORDER BY total DESC
+    """)
+    fun getCategoryTotalsForRange(startOfDay: Long, endOfDay: Long, includeFees: Boolean): Flow<List<CategoryTotal>>
+
+    /**
+     * Money moved between the user's own accounts: each debit, plus each credit whose debit came from
+     * an account that doesn't send SMS, so a move texted by both sides counts once.
+     */
+    @Query("""
+        SELECT COALESCE(SUM(t.amount), 0.0) FROM transactions t
+        WHERE t.isOwnTransfer = 1
+        AND t.isExcluded = 0
+        AND strftime('%Y', t.date / 1000, 'unixepoch', 'localtime') = :year
+        AND strftime('%m', t.date / 1000, 'unixepoch', 'localtime') = :month
+        AND (t.isIncome = 0 OR NOT EXISTS (
+            SELECT 1 FROM transactions o
+            WHERE o.isOwnTransfer = 1 AND o.isIncome = 0 AND o.source != t.source
+            AND ABS(o.amount - t.amount) < 0.005 AND ABS(o.date - t.date) <= 3600000
+        ))
+    """)
+    fun getMovedBetweenOwnAccounts(year: String, month: String): Flow<Double>
+
+    @Query("""
+        SELECT COALESCE(SUM(t.amount), 0.0) FROM transactions t
+        WHERE t.isOwnTransfer = 1
+        AND t.isExcluded = 0
+        AND t.date >= :startOfDay AND t.date < :endOfDay
+        AND (t.isIncome = 0 OR NOT EXISTS (
+            SELECT 1 FROM transactions o
+            WHERE o.isOwnTransfer = 1 AND o.isIncome = 0 AND o.source != t.source
+            AND ABS(o.amount - t.amount) < 0.005 AND ABS(o.date - t.date) <= 3600000
+        ))
+    """)
+    fun getMovedBetweenOwnAccountsForRange(startOfDay: Long, endOfDay: Long): Flow<Double>
+
+    /** Payments that charged a fee, for the FEES list. */
+    @Query("""
+        SELECT * FROM transactions
+        WHERE fee > 0
+        AND isExcluded = 0
+        AND isIncome = 0
         AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
         AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
-        GROUP BY category
-        ORDER BY total DESC
+        ORDER BY date DESC
     """)
-    fun getCategoryTotals(year: String, month: String): Flow<List<CategoryTotal>>
+    fun getWithFees(year: String, month: String): Flow<List<TransactionEntity>>
 
     @Query("""
-        SELECT category, SUM(CASE WHEN isOwnTransfer = 1 THEN fee ELSE amount + fee END) as total FROM transactions
-        WHERE isExcluded = 0
-        AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
-        AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
-        GROUP BY category
-        ORDER BY total DESC
-    """)
-    fun getCategoryTotalsWithFees(year: String, month: String): Flow<List<CategoryTotal>>
-
-    @Query("""
-        SELECT category, SUM(amount) as total FROM transactions
-        WHERE isExcluded = 0
-        AND isOwnTransfer = 0
+        SELECT * FROM transactions
+        WHERE fee > 0
+        AND isExcluded = 0
+        AND isIncome = 0
         AND date >= :startOfDay AND date < :endOfDay
-        GROUP BY category
-        ORDER BY total DESC
+        ORDER BY date DESC
     """)
-    fun getCategoryTotalsForRange(startOfDay: Long, endOfDay: Long): Flow<List<CategoryTotal>>
-
-    @Query("""
-        SELECT category, SUM(CASE WHEN isOwnTransfer = 1 THEN fee ELSE amount + fee END) as total FROM transactions
-        WHERE isExcluded = 0
-        AND date >= :startOfDay AND date < :endOfDay
-        GROUP BY category
-        ORDER BY total DESC
-    """)
-    fun getCategoryTotalsForRangeWithFees(startOfDay: Long, endOfDay: Long): Flow<List<CategoryTotal>>
+    fun getWithFeesForRange(startOfDay: Long, endOfDay: Long): Flow<List<TransactionEntity>>
 
     @Query("""
         SELECT COALESCE(SUM(amount), 0.0) FROM transactions
@@ -178,16 +235,6 @@ interface TransactionDao {
     """)
     suspend fun getCategoryMonthTotal(category: String, year: String, month: String): Double
 
-    @Query("""
-        SELECT COALESCE(SUM(CASE WHEN isOwnTransfer = 1 THEN fee ELSE amount + fee END), 0.0) FROM transactions
-        WHERE isExcluded = 0
-        AND isIncome = 0
-        AND category = :category
-        AND strftime('%Y', date / 1000, 'unixepoch', 'localtime') = :year
-        AND strftime('%m', date / 1000, 'unixepoch', 'localtime') = :month
-    """)
-    suspend fun getCategoryMonthTotalWithFees(category: String, year: String, month: String): Double
-
     @Query("UPDATE transactions SET category = :category WHERE id = :id")
     suspend fun updateCategory(id: Long, category: String)
 
@@ -203,7 +250,7 @@ interface TransactionDao {
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun delete(id: Long)
 
-    @Query("SELECT * FROM transactions WHERE needsClassification = 1")
+    @Query("SELECT * FROM transactions WHERE needsClassification = 1 AND isOwnTransfer = 0")
     suspend fun getPendingClassification(): List<TransactionEntity>
 
     @Query("UPDATE transactions SET needsClassification = :needs WHERE id = :id")
@@ -219,8 +266,13 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY date")
     suspend fun getAllChronological(): List<TransactionEntity>
 
-    @Query("UPDATE transactions SET isOwnTransfer = :isOwnTransfer, category = :category WHERE id = :id")
+    // A transfer isn't waiting for a category any more, so the on-device AI leaves it alone.
+    @Query("UPDATE transactions SET isOwnTransfer = :isOwnTransfer, category = :category, needsClassification = 0 WHERE id = :id")
     suspend fun updateOwnTransfer(id: Long, isOwnTransfer: Boolean, category: String)
+
+    /** Puts back the Transfer category on transfers that an earlier version let the AI recategorise. */
+    @Query("UPDATE transactions SET category = 'TRANSFER', needsClassification = 0 WHERE isOwnTransfer = 1 AND (category != 'TRANSFER' OR needsClassification = 1)")
+    suspend fun repairOwnTransferCategories()
 
     @Query("UPDATE transactions SET ownTransferDismissed = 1 WHERE id = :id")
     suspend fun dismissOwnTransfer(id: Long)

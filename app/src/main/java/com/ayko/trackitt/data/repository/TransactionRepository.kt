@@ -20,6 +20,7 @@ import com.ayko.trackitt.service.sms.ParsedReceipt
 import com.ayko.trackitt.service.sms.ParsedTransaction
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -49,19 +50,51 @@ class TransactionRepository(
     fun getCategoryTotals(year: Int, month: Int, includeFees: Boolean = false): Flow<List<CategoryTotal>> {
         val y = year.toString()
         val m = month.toString().padStart(2, '0')
-        return if (includeFees) transactionDao.getCategoryTotalsWithFees(y, m)
-        else transactionDao.getCategoryTotals(y, m)
+        return transactionDao.getCategoryTotals(y, m, includeFees)
     }
+
+    /**
+     * The Home chart: [getCategoryTotals], plus money moved between the user's own accounts under
+     * Transfer. That isn't spending, so the spending total leaves it out like income.
+     */
+    fun getChartTotals(year: Int, month: Int, includeFees: Boolean): Flow<List<CategoryTotal>> {
+        val y = year.toString()
+        val m = month.toString().padStart(2, '0')
+        return combine(transactionDao.getCategoryTotals(y, m, includeFees), transactionDao.getMovedBetweenOwnAccounts(y, m), ::withMoved)
+    }
+
+    fun getChartTotalsForRange(startOfDay: Long, endOfDay: Long, includeFees: Boolean): Flow<List<CategoryTotal>> =
+        combine(
+            transactionDao.getCategoryTotalsForRange(startOfDay, endOfDay, includeFees),
+            transactionDao.getMovedBetweenOwnAccountsForRange(startOfDay, endOfDay),
+            ::withMoved,
+        )
+
+    private fun withMoved(totals: List<CategoryTotal>, moved: Double): List<CategoryTotal> {
+        if (moved <= 0.0) return totals
+        val transfer = TransactionCategory.TRANSFER.name
+        val existing = totals.find { it.category == transfer }?.total ?: 0.0
+        return (totals.filter { it.category != transfer } + CategoryTotal(transfer, existing + moved))
+            .sortedByDescending { it.total }
+    }
+
+    /** Payments that charged a fee, for the Fees list. */
+    fun getWithFees(year: Int, month: Int): Flow<List<Transaction>> {
+        val y = year.toString()
+        val m = month.toString().padStart(2, '0')
+        return transactionDao.getWithFees(y, m).map { list -> list.map { it.toDomain() } }
+    }
+
+    fun getWithFeesForRange(startOfDay: Long, endOfDay: Long): Flow<List<Transaction>> =
+        transactionDao.getWithFeesForRange(startOfDay, endOfDay).map { list -> list.map { it.toDomain() } }
 
     fun getTodayTotal(): Flow<Double> {
         val (start, end) = todayRange()
         return transactionDao.getTotalForRange(start, end)
     }
 
-    fun getCategoryTotalsForRange(startOfDay: Long, endOfDay: Long, includeFees: Boolean = false): Flow<List<CategoryTotal>> {
-        return if (includeFees) transactionDao.getCategoryTotalsForRangeWithFees(startOfDay, endOfDay)
-        else transactionDao.getCategoryTotalsForRange(startOfDay, endOfDay)
-    }
+    fun getCategoryTotalsForRange(startOfDay: Long, endOfDay: Long, includeFees: Boolean = false): Flow<List<CategoryTotal>> =
+        transactionDao.getCategoryTotalsForRange(startOfDay, endOfDay, includeFees)
 
     fun getDayTotal(startOfDay: Long, endOfDay: Long, includeFees: Boolean = false): Flow<Double> {
         return if (includeFees) transactionDao.getTotalForRangeWithFees(startOfDay, endOfDay)
@@ -179,6 +212,7 @@ class TransactionRepository(
         }
         all.filter { !it.isOwnTransfer && !it.ownTransferDismissed && OwnTransferMatcher.isLinkedAccountMove(it) }
             .forEach { transactionDao.updateOwnTransfer(it.id, true, TransactionCategory.TRANSFER.name) }
+        transactionDao.repairOwnTransferCategories()
         smsReceiptDao.deleteUnmatchedBefore(System.currentTimeMillis() - RECEIPT_RETENTION_MILLIS)
     }
 
@@ -274,10 +308,12 @@ class TransactionRepository(
         applyReceipt(transaction, receipt)
     }
 
-    private suspend fun applyReceipt(transaction: TransactionEntity, receipt: SmsReceiptEntity) {
+    private suspend fun applyReceipt(matched: TransactionEntity, receipt: SmsReceiptEntity) {
         val name = ReceiptMatcher.displayName(receipt)
-        transactionDao.updateMerchant(transaction.id, name)
-        smsReceiptDao.markMatched(receipt.id, transaction.id)
+        transactionDao.updateMerchant(matched.id, name)
+        smsReceiptDao.markMatched(receipt.id, matched.id)
+        // It may have been paired as a transfer since it was read.
+        val transaction = transactionDao.getByIdNow(matched.id) ?: return
         val unsure = transaction.needsClassification || transaction.category == TransactionCategory.OTHER.name
         if (transaction.isIncome || transaction.isOwnTransfer || !unsure) return
         val result = smartCategorization.classify(name, transaction.reference, transaction.note)

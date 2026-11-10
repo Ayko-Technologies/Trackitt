@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalGroceryStore
 import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.School
@@ -50,4 +51,12 @@ enum class TransactionCategory(
     HOME_PROJECT("Home Project", Icons.Filled.Build, CatHomeProjectBg, CatHomeProjectFg, 122f),
     INCOME("Income", Icons.Filled.ArrowDownward, CatIncomeBg, CatIncomeFg, 148f),
     OTHER("Other", Icons.Filled.Category, CatOtherBg, CatOtherFg, 100f),
+
+    /** Not given to transactions: with "Show fees" on, every fee paid is totalled here instead. */
+    FEES("Fees", Icons.Filled.Percent, CatFeesBg, CatFeesFg, 60f);
+
+    companion object {
+        /** The categories a transaction can be put in. */
+        val assignable: List<TransactionCategory> = entries.filter { it != FEES }
+    }
 }

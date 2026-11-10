@@ -417,7 +417,7 @@ fun HomeScreen(
                     categorySheetReopenAt = null
                     selectedCategoryForSheet = null
                 },
-                includeFees = remember { context.getSharedPreferences("trackitt_display", 0).getBoolean("show_fees", false) },
+                total = allChartCategories.find { it.category == sheetCategory }?.total ?: sheetTransactions.sumOf { it.amount },
             )
         }
     }
