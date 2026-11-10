@@ -52,6 +52,7 @@ class TransactionPipelineTest {
             smartCategorization = SmartCategorizationService(dictionary, NanoCategorizationService(), useOnDeviceAi = { false }),
             budgetAlerts = BudgetAlertService(context, db.budgetDao(), db.transactionDao()),
             smsReceiptDao = db.smsReceiptDao(),
+            payeeNameDao = db.payeeNameDao(),
         )
     }
 

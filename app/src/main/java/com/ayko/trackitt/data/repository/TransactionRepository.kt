@@ -3,18 +3,22 @@ package com.ayko.trackitt.data.repository
 import com.ayko.trackitt.data.local.dao.CategoryTotal
 import com.ayko.trackitt.data.local.dao.TransactionDao
 import com.ayko.trackitt.data.local.dao.MerchantMappingDao
+import com.ayko.trackitt.data.local.dao.PayeeNameDao
 import com.ayko.trackitt.data.local.dao.SmsReceiptDao
 import com.ayko.trackitt.data.local.entity.SmsReceiptEntity
 import com.ayko.trackitt.data.local.entity.MerchantMappingEntity
+import com.ayko.trackitt.data.local.entity.PayeeNameEntity
 import com.ayko.trackitt.data.local.entity.TransactionEntity
 import com.ayko.trackitt.domain.model.Transaction
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.service.budget.BudgetAlertService
 import com.ayko.trackitt.service.categorization.ClassificationResult
+import com.ayko.trackitt.service.categorization.PayeeKind
 import com.ayko.trackitt.service.categorization.SmartCategorizationService
 import com.ayko.trackitt.service.accounts.AccountBalance
 import com.ayko.trackitt.service.accounts.BalanceReconciler
 import com.ayko.trackitt.service.accounts.OwnTransferMatcher
+import com.ayko.trackitt.service.accounts.PayeeNumber
 import com.ayko.trackitt.service.accounts.ReceiptMatcher
 import com.ayko.trackitt.service.sms.ParsedReceipt
 import com.ayko.trackitt.service.sms.ParsedTransaction
@@ -33,6 +37,7 @@ class TransactionRepository(
     private val smartCategorization: SmartCategorizationService,
     private val budgetAlerts: BudgetAlertService,
     private val smsReceiptDao: SmsReceiptDao,
+    private val payeeNameDao: PayeeNameDao,
 ) {
     private val classificationLock = kotlinx.coroutines.sync.Mutex()
 
@@ -136,21 +141,25 @@ class TransactionRepository(
      */
     suspend fun insertFromSms(sms: ParsedTransaction, bulk: Boolean = false): Boolean {
         val parsed = withDistinctId(sms) ?: return false
+        val payeeNumber = PayeeNumber.of(parsed.merchant)
+        val payeeName = payeeNumber?.let { payeeNameDao.get(it)?.name }
         val entity = if (parsed.isIncome) {
             parsed.toEntity(TransactionCategory.INCOME, needsClassification = false)
         } else {
-            when (val result = smartCategorization.classify(parsed.merchant, parsed.reference, null, allowAi = !bulk)) {
+            when (val result = smartCategorization.classify(payeeName ?: parsed.merchant, parsed.reference, null, allowAi = !bulk)) {
                 is ClassificationResult.Classified -> parsed.toEntity(result.category, needsClassification = false)
                 is ClassificationResult.Unavailable -> parsed.toEntity(TransactionCategory.OTHER, needsClassification = true)
             }
-        }
+        }.copy(payeeNumber = payeeNumber)
 
         val rowId = transactionDao.insert(entity)
         if (rowId == -1L) return false
         val stored = entity.copy(id = rowId)
         if (!stored.isIncome) budgetAlerts.onInserted(stored)
+        // Pairing looks at the SMS's own wording, such as the wallet's network, so name it afterwards.
         linkOwnTransfer(stored)
         matchPendingReceipt(stored)
+        if (payeeName != null) transactionDao.updateMerchant(rowId, payeeName)
         return true
     }
 
@@ -353,17 +362,59 @@ class TransactionRepository(
         val before = transactionDao.getByIdNow(id) ?: return
         transactionDao.updateCategory(id, category.name)
         transactionDao.updateNeedsClassification(id, false)
-        merchantMappingDao.upsert(
-            MerchantMappingEntity(
-                merchant = merchant.lowercase().trim(),
-                category = category.name,
+        // A person is paid for different things, and a payment service collects for many shops, so
+        // only a business's category is remembered as soon as it's chosen; see RememberedCategories.
+        if (PayeeKind.isBusiness(merchant) && !PayeeKind.isPaymentService(merchant)) {
+            merchantMappingDao.upsert(
+                MerchantMappingEntity(
+                    merchant = merchant.lowercase().trim(),
+                    category = category.name,
+                )
             )
-        )
+        }
         budgetAlerts.onUpdated(before, before.copy(category = category.name, needsClassification = false))
+    }
+
+    /** Forgets categories remembered for payment services before they stopped being remembered. */
+    suspend fun forgetPaymentServiceCategories() {
+        merchantMappingDao.getAll()
+            .filter { PayeeKind.isPaymentService(it.merchant) }
+            .forEach { merchantMappingDao.delete(it.merchant) }
     }
 
     suspend fun updateMerchant(id: Long, merchant: String) {
         transactionDao.updateMerchant(id, merchant)
+    }
+
+    /**
+     * Names the user might give [number]: payees of their other payments with the same reference or
+     * note, most recent first. A payment "to 024… Ref: driving school" suggests the driving school
+     * they paid by name before.
+     */
+    suspend fun payeeNameSuggestions(number: String, reference: String?, note: String?): List<String> {
+        val keys = listOfNotNull(reference, note).map { it.trim().lowercase() }.filter { it.isNotEmpty() }.distinct()
+        if (keys.isEmpty()) return emptyList()
+        return transactionDao.payeesWithPurpose(keys, number)
+            .filter { PayeeNumber.of(it) == null && !PayeeKind.isPaymentService(it) }
+            .distinctBy { it.trim().lowercase() }
+            .take(PAYEE_NAME_SUGGESTIONS)
+    }
+
+    fun observePayeeName(number: String): Flow<String?> = payeeNameDao.observeName(number)
+
+    /**
+     * Names whoever is behind a phone number, on every transaction with it, past and future. A blank
+     * name forgets it and shows the number again.
+     */
+    suspend fun namePayee(number: String, name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) {
+            payeeNameDao.delete(number)
+            transactionDao.renamePayee(number, number)
+            return
+        }
+        payeeNameDao.upsert(PayeeNameEntity(number, trimmed))
+        transactionDao.renamePayee(number, trimmed)
     }
 
     suspend fun updateNote(id: Long, note: String?, merchant: String = "", reference: String? = null) {
@@ -505,11 +556,13 @@ class TransactionRepository(
             balance = balance,
             isOwnTransfer = isOwnTransfer,
             isExcluded = isExcluded,
+            payeeNumber = payeeNumber,
         )
     }
 
     private companion object {
         const val ONE_DAY_MILLIS = 24L * 60 * 60 * 1000
         const val RECEIPT_RETENTION_MILLIS = 2L * 24 * 60 * 60 * 1000
+        const val PAYEE_NAME_SUGGESTIONS = 3
     }
 }

@@ -6,6 +6,7 @@ import com.ayko.trackitt.data.repository.TransactionRepository
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.service.categorization.DictionaryCategorizationService
 import com.ayko.trackitt.service.categorization.NanoCategorizationService
+import com.ayko.trackitt.service.categorization.RememberedCategories
 import com.ayko.trackitt.service.categorization.SmartCategorizationService
 import com.ayko.trackitt.service.budget.BudgetAlertService
 import com.ayko.trackitt.service.budget.BudgetEstimateCache
@@ -24,14 +25,20 @@ import com.ayko.trackitt.service.sms.SmsTransactionParser
 class AppContainer(private val context: Context) {
     val database = TrackittDatabase.getInstance(context)
 
-    private val dictionaryService = DictionaryCategorizationService(
-        userLookup = { merchant ->
-            val mapping = database.merchantMappingDao().getMapping(merchant)
-            mapping?.let {
+    private val rememberedCategories = RememberedCategories(
+        chosenFor = { merchant ->
+            database.merchantMappingDao().getMapping(merchant)?.let {
                 try { TransactionCategory.valueOf(it.category) } catch (_: Exception) { null }
             }
-        }
+        },
+        recentCategoriesOf = { merchant, count ->
+            database.transactionDao().recentCategoriesOf(merchant, count).mapNotNull {
+                try { TransactionCategory.valueOf(it) } catch (_: Exception) { null }
+            }
+        },
     )
+
+    private val dictionaryService = DictionaryCategorizationService(userLookup = rememberedCategories::of)
 
     private val nanoService = NanoCategorizationService()
     private val nanoInsightsService = NanoInsightsService()
@@ -82,6 +89,7 @@ class AppContainer(private val context: Context) {
         smartCategorization = smartCategorization,
         budgetAlerts = budgetAlertService,
         smsReceiptDao = database.smsReceiptDao(),
+        payeeNameDao = database.payeeNameDao(),
     )
 
     val insightsService = SmartInsightsService(

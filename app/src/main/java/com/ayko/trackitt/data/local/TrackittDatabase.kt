@@ -9,13 +9,16 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ayko.trackitt.data.local.dao.BudgetDao
 import com.ayko.trackitt.data.local.dao.CustomCategoryDao
 import com.ayko.trackitt.data.local.dao.MerchantMappingDao
+import com.ayko.trackitt.data.local.dao.PayeeNameDao
 import com.ayko.trackitt.data.local.dao.SmsReceiptDao
 import com.ayko.trackitt.data.local.dao.TransactionDao
 import com.ayko.trackitt.data.local.entity.BudgetEntity
 import com.ayko.trackitt.data.local.entity.CustomCategoryEntity
 import com.ayko.trackitt.data.local.entity.MerchantMappingEntity
+import com.ayko.trackitt.data.local.entity.PayeeNameEntity
 import com.ayko.trackitt.data.local.entity.SmsReceiptEntity
 import com.ayko.trackitt.data.local.entity.TransactionEntity
+import com.ayko.trackitt.service.accounts.PayeeNumber
 
 val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -55,13 +58,30 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
+/** Names for payees that SMS show only as a phone number. */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE transactions ADD COLUMN payeeNumber TEXT")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `payee_names` (`number` TEXT NOT NULL, `name` TEXT NOT NULL, PRIMARY KEY(`number`))")
+        val numbers = mutableListOf<Pair<Long, String>>()
+        db.query("SELECT id, merchant FROM transactions").use { cursor ->
+            while (cursor.moveToNext()) {
+                PayeeNumber.of(cursor.getString(1))?.let { numbers += cursor.getLong(0) to it }
+            }
+        }
+        numbers.forEach { (id, number) ->
+            db.execSQL("UPDATE transactions SET payeeNumber = ? WHERE id = ?", arrayOf<Any>(number, id))
+        }
+    }
+}
+
 /** Every migration, oldest first. A schema change without one here fails loudly instead of wiping data. */
-val ALL_MIGRATIONS = arrayOf(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+val ALL_MIGRATIONS = arrayOf(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
 
 @Database(
     entities = [
         TransactionEntity::class, MerchantMappingEntity::class, CustomCategoryEntity::class, BudgetEntity::class,
-        SmsReceiptEntity::class,
+        SmsReceiptEntity::class, PayeeNameEntity::class,
     ],
     version = TrackittDatabase.VERSION,
     exportSchema = true,
@@ -72,9 +92,10 @@ abstract class TrackittDatabase : RoomDatabase() {
     abstract fun customCategoryDao(): CustomCategoryDao
     abstract fun budgetDao(): BudgetDao
     abstract fun smsReceiptDao(): SmsReceiptDao
+    abstract fun payeeNameDao(): PayeeNameDao
 
     companion object {
-        const val VERSION = 7
+        const val VERSION = 8
 
         /** Oldest schema with a migration path; anything older would be wiped on open. */
         const val MIN_MIGRATABLE_VERSION = 3

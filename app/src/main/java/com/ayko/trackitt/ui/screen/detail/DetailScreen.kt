@@ -46,6 +46,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -79,7 +82,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DetailScreen(
     transactionId: Long,
@@ -103,6 +106,8 @@ fun DetailScreen(
 
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showEditMerchant by remember { mutableStateOf(false) }
+    var showEditPayeeName by remember { mutableStateOf(false) }
+    val payeeName by viewModel.payeeName.collectAsStateWithLifecycle(initialValue = null)
     var showEditNote by remember { mutableStateOf(false) }
 
     LaunchedEffect(deleted) {
@@ -203,6 +208,11 @@ fun DetailScreen(
 
         // Editable fields
         EditableRow(label = "Merchant", value = tx.merchant) { showEditMerchant = true }
+        tx.payeeNumber?.let { number ->
+            EditableRow(label = "Name for $number", value = payeeName ?: "Add a name", muted = payeeName == null) {
+                showEditPayeeName = true
+            }
+        }
         EditableRow(label = "Note", value = tx.note ?: "Add a note", muted = tx.note == null) { showEditNote = true }
 
         if (tx.isFromSms) {
@@ -361,6 +371,49 @@ fun DetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showEditMerchant = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    // Name for the phone number the SMS gave instead of a name
+    val payeeNumber = tx.payeeNumber
+    if (showEditPayeeName && payeeNumber != null) {
+        var text by remember { mutableStateOf(payeeName.orEmpty()) }
+        var suggestions by remember { mutableStateOf(emptyList<String>()) }
+        LaunchedEffect(tx.id) { suggestions = viewModel.payeeNameSuggestions(tx) }
+        TrackittAlertDialog(
+            onDismissRequest = { showEditPayeeName = false },
+            title = { Text("Name for $payeeNumber", fontFamily = TrackittBodyFamily) },
+            text = {
+                Column {
+                    Text(
+                        "Shown instead of the number on every payment to or from it, including new ones.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 12.dp),
+                    )
+                    OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    val shown = suggestions.filterNot { it.equals(text.trim(), ignoreCase = true) }
+                    if (shown.isNotEmpty()) {
+                        Text(
+                            "From your other payments for \"${(tx.reference ?: tx.note).orEmpty().trim()}\"",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                        )
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            shown.forEach { name ->
+                                SuggestionChip(onClick = { text = name }, label = { Text(name) })
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.namePayee(payeeNumber, text); showEditPayeeName = false }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditPayeeName = false }) { Text("Cancel") }
             },
         )
     }

@@ -188,7 +188,7 @@ interface TransactionDao {
     """)
     suspend fun getMonthTotalWithFeesNow(year: String, month: String): Double
 
-    @Query("SELECT * FROM transactions WHERE merchant LIKE '%' || :query || '%' ORDER BY date DESC")
+    @Query("SELECT * FROM transactions WHERE merchant LIKE '%' || :query || '%' OR payeeNumber LIKE '%' || :query || '%' ORDER BY date DESC")
     fun searchByMerchant(query: String): Flow<List<TransactionEntity>>
 
     @Query("""
@@ -240,6 +240,28 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET merchant = :merchant WHERE id = :id")
     suspend fun updateMerchant(id: Long, merchant: String)
+
+    /** The categories of the latest payments to [merchant] (lowercase), newest first. */
+    @Query("""
+        SELECT category FROM transactions
+        WHERE LOWER(TRIM(merchant)) = :merchant AND isIncome = 0 AND isOwnTransfer = 0
+        ORDER BY date DESC
+        LIMIT :count
+    """)
+    suspend fun recentCategoriesOf(merchant: String, count: Int): List<String>
+
+    @Query("UPDATE transactions SET merchant = :merchant WHERE payeeNumber = :number")
+    suspend fun renamePayee(number: String, merchant: String)
+
+    /** Payees of payments (other than to [number]) whose reference or note is one of [purposes]. */
+    @Query("""
+        SELECT merchant FROM transactions
+        WHERE isOwnTransfer = 0 AND (payeeNumber IS NULL OR payeeNumber != :number)
+          AND (LOWER(TRIM(reference)) IN (:purposes) OR LOWER(TRIM(note)) IN (:purposes))
+        ORDER BY date DESC
+        LIMIT 50
+    """)
+    suspend fun payeesWithPurpose(purposes: List<String>, number: String): List<String>
 
     @Query("UPDATE transactions SET note = :note WHERE id = :id")
     suspend fun updateNote(id: Long, note: String?)
