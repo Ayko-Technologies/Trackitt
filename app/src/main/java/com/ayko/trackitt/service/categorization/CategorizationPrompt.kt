@@ -23,6 +23,7 @@ object CategorizationPrompt {
         TransactionCategory.GIFTS to "presents, birthdays, weddings, funerals, tips, donations",
         TransactionCategory.ELECTRONICS to "phones, laptops, chargers, gadgets and parts",
         TransactionCategory.HOME_PROJECT to "building, renovation, AC installation, materials and workmanship",
+        TransactionCategory.BUSINESS to "costs of the user's own business or trade: stock to resell, suppliers, staff pay, business registration",
         TransactionCategory.OTHER to "anything that fits none of the above, or when the purpose is unclear",
     )
     private val CATEGORY_LIST = CATEGORY_DESCRIPTIONS.entries.joinToString("\n") { (category, description) ->

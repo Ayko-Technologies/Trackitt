@@ -5,6 +5,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.DirectionsBus
@@ -49,6 +50,7 @@ enum class TransactionCategory(
     GIFTS("Gifts", Icons.Filled.CardGiftcard, CatGiftsBg, CatGiftsFg, 308f),
     ELECTRONICS("Electronics", Icons.Filled.Devices, CatElectronicsBg, CatElectronicsFg, 206f),
     HOME_PROJECT("Home Project", Icons.Filled.Build, CatHomeProjectBg, CatHomeProjectFg, 122f),
+    BUSINESS("Business", Icons.Filled.BusinessCenter, CatBusinessBg, CatBusinessFg, 180f),
     INCOME("Income", Icons.Filled.ArrowDownward, CatIncomeBg, CatIncomeFg, 148f),
     OTHER("Other", Icons.Filled.Category, CatOtherBg, CatOtherFg, 100f),
 

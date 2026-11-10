@@ -140,6 +140,12 @@ class DictionaryCategorizationServiceTest {
     }
 
     @Test
+    fun business_costs_have_their_own_category() {
+        assertEquals(TransactionCategory.BUSINESS, service.purposeOf(reference = "restock", note = null))
+        assertEquals(TransactionCategory.BUSINESS, service.purposeOf(reference = null, note = "business"))
+    }
+
+    @Test
     fun keyword_files_load_without_a_keyword_in_two_categories() {
         assertTrue(PurposeKeywords.curated.size > 500)
         assertTrue(PurposeKeywords.generated.size > 5000)
