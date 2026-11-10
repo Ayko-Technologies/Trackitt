@@ -323,7 +323,7 @@ fun DetailScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.padding(horizontal = 16.dp).weight(1f, fill = false),
             ) {
-                itemsIndexed(TransactionCategory.entries.toList()) { _, cat ->
+                itemsIndexed(TransactionCategory.assignable) { _, cat ->
                     val isSelected = cat == category
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,

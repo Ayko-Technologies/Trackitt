@@ -148,7 +148,7 @@ class DictionaryCategorizationServiceTest {
     @Test
     fun ai_prompt_describes_every_category_it_may_answer() {
         val prompt = CategorizationPrompt.build("KOFI MENSAH", "go bed", null)
-        TransactionCategory.entries
+        TransactionCategory.assignable
             .filter { it != TransactionCategory.INCOME && it != TransactionCategory.TRANSFER }
             .forEach { assertTrue("${it.name} missing", prompt.contains("- ${it.name}:")) }
     }

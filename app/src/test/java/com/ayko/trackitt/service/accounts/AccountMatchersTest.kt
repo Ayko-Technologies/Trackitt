@@ -147,6 +147,15 @@ class AccountMatchersTest {
     }
 
     @Test
+    fun does_not_tie_paying_someones_wallet_to_unrelated_money_arriving_later() {
+        val paidRider = tx("GhanaPay", 20.0, false, "0240000002 (MTN MOBILE MONEY)")
+        val laterCredit = tx("MTN MoMo", 20.0, true, "Paystack Ghana Limited", at = start + 50 * minute)
+
+        assertFalse(OwnTransferMatcher.isPair(paidRider, laterCredit))
+        assertTrue(OwnTransferMatcher.isPair(tx("MTN MoMo", 20.0, false, "GHANAPAY PUSH"), tx("GhanaPay", 20.0, true, "X", at = start + 50 * minute)))
+    }
+
+    @Test
     fun treats_ecobank_linked_account_moves_as_own_even_without_a_pair() {
         assertTrue(OwnTransferMatcher.isLinkedAccountMove(tx("Ecobank", 2160.0, false, "Bank → MoMo")))
         assertFalse(OwnTransferMatcher.isLinkedAccountMove(tx("Ecobank", 50.0, false, "SPAR ACCRA")))

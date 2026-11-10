@@ -65,7 +65,7 @@ import com.ayko.trackitt.ui.theme.TrackittBodyFamily
 
 private enum class AddStep { AMOUNT, CATEGORY, CONFIRM }
 
-private val expenseCategories = TransactionCategory.entries.filter { it != TransactionCategory.INCOME }
+private val expenseCategories = TransactionCategory.assignable.filter { it != TransactionCategory.INCOME }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

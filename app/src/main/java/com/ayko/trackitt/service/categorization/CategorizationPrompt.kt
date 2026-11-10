@@ -50,7 +50,8 @@ object CategorizationPrompt {
     fun parseResponse(response: String): TransactionCategory? {
         return try {
             val cleaned = response.trim().uppercase()
-            TransactionCategory.valueOf(cleaned).takeUnless { it == TransactionCategory.TRANSFER } ?: TransactionCategory.OTHER
+            TransactionCategory.valueOf(cleaned)
+                .takeUnless { it == TransactionCategory.TRANSFER || it == TransactionCategory.FEES } ?: TransactionCategory.OTHER
         } catch (_: IllegalArgumentException) {
             null
         }
