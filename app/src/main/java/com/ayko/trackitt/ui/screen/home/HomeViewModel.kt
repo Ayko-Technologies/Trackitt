@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -48,6 +49,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
         SmsBackfillWorker.resumeIfUnfinished(application)
     }
+
+    /**
+     * The year whose recap Home offers: the current one through December, and the one just ended
+     * through January. Null the rest of the year, or when Trackitt has nothing for it.
+     */
+    val recapYear: StateFlow<Int?> = flow {
+        val today = LocalDate.now()
+        val year = when (today.monthValue) {
+            12 -> today.year
+            1 -> today.year - 1
+            else -> null
+        }
+        emit(year?.takeIf { it in repository.recapYears() })
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     private val _refreshTrigger = MutableStateFlow(0)
     fun refresh() { _refreshTrigger.value++ }

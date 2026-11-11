@@ -22,6 +22,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Celebration
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.outlined.Settings
@@ -83,6 +87,7 @@ fun HomeScreen(
     onBudgetTap: () -> Unit = {},
     onInsightsTap: (Int, Int) -> Unit = { _, _ -> },
     onTransactionTap: (Long) -> Unit = {},
+    onRecapTap: (Int) -> Unit = {},
 ) {
     val context = LocalContext.current
     val selectedPeriod by viewModel.selectedPeriod.collectAsStateWithLifecycle()
@@ -99,6 +104,14 @@ fun HomeScreen(
     val currentYear by viewModel.currentYear.collectAsStateWithLifecycle(initialValue = 2026)
 
     val dayLabel by viewModel.dayLabel.collectAsStateWithLifecycle(initialValue = "Today")
+    val recapYear by viewModel.recapYear.collectAsStateWithLifecycle()
+    var dismissedRecaps by remember {
+        mutableStateOf(displayPrefs.getStringSet(KEY_RECAPS_SEEN, emptySet()).orEmpty().mapNotNull { it.toIntOrNull() }.toSet())
+    }
+    fun dismissRecap(year: Int) {
+        dismissedRecaps = dismissedRecaps + year
+        displayPrefs.edit().putStringSet(KEY_RECAPS_SEEN, dismissedRecaps.map { it.toString() }.toSet()).apply()
+    }
 
     val empty = chartCategories.isEmpty()
     var showMonthPicker by remember { mutableStateOf(false) }
@@ -292,6 +305,18 @@ fun HomeScreen(
                 }
             }
 
+            // The year's recap, offered through December and January until opened or dismissed.
+            recapYear?.takeUnless { it in dismissedRecaps }?.let { year ->
+                RecapBanner(
+                    year = year,
+                    onOpen = {
+                        dismissRecap(year)
+                        onRecapTap(year)
+                    },
+                    onDismiss = { dismissRecap(year) },
+                )
+            }
+
             // SMS permission card
             if (!smsGranted) {
                 Row(
@@ -418,6 +443,53 @@ fun HomeScreen(
                     selectedCategoryForSheet = null
                 },
                 total = allChartCategories.find { it.category == sheetCategory }?.total ?: sheetTransactions.sumOf { it.amount },
+            )
+        }
+    }
+}
+
+private const val KEY_RECAPS_SEEN = "recaps_seen"
+
+/** A dark, can't-miss card: the year's recap is ready. */
+@Composable
+private fun RecapBanner(year: Int, onOpen: () -> Unit, onDismiss: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(OnSurface)
+            .clickable(onClick = onOpen)
+            .padding(start = 18.dp, top = 14.dp, bottom = 14.dp, end = 6.dp),
+    ) {
+        Icon(
+            Icons.Filled.Celebration,
+            contentDescription = null,
+            tint = com.ayko.trackitt.ui.theme.PrimaryContainer,
+            modifier = Modifier.size(26.dp),
+        )
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                "Your $year in money",
+                color = com.ayko.trackitt.ui.theme.PrimaryContainer,
+                fontFamily = com.ayko.trackitt.ui.theme.FrauncesFamily,
+                fontSize = 22.sp,
+            )
+            Text(
+                "Your year recap is ready. Tap to see it.",
+                color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.75f),
+                fontFamily = TrackittBodyFamily,
+                fontSize = 13.sp,
+            )
+        }
+        IconButton(onClick = onDismiss) {
+            Icon(
+                Icons.Filled.Close,
+                contentDescription = "Dismiss",
+                tint = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.6f),
+                modifier = Modifier.size(20.dp),
             )
         }
     }

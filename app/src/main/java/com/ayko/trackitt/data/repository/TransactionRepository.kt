@@ -375,6 +375,17 @@ class TransactionRepository(
         budgetAlerts.onUpdated(before, before.copy(category = category.name, needsClassification = false))
     }
 
+    /** Years the user has transactions in, latest first. */
+    suspend fun recapYears(): List<Int> = transactionDao.yearsWithTransactions()
+
+    /** Every transaction in [year], in the device's time zone. */
+    suspend fun transactionsInYear(year: Int): List<Transaction> {
+        val zone = java.time.ZoneId.systemDefault()
+        val start = java.time.LocalDate.of(year, 1, 1).atStartOfDay(zone).toInstant().toEpochMilli()
+        val end = java.time.LocalDate.of(year + 1, 1, 1).atStartOfDay(zone).toInstant().toEpochMilli()
+        return transactionDao.getBetween(start, end).map { it.toDomain() }
+    }
+
     /** Forgets categories remembered for payment services before they stopped being remembered. */
     suspend fun forgetPaymentServiceCategories() {
         merchantMappingDao.getAll()

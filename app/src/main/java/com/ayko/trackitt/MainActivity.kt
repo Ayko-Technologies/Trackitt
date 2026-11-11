@@ -21,6 +21,11 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
+import com.ayko.trackitt.ui.component.LocalStatusBarBackdrop
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.ayko.trackitt.service.security.AppLockManager
@@ -55,30 +60,37 @@ class MainActivity : FragmentActivity() {
         )
         setContent {
             TrackittTheme {
-                Surface(
-                    color = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .statusBarsPadding(),
-                ) {
-                    // In landscape the camera cutout sits on a side edge; keep content out from under it.
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)),
-                    ) {
-                        TrackittNavGraph()
-                        if (showLock) {
-                            AppLockScreen(
-                                showBiometric = appLockManager.isBiometricEnabled(),
-                                biometricPromptNonce = biometricPromptNonce,
-                                onUnlockWithPin = { pin ->
-                                    val unlocked = appLockManager.verifyPin(pin)
-                                    if (unlocked) unlockApp()
-                                    unlocked
-                                },
-                                onRequestBiometric = { showBiometricPrompt() },
-                            )
+                val statusBarBackdrop = remember { mutableStateOf<Color?>(null) }
+                CompositionLocalProvider(LocalStatusBarBackdrop provides statusBarBackdrop) {
+                    // Behind the status bar: the app's surface, unless a full-bleed screen asked for its own colour.
+                    val backdrop = statusBarBackdrop.value?.takeUnless { showLock } ?: MaterialTheme.colorScheme.surface
+                    Box(Modifier.fillMaxSize().background(backdrop)) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .statusBarsPadding(),
+                        ) {
+                            // In landscape the camera cutout sits on a side edge; keep content out from under it.
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)),
+                            ) {
+                                TrackittNavGraph()
+                                if (showLock) {
+                                    AppLockScreen(
+                                        showBiometric = appLockManager.isBiometricEnabled(),
+                                        biometricPromptNonce = biometricPromptNonce,
+                                        onUnlockWithPin = { pin ->
+                                            val unlocked = appLockManager.verifyPin(pin)
+                                            if (unlocked) unlockApp()
+                                            unlocked
+                                        },
+                                        onRequestBiometric = { showBiometricPrompt() },
+                                    )
+                                }
+                            }
                         }
                     }
                 }

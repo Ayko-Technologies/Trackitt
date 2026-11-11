@@ -96,6 +96,7 @@ private val PRESET_COLORS = listOf(
 fun SettingsScreen(
     onBack: () -> Unit = {},
     onNavigateToSmsSources: () -> Unit = {},
+    onOpenRecap: (Int) -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -103,6 +104,9 @@ fun SettingsScreen(
     val db = remember { TrackittDatabase.getInstance(context) }
     val appLockManager = remember { AppLockManager(context) }
     val customCategories by db.customCategoryDao().getAll().collectAsStateWithLifecycle(initialValue = emptyList())
+    val recapYears by androidx.compose.runtime.produceState(initialValue = emptyList<Int>()) {
+        value = db.transactionDao().yearsWithTransactions()
+    }
 
     var showAddCategoryDialog by remember { mutableStateOf(false) }
     var showSetPinDialog by remember { mutableStateOf(false) }
@@ -236,6 +240,25 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .navigationBarsPadding(),
         ) {
+            // ── Year in review ──
+            if (recapYears.isNotEmpty()) {
+                item { SectionHeader("Year in review") }
+                item {
+                    SettingsGroup {
+                        recapYears.forEachIndexed { index, year ->
+                            SettingsRow(
+                                icon = Icons.Filled.Celebration,
+                                label = "Your $year",
+                                subtitle = if (year == java.time.LocalDate.now().year) "So far this year" else null,
+                                showChevron = true,
+                                showDivider = index < recapYears.size - 1,
+                                onClick = { onOpenRecap(year) },
+                            )
+                        }
+                    }
+                }
+            }
+
             // ── Categories ──
             item { SectionHeader("Categories") }
 

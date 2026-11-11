@@ -253,6 +253,10 @@ interface TransactionDao {
     @Query("UPDATE transactions SET merchant = :merchant WHERE payeeNumber = :number")
     suspend fun renamePayee(number: String, merchant: String)
 
+    /** Every year with a transaction in it, latest first. */
+    @Query("SELECT DISTINCT CAST(strftime('%Y', date / 1000, 'unixepoch', 'localtime') AS INTEGER) AS year FROM transactions ORDER BY year DESC")
+    suspend fun yearsWithTransactions(): List<Int>
+
     /** Payees of payments (other than to [number]) whose reference or note is one of [purposes]. */
     @Query("""
         SELECT merchant FROM transactions

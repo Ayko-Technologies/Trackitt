@@ -23,6 +23,9 @@ import com.ayko.trackitt.ui.screen.detail.DetailScreen
 import com.ayko.trackitt.ui.screen.home.HomeScreen
 import com.ayko.trackitt.ui.screen.insights.InsightsScreen
 import com.ayko.trackitt.ui.screen.onboarding.OnboardingScreen
+import com.ayko.trackitt.ui.screen.recap.RecapScreen
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import com.ayko.trackitt.ui.screen.search.SearchScreen
 import com.ayko.trackitt.ui.screen.settings.SettingsScreen
 import com.ayko.trackitt.ui.screen.settings.SmsSourcesScreen
@@ -73,7 +76,19 @@ fun TrackittNavGraph(
                 onTransactionTap = { id ->
                     navController.navigate(NavRoute.Detail.withId(id))
                 },
+                onRecapTap = { year -> navController.navigate(NavRoute.Recap.withYear(year)) },
             )
+        }
+
+        composable(
+            NavRoute.Recap.route,
+            arguments = listOf(navArgument("year") { type = NavType.IntType }),
+            // A story opens over everything, rising from the bottom like a sheet.
+            enterTransition = { slideInVertically(initialOffsetY = { it / 4 }, animationSpec = tween(300, easing = FastOutSlowInEasing)) + fadeIn(tween(250)) },
+            popExitTransition = { slideOutVertically(targetOffsetY = { it / 4 }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(tween(200)) },
+        ) { backStackEntry ->
+            val year = backStackEntry.arguments?.getInt("year") ?: return@composable
+            RecapScreen(year = year, onClose = { navController.popBackStack() })
         }
 
         composable(
@@ -99,6 +114,7 @@ fun TrackittNavGraph(
             SettingsScreen(
                 onBack = { navController.popBackStack() },
                 onNavigateToSmsSources = { navController.navigate(NavRoute.SmsSources.route) },
+                onOpenRecap = { year -> navController.navigate(NavRoute.Recap.withYear(year)) },
             )
         }
 
