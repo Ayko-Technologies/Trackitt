@@ -375,8 +375,9 @@ class TransactionRepository(
         budgetAlerts.onUpdated(before, before.copy(category = category.name, needsClassification = false))
     }
 
-    /** Years the user has transactions in, latest first. */
-    suspend fun recapYears(): List<Int> = transactionDao.yearsWithTransactions()
+    /** Years with enough tracked for a recap, latest first. */
+    suspend fun recapYears(): List<Int> =
+        com.ayko.trackitt.service.recap.YearRecapCalculator().readyYears(transactionDao.yearActivity())
 
     /** Every transaction in [year], in the device's time zone. */
     suspend fun transactionsInYear(year: Int): List<Transaction> {

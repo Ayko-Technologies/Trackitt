@@ -105,7 +105,7 @@ fun SettingsScreen(
     val appLockManager = remember { AppLockManager(context) }
     val customCategories by db.customCategoryDao().getAll().collectAsStateWithLifecycle(initialValue = emptyList())
     val recapYears by androidx.compose.runtime.produceState(initialValue = emptyList<Int>()) {
-        value = db.transactionDao().yearsWithTransactions()
+        value = com.ayko.trackitt.service.recap.YearRecapCalculator().readyYears(db.transactionDao().yearActivity())
     }
 
     var showAddCategoryDialog by remember { mutableStateOf(false) }

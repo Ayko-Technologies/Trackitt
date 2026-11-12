@@ -1,5 +1,6 @@
 package com.ayko.trackitt.service.recap
 
+import com.ayko.trackitt.data.local.dao.YearActivity
 import com.ayko.trackitt.domain.model.Transaction
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.service.accounts.PayeeNumber
@@ -38,6 +39,8 @@ data class YearRecap(
     /** Change in spending per day against last year (0.1 = 10% more), when last year was tracked enough. */
     val perDayChange: Double?,
     val personality: Personality,
+    /** The year is still under way: everything here is "so far". */
+    val ongoing: Boolean = false,
 ) {
     val perDay: Double get() = if (trackedDays > 0) spent / trackedDays else 0.0
     val coversWholeYear: Boolean get() = from.dayOfYear <= 7 && to.isAfter(LocalDate.of(year, 12, 24))
@@ -169,12 +172,29 @@ class YearRecapCalculator(
             trackedDays = trackedDays,
             perDayChange = perDayChange,
             personality = Personality.of(categories),
+            ongoing = year == today().year,
         )
+    }
+
+    /**
+     * Years with enough in them for a recap to say something true, latest first. A few stray
+     * messages, or the first days of a new year, would make a story out of noise.
+     */
+    fun readyYears(activity: List<YearActivity>): List<Int> = activity
+        .filter { isReady(it.year, dayOf(it.first), dayOf(it.last), it.payments) }
+        .map { it.year }
+
+    fun isReady(year: Int, first: LocalDate, last: LocalDate, payments: Int): Boolean {
+        val to = if (year == today().year) maxOf(last, today()) else last
+        val trackedDays = ChronoUnit.DAYS.between(first, to) + 1
+        return trackedDays >= MIN_DAYS_TO_RECAP && payments >= MIN_PAYMENTS_TO_RECAP
     }
 
     private fun isSpending(t: Transaction) = !t.isIncome && !t.isOwnTransfer && !t.isExcluded
 
-    private fun dayOf(t: Transaction): LocalDate = Instant.ofEpochMilli(t.date).atZone(zone).toLocalDate()
+    private fun dayOf(t: Transaction): LocalDate = dayOf(t.date)
+
+    private fun dayOf(epochMillis: Long): LocalDate = Instant.ofEpochMilli(epochMillis).atZone(zone).toLocalDate()
 
     private fun hourOf(t: Transaction): Int = Instant.ofEpochMilli(t.date).atZone(zone).hour
 
@@ -189,5 +209,7 @@ class YearRecapCalculator(
         const val MIN_DAYS_TO_COMPARE = 30
         const val MIN_PAYMENTS_TO_COMPARE = 20
         const val EDGE_DAYS = 6L
+        const val MIN_DAYS_TO_RECAP = 30
+        const val MIN_PAYMENTS_TO_RECAP = 20
     }
 }

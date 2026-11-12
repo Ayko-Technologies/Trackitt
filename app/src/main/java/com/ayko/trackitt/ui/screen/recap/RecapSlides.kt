@@ -116,8 +116,11 @@ private fun IntroSlide(recap: YearRecap) = SlideColumn {
     Gap(16)
     Rise(2) {
         Headline(
-            if (recap.coversWholeYear) "Every cedi, every payment. Here's how your year went."
-            else "From ${RecapFormat.dayMonth(recap.from)} to ${RecapFormat.dayMonth(recap.to)}, here's how your year went.",
+            when {
+                recap.ongoing -> "From ${RecapFormat.dayMonth(recap.from)} to today, here's your year so far."
+                recap.coversWholeYear -> "Every cedi, every payment. Here's how your year went."
+                else -> "From ${RecapFormat.dayMonth(recap.from)} to ${RecapFormat.dayMonth(recap.to)}, here's how your year went."
+            },
         )
     }
     Gap(40)

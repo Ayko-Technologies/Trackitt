@@ -7,6 +7,9 @@ import androidx.room.Query
 import com.ayko.trackitt.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 
+/** A year's first and last transaction (epoch millis) and how many payments it has. */
+data class YearActivity(val year: Int, val first: Long, val last: Long, val payments: Int)
+
 data class CategoryTotal(
     val category: String,
     val total: Double,
@@ -253,9 +256,16 @@ interface TransactionDao {
     @Query("UPDATE transactions SET merchant = :merchant WHERE payeeNumber = :number")
     suspend fun renamePayee(number: String, merchant: String)
 
-    /** Every year with a transaction in it, latest first. */
-    @Query("SELECT DISTINCT CAST(strftime('%Y', date / 1000, 'unixepoch', 'localtime') AS INTEGER) AS year FROM transactions ORDER BY year DESC")
-    suspend fun yearsWithTransactions(): List<Int>
+    /** Every year with a transaction in it, latest first, with how much it holds. */
+    @Query(
+        """
+        SELECT CAST(strftime('%Y', date / 1000, 'unixepoch', 'localtime') AS INTEGER) AS year,
+               MIN(date) AS first, MAX(date) AS last,
+               SUM(CASE WHEN isIncome = 0 AND isOwnTransfer = 0 AND isExcluded = 0 THEN 1 ELSE 0 END) AS payments
+        FROM transactions GROUP BY year ORDER BY year DESC
+        """
+    )
+    suspend fun yearActivity(): List<YearActivity>
 
     /** Payees of payments (other than to [number]) whose reference or note is one of [purposes]. */
     @Query("""

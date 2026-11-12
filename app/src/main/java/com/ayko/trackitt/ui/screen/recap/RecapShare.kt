@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -142,10 +143,14 @@ private fun ShareCard(recap: YearRecap, showAmounts: Boolean) {
             .clip(RoundedCornerShape(24.dp))
             .background(RecapPalette.Ink),
     ) {
-        // Laid out for a 320dp-wide card and scaled to whatever room there is.
+        // Laid out for a 320dp-wide card and scaled to whatever room there is. The card is a picture,
+        // so its text scales with the card, not the phone's font size: the image comes out the same
+        // everywhere and nothing falls off the bottom.
         val unit = maxWidth.value / 320f
+        val density = LocalDensity.current
         fun d(v: Number): Dp = (v.toFloat() * unit).dp
-        fun s(v: Number): TextUnit = (v.toFloat() * unit).sp
+        // Undoes the font size setting, including Android's gentler scaling of large text.
+        fun s(v: Number): TextUnit = with(density) { d(v).toSp() }
         val accent = recap.topCategory?.category?.bgColor ?: RecapPalette.Mint
 
         Column(Modifier.fillMaxSize().padding(d(24))) {
@@ -165,6 +170,18 @@ private fun ShareCard(recap: YearRecap, showAmounts: Boolean) {
                 lineHeight = s(76),
                 letterSpacing = s(-3),
             )
+            // Whoever sees the card should know when it covers only part of the year.
+            if (recap.ongoing || !recap.coversWholeYear) {
+                val range = "${RecapFormat.dayMonth(recap.from)} – ${RecapFormat.dayMonth(recap.to)}".uppercase()
+                Text(
+                    if (recap.ongoing) "$range · SO FAR" else range,
+                    color = RecapPalette.Mint.copy(alpha = 0.8f),
+                    fontFamily = TrackittBodyFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = s(11),
+                    letterSpacing = s(1.6f),
+                )
+            }
             Box(Modifier.height(d(8)))
             Text("I'm", color = Color.White.copy(alpha = 0.7f), fontFamily = TrackittBodyFamily, fontSize = s(15))
             FitText(recap.personality.title, s(32), accent, minSize = s(20), maxLines = 2)

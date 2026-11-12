@@ -1,5 +1,6 @@
 package com.ayko.trackitt.service.recap
 
+import com.ayko.trackitt.data.local.dao.YearActivity
 import com.ayko.trackitt.domain.model.Transaction
 import com.ayko.trackitt.domain.model.TransactionCategory
 import com.ayko.trackitt.domain.model.TransactionCategory.FOOD
@@ -186,6 +187,30 @@ class YearRecapCalculatorTest {
             .filter { it != OTHER && it != INCOME }
             .mapIndexed { i, c -> tx("2026-05-${(i % 28 + 1).toString().padStart(2, '0')}T10:00", 10.0, c) }
         assertEquals(Personality.ALL_ROUNDER, calculator.recap(2026, spread)!!.personality)
+    }
+
+    @Test
+    fun a_year_needs_a_month_and_twenty_payments_for_a_recap() {
+        val calculator = YearRecapCalculator(zone, today = { LocalDate.of(2026, 11, 12) })
+        fun millis(day: String) = LocalDate.parse(day).atStartOfDay(zone).toInstant().toEpochMilli()
+        val years = calculator.readyYears(
+            listOf(
+                YearActivity(2026, millis("2026-10-20"), millis("2026-11-01"), 25), // 24 days to today
+                YearActivity(2025, millis("2025-01-01"), millis("2025-12-31"), 19), // too few payments
+                YearActivity(2024, millis("2024-12-01"), millis("2024-12-31"), 20), // a month, just
+                YearActivity(2023, millis("2023-03-01"), millis("2023-03-05"), 40), // a few days
+            ),
+        )
+        assertEquals(listOf(2024), years)
+        // The current year counts its quiet days up to today.
+        assertEquals(true, calculator.isReady(2026, LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 2), 20))
+    }
+
+    @Test
+    fun only_the_current_year_is_so_far() {
+        val calculator = YearRecapCalculator(zone, today = { LocalDate.of(2026, 11, 12) })
+        assertEquals(true, calculator.recap(2026, listOf(tx("2026-05-01T10:00", 10.0)))!!.ongoing)
+        assertEquals(false, calculator.recap(2025, listOf(tx("2025-05-01T10:00", 10.0)))!!.ongoing)
     }
 
     @Test
